@@ -8,6 +8,10 @@ import logging
 import math
 
 _logger = logging.getLogger(__name__)
+evaluation_context = {
+    'datetime': datetime,
+    'context_today': datetime.datetime.now,
+}
 
 try:
     from flanker.addresslib import address
@@ -53,7 +57,7 @@ class crm_case_section(osv.osv):
     @api.constrains('score_section_domain')
     def _assert_valid_domain(self):
         try:
-            domain = safe_eval(self.score_section_domain)
+            domain = safe_eval(self.score_section_domain, evaluation_context)
             self.env['crm.lead'].search(domain)
         except Exception:
             raise Warning('The domain is incorrectly formatted')
@@ -82,7 +86,7 @@ class crm_case_section(osv.osv):
         while haslead:
             haslead = False
             for salesteam in all_salesteams:
-                domain = safe_eval(salesteam['score_section_domain'] or '[]')
+                domain = safe_eval(salesteam['score_section_domain'], evaluation_context)
                 domain.extend([('section_id', '=', False), ('user_id', '=', False)])
                 lead_fits = self.env["crm.lead"].search(domain, limit=50)
                 haslead = haslead or (len(lead_fits) == 50 and not dry)
@@ -101,7 +105,7 @@ class crm_case_section(osv.osv):
         for su in all_section_users:
             if (su.maximum_user_leads - su.leads_count) <= 0:
                 continue
-            domain = safe_eval(su.section_user_domain or '[]')
+            domain = safe_eval(su.section_user_domain or '[]', evaluation_context)
             domain.append(('user_id', '=', False))
 
             # assignation rythm: 2 days of leads if a lot of leads should be assigned
@@ -201,7 +205,7 @@ class section_user(models.Model):
     @api.constrains('section_user_domain')
     def _assert_valid_domain(self):
         try:
-            domain = safe_eval(self.section_user_domain)
+            domain = safe_eval(self.section_user_domain, evaluation_context)
             self.env['crm.lead'].search(domain)
         except Exception:
             raise Warning('The domain is incorrectly formatted')

@@ -31,7 +31,7 @@
                         <group>
                             <field name="lead_id"/>
                             <field name="partner_id"/>
-                            <field name="create_date"/>    
+                            <field name="view_date"/>
                         </group>
                     </sheet>
                 </form>

@@ -5,7 +5,10 @@ import logging
 
 
 _logger = logging.getLogger(__name__)
-
+evaluation_context = {
+    'datetime': datetime,
+    'context_today': datetime.datetime.now,
+}
 
 class website_crm_score(models.Model):
     _name = 'website.crm.score'
@@ -26,10 +29,6 @@ class website_crm_score(models.Model):
     @api.constrains('domain')
     def _assert_valid_domain(self):
         try:
-            evaluation_context = {
-                'datetime': datetime,
-                'context_today': datetime.datetime.now,
-            }
             domain = safe_eval(self.domain, evaluation_context)
             self.env['crm.lead'].search(domain)
         except Exception as e:
@@ -50,7 +49,7 @@ class website_crm_score(models.Model):
             domain.append(('id', 'in', ids))
         scores = self.search_read(domain=domain, fields=['domain'])
         for score in scores:
-            domain = safe_eval(score['domain'])
+            domain = safe_eval(score['domain'], evaluation_context)
             domain.extend(['|', ('stage_id.on_change', '=', False), ('stage_id.probability', 'not in', [0, 100])])
             domain.extend([('score_ids', 'not in', [score['id']])])
             leads = self.env['crm.lead'].search(domain)
