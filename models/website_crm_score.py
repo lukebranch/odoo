@@ -1,5 +1,10 @@
 from openerp import fields, models, api
 from openerp.tools.safe_eval import safe_eval
+import datetime
+import logging
+
+
+_logger = logging.getLogger(__name__)
 
 
 class website_crm_score(models.Model):
@@ -21,10 +26,15 @@ class website_crm_score(models.Model):
     @api.constrains('domain')
     def _assert_valid_domain(self):
         try:
-            domain = safe_eval(self.domain)
+            evaluation_context = {
+                'datetime': datetime,
+                'context_today': datetime.datetime.now,
+            }
+            domain = safe_eval(self.domain, evaluation_context)
             self.env['crm.lead'].search(domain)
-        except Exception:
-            raise Warning('Wrong domain')
+        except Exception as e:
+            _logger.warning('Exception: %s' % (e,))
+            raise Warning('The domain is incorrectly formatted')
 
     name = fields.Char('Name', required=True)
     value = fields.Float('Value', required=True)

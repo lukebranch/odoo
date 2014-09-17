@@ -49,6 +49,15 @@ class crm_case_section(osv.osv):
     def _capacity(self):
         self.capacity = sum(s.maximum_user_leads for s in self.section_user_ids)
 
+    @api.one
+    @api.constrains('score_section_domain')
+    def _assert_valid_domain(self):
+        try:
+            domain = safe_eval(self.score_section_domain)
+            self.env['crm.lead'].search(domain)
+        except Exception:
+            raise Warning('The domain is incorrectly formatted')
+
     ratio = fields.Float(string='Ratio')
     score_section_domain = fields.Char('Domain')
     leads_count = fields.Integer(compute='_count_leads')
@@ -83,7 +92,7 @@ class crm_case_section(osv.osv):
                         self.env['leads.dry.run'].create(values)
                 else:
                     lead_fits.write({'section_id': salesteam['id']})
-                    spams = filter(lambda x: x.email_from and not checkmail(x.email_from), lead_fits)
+                    spams = map(lambda x: x.id, filter(lambda x: x.email_from and not checkmail(x.email_from), lead_fits))
                     self.env["crm.lead"].browse(spams).unlink()
 
     @api.model
@@ -157,7 +166,7 @@ class crm_case_section(osv.osv):
                              'capacity',
                              'name'
                              ]
-        all_salesteams = self.search_read(fields=salesteams_fields)
+        all_salesteams = self.search_read(fields=salesteams_fields, domain=[('score_section_domain', '!=', False)])
         # casting the list into a dict to ease the access afterwards
 
         all_section_users = self.env['section.user'].search([('running', '=', True)])
@@ -187,6 +196,15 @@ class section_user(models.Model):
             self.percentage_leads = round(100 * self.leads_count / float(self.maximum_user_leads), 2)
         except ZeroDivisionError:
             self.percentage_leads = 0.0
+
+    @api.one
+    @api.constrains('section_user_domain')
+    def _assert_valid_domain(self):
+        try:
+            domain = safe_eval(self.section_user_domain)
+            self.env['crm.lead'].search(domain)
+        except Exception:
+            raise Warning('The domain is incorrectly formatted')
 
     section_id = fields.Many2one('crm.case.section', string='SaleTeam', required=True)
     user_id = fields.Many2one('res.users', string='Saleman', required=True)

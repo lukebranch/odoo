@@ -162,9 +162,7 @@
                 </xpath>
                 <xpath expr="//group[@name='left']" position="after">
                     <group name="right">
-                        <!--<field name="section_user_domain" widget="char_domain" options="{'model': 'crm.lead'}"/>-->
-                        <field name="section_user_domain" />
-
+                        <field name="score_section_domain"  options="{'model': 'crm.lead'}"/>
                         <label for="assigned_leads"/>
                         <div>
                             <field name="assigned_leads" class="oe_inline"/> /
