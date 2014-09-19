@@ -5,7 +5,7 @@ from psycopg2 import IntegrityError
 class pageview(models.Model):
     _name = "website.crm.pageview"
 
-    view_date = fields.Datetime(string='Date')
+    view_date = fields.Datetime(string='Viewing Date')
     lead_id = fields.Many2one('crm.lead', string='Lead')
     partner_id = fields.Many2one('res.partner', string='Partner')
     url = fields.Char(string='Url')

@@ -1,5 +1,6 @@
 from openerp import fields, models, api
 from openerp.tools.safe_eval import safe_eval
+from openerp.osv.expression import expression
 import datetime
 import logging
 
@@ -29,7 +30,7 @@ class website_crm_score(models.Model):
     @api.constrains('domain')
     def _assert_valid_domain(self):
         try:
-            domain = safe_eval(self.domain, evaluation_context)
+            domain = safe_eval(self.domain or '[]', evaluation_context)
             self.env['crm.lead'].search(domain)
         except Exception as e:
             _logger.warning('Exception: %s' % (e,))
@@ -50,15 +51,24 @@ class website_crm_score(models.Model):
         scores = self.search_read(domain=domain, fields=['domain'])
         for score in scores:
             domain = safe_eval(score['domain'], evaluation_context)
-            domain.extend(['|', ('stage_id.on_change', '=', False), ('stage_id.probability', 'not in', [0, 100])])
-            domain.extend([('score_ids', 'not in', [score['id']])])
-            leads = self.env['crm.lead'].search(domain)
 
-            for sub_ids in self._cr.split_for_in_conditions(leads.ids):
-                self._cr.execute("""INSERT INTO crm_lead_score_rel
-                                    SELECT unnest(%s), %s as score_id""",
-                                (list(sub_ids), score['id']))
+            # Don't replace the domain with a 'not in' like below... that doesn't make the same thing !!!
+            #domain.extend(['|', ('stage_id.on_change', '=', False), ('stage_id.probability', 'not in', [0,100])])
+            domain.extend(['|', ('stage_id.on_change', '=', False), '&', ('stage_id.probability', '!=', 0), ('stage_id.probability', '!=', 100)])
+
+            e = expression(self._cr, self._uid, domain, self.pool['crm.lead'], self._context)
+            where_clause, where_params = e.to_sql()
+
+            where_clause += """ AND (id NOT IN (SELECT lead_id FROM crm_lead_score_rel WHERE score_id = %s)) """
+            where_params.append(score['id'])
+
+            self._cr.execute("""INSERT INTO crm_lead_score_rel
+                                    SELECT crm_lead.id as lead_id, %s as score_id
+                                    FROM crm_lead
+                                    WHERE %s RETURNING lead_id""" % (score['id'], where_clause), where_params)
 
             # Todo: force recompute of fields that depends on score_ids
+            lead_ids = [resp[0] for resp in self._cr.fetchall()]
+            leads = self.env["crm.lead"].browse(lead_ids)
             leads.modified(['score_ids'])
             leads.recompute()

@@ -92,7 +92,7 @@ class ContactController(addons.website_crm.controllers.main.contactus):
                 url_list = []
                 pages_viewed = request.session['pages_viewed']
                 for url, date in pages_viewed.iteritems():
-                    vals = {'partner_id': request.session.get('uid', None), 'url': url, 'create_date': date}
+                    vals = {'partner_id': request.session.get('uid', None), 'url': url, 'view_date': date}
                     score_pageview_ids.append((0, 0, vals))
                     url_list.append(url)
                 del request.session['pages_viewed']

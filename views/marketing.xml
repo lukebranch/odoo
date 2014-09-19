@@ -4,9 +4,9 @@
 
     <data>
 
-        <!-- Scheduler for Lead Assign-->
+        <!-- Scheduler for Lead Scoring and Assignation -->
         <record forcecreate="True" id="ir_cron_lead_assign" model="ir.cron">
-            <field name="name">Lead Assign Cron</field>
+            <field name="name">Lead Scoring and Assignation Cron</field>
             <field eval="False" name="active" />
             <field name="user_id" ref="base.user_root" />
             <field name="interval_number">1</field>
@@ -14,20 +14,24 @@
             <field name="numbercall">-1</field>
             <field eval="False" name="doall" />
             <field eval="'crm.case.section'" name="model" />
-            <field eval="'direct_assign_leads'" name="function" />
-        </record> 
+            <field eval="'score_and_assign_leads'" name="function" />
+        </record>
 
-        <!-- Scheduler for Lead Scoring -->
-        <record forcecreate="True" id="ir_cron_lead_scoring" model="ir.cron">
-            <field name="name">Lead Scoring Cron</field>
-            <field eval="False" name="active" />
-            <field name="user_id" ref="base.user_root" />
-            <field name="interval_number">1</field>
-            <field name="interval_type">days</field>
-            <field name="numbercall">-1</field>
-            <field eval="False" name="doall" />
-            <field eval="'website.crm.score'" name="model" />
-            <field eval="'assign_scores_to_leads'" name="function" />
+
+        <record id="action_score_now" model="ir.actions.server">
+            <field name="name">Apply marked scores</field>
+            <field name="model_id" ref="model_website_crm_score"/>
+            <field name="state">code</field>
+            <field name="code">
+    self.assign_scores_to_leads(cr, uid, context['active_ids'], context)
+            </field>
+        </record>
+
+        <record id="ir_action_score_now" model="ir.values">
+            <field eval="'client_action_multi'" name="key2"/>
+            <field eval="'website.crm.score'" name="model"/>
+            <field name="name">Apply marked scores</field>
+            <field eval="'ir.actions.server,%d'%action_score_now" name="value"/>
         </record>
 
         <!-- Score Menu Item -->
@@ -190,7 +194,7 @@
                                                             <li><a type="open">
                                                                 <field name="section_id"/>
                                                             </a></li>
-                                                            <li><field name="section_user_domain"/></li>
+                                                            <li><field name="section_user_domain" widget='filters'/></li>
                                                         </ul>
                                                     </td> 
                                                     <td>

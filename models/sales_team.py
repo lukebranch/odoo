@@ -57,7 +57,7 @@ class crm_case_section(osv.osv):
     @api.constrains('score_section_domain')
     def _assert_valid_domain(self):
         try:
-            domain = safe_eval(self.score_section_domain, evaluation_context)
+            domain = safe_eval(self.score_section_domain  or '[]', evaluation_context)
             self.env['crm.lead'].search(domain)
         except Exception:
             raise Warning('The domain is incorrectly formatted')
@@ -68,7 +68,12 @@ class crm_case_section(osv.osv):
     assigned_leads = fields.Integer(compute='_assigned_leads')
     unassigned_leads = fields.Integer(compute='_unassigned_leads')
     capacity = fields.Integer(compute='_capacity')
-    section_user_ids = fields.One2many('section.user', 'section_id', string='Salemen')
+    section_user_ids = fields.One2many('section.user', 'section_id', string='Salesman')
+
+    @api.model
+    def score_and_assign_leads(self):
+        self.env['website.crm.score'].assign_scores_to_leads()
+        self._assign_leads()
 
     @api.model
     def direct_assign_leads(self, ids=[]):
@@ -205,7 +210,7 @@ class section_user(models.Model):
     @api.constrains('section_user_domain')
     def _assert_valid_domain(self):
         try:
-            domain = safe_eval(self.section_user_domain, evaluation_context)
+            domain = safe_eval(self.section_user_domain or '[]', evaluation_context)
             self.env['crm.lead'].search(domain)
         except Exception:
             raise Warning('The domain is incorrectly formatted')

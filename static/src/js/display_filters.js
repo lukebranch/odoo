@@ -18,7 +18,7 @@ openerp.website_crm_score = function(instance) {
             some operators are negative
         */
         NEG_OP: ['!=', 'not like', 'not ilike', 'not in'],
-        MAX_LEN: 10,
+        MAX_LEN: 5,
         start: function() {
             var val = this.field.raw_value;
             var self = this;
@@ -34,6 +34,10 @@ openerp.website_crm_score = function(instance) {
                         self.$el.append($span);
                     }
                 }
+                else {
+                    var $span = '<span class="oe_tag" style="background-color:#fce9e9;">Domain too big<span>';
+                    self.$el.append($span);
+                }
             }
         },
 
@@ -47,13 +51,14 @@ openerp.website_crm_score = function(instance) {
                     // op in NEG_OP
                     tip = 'not ' + tip;
                 }
-                // var span = '<span class="oe_tag" title="' + tip + '">'+ tag +'</span>';
-                var span = '<span class="label label-info" title="' + tip + '">'+ tag +'</span>';
+                var span = '<span class="oe_tag" title="' + tip + '">'+ tag +'</span>';
+                // var span = '<span class="label label-info" title="' + tip + '">'+ tag +'</span>';
                 return [i+1, span];
             }
             else if (a === '!'){
                 var res = this.interpret(val, i+1);
-                var span = '<span class="label label-danger">' + res[1] + '</span>';
+                // var span = '<span class="label label-danger">' + res[1] + '</span>';
+                var span = '<span class="oe_tag">!</span>' + res[1];
                 // var span = '<span class="label label-danger" style="border-style: solid; border-width: 1px; border-color: #666;">' + res[1] + '</span>';
                 return [res[0], span];
             }
@@ -78,7 +83,8 @@ openerp.website_crm_score = function(instance) {
                 label = 'label-primary';
                 op = ' and ';
             }
-            var span = '<span class="label ' + label + '"">' + resA[1] + ' ' + resB[1] + '</span>';
+            // var span = '<span class="label ' + label + '"">' + resA[1] + ' ' + resB[1] + '</span>';
+            var span = resA[1] + resB[1];
             return [resB[0], span];
         }
     });
@@ -149,6 +155,10 @@ openerp.website_crm_score = function(instance) {
                         var $span = form;
                         self.$el.append($span);
                     }
+                }
+                else {
+                    var $span = '<span class="oe_tag" style="background-color:#fce9e9;">Domain too big<span>';
+                    self.$el.append($span);
                 }
             }
         },
