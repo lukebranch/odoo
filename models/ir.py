@@ -9,7 +9,7 @@ class ir_http(models.AbstractModel):
     def _dispatch(self):
         response = super(ir_http, self)._dispatch()
 
-        if response.status_code == 200:  # may not be needed because find_handler not used anymore
+        if hasattr(response, 'status_code') and response.status_code == 200:  # may not be needed because find_handler not used anymore
             if request.endpoint.routing.get('track', False):
                 cr, uid, context = request.cr, request.uid, request.context
                 lead_id = request.registry["crm.lead"].decode(request)

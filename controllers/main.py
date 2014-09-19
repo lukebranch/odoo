@@ -8,21 +8,26 @@ class PageController(addons.website.controllers.main.Website):
     def page(self, page, **opt):
         response = super(PageController, self).page(page, **opt)
         # duplication of ir_http.py
-        view = request.website.get_template(page)
 
-        if view.track and response.status_code == 200:  # avoid tracking redirected page
-            cr, uid, context = request.cr, request.uid, request.context
-            lead_id = request.registry["crm.lead"].decode(request)
-            url = request.httprequest.url
-            vals = {'lead_id': lead_id, 'partner_id': request.session.get('uid', None), 'url': url}
+        if hasattr(response, 'status_code') and response.status_code == 200:
+            try:
+                view = request.website.get_template(page)
+                if view.track:  # avoid tracking redirected page
+                    cr, uid, context = request.cr, request.uid, request.context
+                    lead_id = request.registry["crm.lead"].decode(request)
+                    url = request.httprequest.url
+                    vals = {'lead_id': lead_id, 'partner_id': request.session.get('uid', None), 'url': url}
 
-            if lead_id and request.registry['website.crm.pageview'].create_pageview(cr, uid, vals, context=context):
-                # create_pageview was successful
-                pass
-            else:
-                response.delete_cookie('lead_id')
-                request.session.setdefault('pages_viewed', {})[url] = fields.Datetime.now()
-                request.session.modified = True
+                    if lead_id and request.registry['website.crm.pageview'].create_pageview(cr, uid, vals, context=context):
+                        # create_pageview was successful
+                        pass
+                    else:
+                        response.delete_cookie('lead_id')
+                        request.session.setdefault('pages_viewed', {})[url] = fields.Datetime.now()
+                        request.session.modified = True
+            except:
+                pass  # view not found
+
         return response
 
 
@@ -54,7 +59,7 @@ class ContactController(addons.website_crm.controllers.main.contactus):
         # NOT [ on_change AND (proba = 0 OR proba = 100) ]
         # the condition on the lead_id is prepended
         domain = [('id', '=', lead_id),
-                  '!', '&', ('stage_id.on_change', '!=', True), 
+                  '!', '&', ('stage_id.on_change', '!=', True),
                        '|', ('stage_id.probability', '!=', 0.0), ('stage_id.probability', '!=', 100.0)
                   ]
         lead_instance = lead_model.search(cr, SUPERUSER_ID, domain, context=context)
