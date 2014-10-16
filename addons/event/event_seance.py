@@ -917,27 +917,53 @@ class EventSeance(osv.Model):
                 resources.add((roles[0], p))
 
             # computed diff from existing resource assignment
-            changes = []
+            to_remove = []
+            resource_swap_map = defaultdict(list)
             for participation in seance.resource_participation_ids:
                 key = (participation.role, participation.partner_id)
+                partner = participation.partner_id
+                comm_key = (participation.role, partner.commercial_partner_id)
                 if key in resources:
                     # TODO: check that price & other values are in sync
                     resources.remove(key)
                 else:
-                    # assignment not-need, remove it.
-                    changes.append((2, participation.id))
+                    # assignment not-needed, remove it.
+                    to_remove.append(participation)
+                    if partner.event_assignment_mode != 'automatic':
+                        # list this participation as usable for resource 'swap'
+                        resource_swap_map[comm_key].append(participation)
 
             # create missing assignments
+            changes = []
             for role, partner in resources:
-                changes.append((0, 0, {
-                    'role': role,
-                    'partner_id': partner.id,
-                    'name': partner.name,
-                }))
+                comm_key = (role, partner.commercial_partner_id)
+                comm_partner_id = partner.commercial_partner_id
+                if comm_partner_id and resource_swap_map.get(comm_key):
+                    # switching ressource from the same commercial company is
+                    # allowed, as this permit to changed the resource when
+                    # participation is linked to a purchase order
+                    participation = resource_swap_map[comm_key].pop(0)
+                    to_remove.remove(participation)
+                    changes.append((1, participation.id, {
+                        'role': role,
+                        'partner_id': partner.id,
+                        'name': partner.name,
+                    }))
+                else:
+                    # create a new resource participation
+                    changes.append((0, 0, {
+                        'role': role,
+                        'partner_id': partner.id,
+                        'name': partner.name,
+                    }))
+            for participation in to_remove:
+                changes.append((2, participation.id))
 
             if changes:
                 seance.write({'resource_participation_ids': changes})
-            pass
+
+            resource_swap_map.clear()
+        return True
 
     def _refresh_participations(self, cr, uid, ids, context=None):
         rfp_logger = logging.getLogger('event.seance.refresh_participations')
