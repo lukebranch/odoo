@@ -211,9 +211,10 @@ class EventSeance(osv.Model):
         else:
             return []
         seance_filter = [
-            '|',
+            '|', '|',
                 ('address_id', '=', value),
                 ('main_speaker_id', '=', value),
+                ('other_resource_ids', 'in', [value]),
         ]
         result = [('id', 'in', self.search(cr, uid, seance_filter, context=context))]
         return result
@@ -248,7 +249,21 @@ class EventSeance(osv.Model):
             past_seances = set(p.seance_id.id for p in Participation.browse(cr, user, past_part_ids, context=context))
             past_seances_filter = [('id', 'not in', list(past_seances))]
 
-            args = expression.AND((partner_args, past_seances_filter, args))
+            assigned_part_ids = Participation.search(cr, user,
+                                                    [('partner_id', '=', partner_id),
+                                                     ('purchase_order_line_id', '=', False)],
+                                                     context=context)
+            assigned_seances = set(p.seance_id.id for p in Participation.browse(cr, user, assigned_part_ids, context=context))
+            assigned_seances_filter = [('id', 'in', list(assigned_seances))]
+
+            # current_filter:
+            #  - search for seance on which resource is already assigned
+            #  - OR if partner is speaker - list seance on which resource *can be assigned*
+            current_filter = assigned_seances_filter
+            if partner_args:
+                current_filter = expression.OR((partner_args, current_filter))
+
+            args = expression.AND((current_filter, past_seances_filter, args))
 
         _super = super(EventSeance, self)
         return _super._search(cr, user, args, offset=offset, limit=limit, order=order,
