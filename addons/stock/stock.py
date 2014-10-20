@@ -1555,9 +1555,11 @@ class stock_production_lot(osv.osv):
             params = (tuple(ids),)
         cr.execute(query, params)
         results = cr.fetchall()
-        res = dict.fromkeys(ids, {'stock_available': 0.0,
-                                  'stock_reserved': 0.0,
-                                  'stock_free': 0.0})
+        res = {}
+        for lot_id in ids:
+            res[lot_id] = {'stock_available': 0.0,
+                           'stock_reserved': 0.0,
+                           'stock_free': 0.0}
         for qty, lot, reservation in results:
             if reservation:
                 res[lot]['stock_reserved'] = qty
@@ -1568,17 +1570,21 @@ class stock_production_lot(osv.osv):
         return res
 
     def _search_lots(self, cr, uid, reservation_query, args, context=None):
+        having_where_clause = ' AND '.join(map(lambda x: 'SUM(qty) %s %%s' % (x[1]), args))
+        having_values = [x[2] for x in args]
         if context.get("location_id"):
-            query = """SELECT lot_id, sum(qty) FROM stock_quant where location_id = %s""" + reservation_query
-            query += """ GROUP BY lot_id HAVING %s %s"""
-            params = (context['location_id'], str(args[0][1]), str(args[0][2]))
+            query = """SELECT lot_id FROM stock_quant where lot_id IS NOT NULL AND location_id = %s""" + reservation_query
+            query += """ GROUP BY lot_id HAVING """ + having_where_clause
+            params = [context['location_id']] + having_values
         else:
-            query = """SELECT lot_id FROM stock_quant, stock_location WHERE stock_location.id = stock_quant.location_id
-                        AND stock_location.usage = 'internal' """ + reservation_query + """ GROUP BY lot_id"""
-            params = tuple()
-        cr.execute(query, params)
+            query = """SELECT lot_id FROM stock_quant LEFT JOIN stock_location WHERE lot_id IS NOT NULL AND stock_location.id = stock_quant.location_id
+                        AND stock_location.usage = 'internal' """ + reservation_query + """ GROUP BY lot_id HAVING """ + having_where_clause
+            params = having_values
+        cr.execute(query, tuple(params))
         res = cr.fetchall()
-        return [x[0] for x in res]
+        if not res:
+            return [('id','=','0')]
+        return [('id','in', [x[0] for x in res])]
 
     def _stock_search(self, cr, uid, obj, name, args, context=None):
         return self._search_lots(cr, uid, '', args, context=context)
