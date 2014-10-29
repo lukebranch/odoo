@@ -35,7 +35,7 @@
                     <separator/>
                     <filter string="Confirmed Registration" name="registration_open" domain="[('registration_state','=','open')]"/>
                     <separator/>
-                    <filter string="Present" domain="[('presence_status', '=', 'present'])]"/>
+                    <filter string="Present" domain="[('presence_status', '=', 'present')]"/>
                     <filter string="Absent" domain="[('presence_status', 'in', ['absent', 'absent_justified'])]"/>
                     <filter string="Late" domain="[('presence_status', 'in', ['late', 'late_justified'])]"/>
                     <separator/>
