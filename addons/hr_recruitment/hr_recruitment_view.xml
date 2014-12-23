@@ -394,6 +394,7 @@
             <xpath expr="//div[@name='buttons']" position="inside">
                 <div class="oe_button_box" >
                     <button class="oe_stat_button" 
+                        tour_id="total_application" 
                         icon="fa-file-o"
                         name="%(action_hr_job_applications)d" 
                         context="{'default_user_id': user_id}" 

@@ -961,8 +961,7 @@
                     <field name="date" groups="base.group_no_one"/>
                     <field name="date_expected"/>
                     <field name="state"/>
-                    <button name="action_done" states="confirmed,assigned" string="Process" type="object" 
-                            groups="stock.group_stock_user" icon="gtk-go-forward" help="Done"/>
+                    <button name="action_done" states="confirmed,assigned" string="Process" tour_id="process_entirely" type="object" groups="stock.group_stock_user" icon="gtk-go-forward" help="Done"/>
                 </tree>
             </field>
         </record>

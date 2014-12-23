@@ -9,7 +9,7 @@
             <field name="arch" type="xml">
                 <data>
                    <xpath expr="//button[@name='invoice_corrected']" position="after">
-                       <button name="ship_recreate" states="shipping_except" string="Recreate Delivery Order"/>
+                       <button name="ship_recreate" tour_id="recreate_delivery_order" states="shipping_except" string="Recreate Delivery Order"/>
                        <button name="ship_corrected" states="shipping_except" string="Ignore Exception"/>
                    </xpath>
                    <xpath expr="//button[@name='action_view_invoice']" position="after">

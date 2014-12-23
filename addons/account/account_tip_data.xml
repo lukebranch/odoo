@@ -9,7 +9,7 @@
             <field name="type">form</field>
             <field name="mode">form</field>
             <field name="trigger_selector">header button span:contains("Reconcile"):visible</field>
-            <field name="highlight_selector">header button:nth-child(1)</field>
+            <field name="highlight_selector">header button#reconcile_statement</field>
             <field name="placement">bottom</field>
         </record>
 

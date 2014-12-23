@@ -91,6 +91,7 @@
                     </field>
                     <xpath expr="//div[@name='buttons']" position="inside">
                         <button class="oe_inline oe_stat_button" type="action"
+                            tour_id="total_opportunity"
                             attrs="{'invisible': [('customer', '=', False)]}"
                             name="%(crm.crm_lead_opportunities)d"
                             icon="fa-star"
