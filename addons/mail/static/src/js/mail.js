@@ -663,6 +663,9 @@ openerp.mail = function (session) {
                     });
                 }
             }
+            else{
+                self.flag_post = false;
+            }
         },
 
         /* do post a message and fetch the message */
