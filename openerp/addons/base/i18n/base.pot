@@ -5191,6 +5191,24 @@ msgid "Calendar"
 msgstr ""
 
 #. module: base
+#: code:addons/base/res/res_partner.py:69
+#, python-format
+msgid "City"
+msgstr ""
+
+#. module: base
+#: code:addons/base/res/res_partner.py:69
+#, python-format
+msgid "ZIP"
+msgstr ""
+
+#. module: base
+#: code:addons/base/res/res_partner.py:69
+#, python-format
+msgid "State"
+msgstr ""
+
+#. module: base
 #: model:res.country,name:base.kh
 msgid "Cambodia, Kingdom of"
 msgstr ""
