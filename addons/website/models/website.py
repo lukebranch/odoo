@@ -192,7 +192,7 @@ class website(osv.osv):
         self._get_languages.clear_cache(self)
         return super(website, self).write(cr, uid, ids, vals, context)
 
-    def new_page(self, cr, uid, name, template='website.default_page', ispage=True, context=None):
+    def new_page(self, cr, uid, name, template='website.default_page', ispage=True, add_menu=False, context=None):
         context = context or {}
         imd = self.pool.get('ir.model.data')
         view = self.pool.get('ir.ui.view')
@@ -215,6 +215,7 @@ class website(osv.osv):
             page.write({
                 'arch': page.arch.replace(template, page_xmlid),
                 'name': page_name,
+                'is_not_in_menu': not add_menu,
                 'page': ispage,
             })
         return page_xmlid

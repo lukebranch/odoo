@@ -161,7 +161,7 @@ class Website(openerp.addons.web.controllers.main.Home):
     #------------------------------------------------------
     @http.route('/website/add/<path:path>', type='http', auth="user", website=True)
     def pagenew(self, path, noredirect=False, add_menu=None):
-        xml_id = request.registry['website'].new_page(request.cr, request.uid, path, context=request.context)
+        xml_id = request.registry['website'].new_page(request.cr, request.uid, path, add_menu=add_menu, context=request.context)
         if add_menu:
             request.registry['website.menu'].create(request.cr, request.uid, {
                     'name': path,

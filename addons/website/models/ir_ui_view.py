@@ -12,7 +12,9 @@ from openerp.osv import osv, fields
 _logger = logging.getLogger(__name__)
 
 
+
 class view(osv.osv):
+
     _inherit = "ir.ui.view"
     _columns = {
         'page': fields.boolean("Whether this view is a web page template (complete)"),
@@ -21,6 +23,7 @@ class view(osv.osv):
         'website_meta_keywords': fields.char("Website meta keywords", translate=True),
         'customize_show': fields.boolean("Show As Optional Inherit"),
         'website_id': fields.many2one('website', ondelete='cascade', string="Website"),
+        'is_not_in_menu': fields.boolean("Is not in Menu"),
     }
 
     _sql_constraints = [
