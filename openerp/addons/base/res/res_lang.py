@@ -175,7 +175,12 @@ class lang(osv.osv):
         return grouping, thousands_sep, decimal_point
 
     def write(self, cr, uid, ids, vals, context=None):
+        user = self.pool.get('res.users').browse(cr, uid, uid, context=context)
         for lang_id in ids :
+            if not vals.get('active'):
+                language = self.pool.get('res.lang').browse(cr, uid, ids, context=context)
+                if language.code == user.lang:
+                    raise osv.except_osv(_('Error'), _("Can not make it inactive because it is currently selected language"))
             self._lang_data_get.clear_cache(self)
         return super(lang, self).write(cr, uid, ids, vals, context)
 
