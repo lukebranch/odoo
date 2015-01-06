@@ -8,7 +8,6 @@ Homepage: http://www.odoo.com/
 Vcs-Git: https://github.com/odoo/odoo
 
 Package: odoo
-Section: net
 Architecture: all
 Depends:
  ${misc:Depends},
