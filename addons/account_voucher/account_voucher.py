@@ -273,6 +273,7 @@ class account_voucher(models.Model):
             self.with_context(ctx)
             prec = self.env['decimal.precision'].precision_get('Account')
             for line in voucher.line_ids:
+                line_vals = line.get_aml_dict(date, voucher.partner_id.id)
                 #create one move line per voucher line where amount is not 0.0
                 # AND (second part of the clause) only if the original move line was not having debit = credit = 0 (which is a legal value)
                 if not line.amount and not (line.move_line_id and not float_compare(line.move_line_id.debit, line.move_line_id.credit, precision_digits=prec) and not float_compare(line.move_line_id.debit, 0.0, precision_digits=prec)):
@@ -281,12 +282,7 @@ class account_voucher(models.Model):
                 # this calls res_curreny.compute() with the right context, so that it will take either the rate on the voucher if it is relevant or will use the default behaviour
                 amount = voucher._convert_amount(line.untax_amount or line.amount)
                 move_line = {
-                    'journal_id': voucher.journal_id.id,
-                    'name': line.name or '/',
-                    'account_id': line.account_id.id,
                     'move_id': move_id,
-                    'partner_id': voucher.partner_id.id,
-                    'analytic_account_id': line.account_analytic_id and line.account_analytic_id.id or False,
                     'quantity': 1,
                     'credit': 0.0,
                     'debit': 0.0,
@@ -368,7 +364,7 @@ class account_voucher(models.Model):
             elif voucher.type == 'purchase':
                 line_total = line_total + voucher._convert_amount(voucher.tax_amount)
             # Create one move line per voucher line where amount is not 0.0
-            line_total = voucher.voucher_move_line_create(line_total, move_id, company_currency, current_currency)
+            voucher.voucher_move_line_create(line_total, move_id, company_currency, current_currency)
 
             # We post the voucher.
             voucher.write({
@@ -381,7 +377,7 @@ class account_voucher(models.Model):
         return True
 
 
-class account_voucher_line(models.Model):
+class account_voucher_line(models.Model, osv.aml_creator_mixin):
     _name = 'account.voucher.line'
     _description = 'Voucher Lines'
 

@@ -47,15 +47,23 @@ class aml_creator_mixin(osv.AbstractModel):
     _name = 'aml.creator.mixin'
 
     @api.v8
-    def get_aml_dict(self):
+    def get_aml_dict(self, date, partner_id):
+        ctx = self._context.copy()
+        ctx['date'] = date
+        price, price_in_currency, currency_id = self.with_context(ctx).get_subtotal_prices()
         move_line_dict = {
             'name': self.name.split('\n')[0][:64],
+            'date': date,
+            'partner_id': partner_id,
             'quantity': self.quantity,
-            'price': self.price_subtotal,
+            'debit': price > 0 and price,
+            'credit': price < 0 and -price,
+            'amount_currency': price > 0 and abs(price_in_currency) or -abs(price_in_currency),
+            'currency_id': currency_id,
             'account_id': self.account_id.id,
             'product_id': self.product_id.id,
-            'uos_id': self.uos_id.id,
-            'account_analytic_id': self.account_analytic_id.id,
+            'product_uom_id': self.uos_id.id,
+            'analytic_account_id': self.account_analytic_id.id,
             'tax_ids': [(4, id, None) for id in self.invoice_line_tax_id.ids]
         }
         if move_line_dict['account_analytic_id']:
@@ -751,11 +759,10 @@ class account_invoice(models.Model):
         for tax_line in self.tax_line:
             res.append({
                 'tax_line_id': tax_line.tax_id.id,
-                'type': 'tax',
                 'name': tax_line.name,
-                'price_unit': tax_line.amount,
                 'quantity': 1,
-                'price': tax_line.amount,
+                'debit': tax_line.amount > 0 and tax_line.amount,
+                'credit': tax_line.amount < 0 and -tax_line.amount,
                 'account_id': tax_line.account_id.id,
                 'account_analytic_id': tax_line.account_analytic_id.id,
             })
@@ -774,7 +781,7 @@ class account_invoice(models.Model):
             invoice_line.get('date_maturity', 'False'),
         )
 
-    def group_lines(self, iml, line):
+    def group_lines(self, line):
         """Merge account move lines (and hence analytic lines) if invoice line hashcodes are equals"""
         if self.journal_id.group_invoice_lines:
             line2 = {}
@@ -833,6 +840,9 @@ class account_invoice(models.Model):
             total, total_currency, iml = inv.with_context(ctx).compute_invoice_totals(company_currency, ref, iml)
 
             name = inv.name or inv.supplier_invoice_number or '/'
+            date = date_invoice
+            part = self.env['res.partner']._find_accounting_partner(inv.partner_id)
+
             if inv.payment_term:
                 totlines = inv.with_context(ctx).payment_term.compute(total, date_invoice)[0]
                 res_amount_currency = total_currency
@@ -849,11 +859,13 @@ class account_invoice(models.Model):
                         amount_currency += res_amount_currency
 
                     iml.append({
-                        'type': 'dest',
                         'name': name,
-                        'price': t[1],
+                        'debit': t[1] > 0 and t[1],
+                        'credit': t[1] < 0 and -t[1],
                         'account_id': inv.account_id.id,
                         'date_maturity': t[0],
+                        'date': date,
+                        'partner_id': part.id,
                         'amount_currency': diff_currency and amount_currency,
                         'currency_id': diff_currency and inv.currency_id.id,
                         'ref': ref,
@@ -861,22 +873,21 @@ class account_invoice(models.Model):
                     })
             else:
                 iml.append({
-                    'type': 'dest',
                     'name': name,
-                    'price': total,
+                    'debit': total > 0 and total,
+                    'credit': total < 0 and -total,
                     'account_id': inv.account_id.id,
                     'date_maturity': inv.date_due,
+                    'date': date,
+                    'partner_id': part.id,
                     'amount_currency': diff_currency and total_currency,
                     'currency_id': diff_currency and inv.currency_id.id,
                     'ref': ref,
                     'invoice': inv.id
                 })
-            date = date_invoice
 
-            part = self.env['res.partner']._find_accounting_partner(inv.partner_id)
-
-            line = [(0, 0, self.line_get_convert(l, part.id, date)) for l in iml]
-            line = inv.group_lines(iml, line)
+            line = [(0, 0, l) for l in iml]
+            line = inv.group_lines(line)
 
             journal = inv.journal_id.with_context(ctx)
             line = inv.finalize_invoice_move_lines(line)
@@ -916,29 +927,6 @@ class account_invoice(models.Model):
     @api.multi
     def invoice_validate(self):
         return self.write({'state': 'open'})
-
-    @api.model
-    def line_get_convert(self, line, part, date):
-        return {
-            'date_maturity': line.get('date_maturity', False),
-            'partner_id': part,
-            'name': line['name'][:64],
-            'date': date,
-            'debit': line['price'] > 0 and line['price'],
-            'credit': line['price'] < 0 and -line['price'],
-            'account_id': line['account_id'],
-            'analytic_lines': line.get('analytic_lines', []),
-            'amount_currency': line['price'] > 0 and abs(line.get('amount_currency', False)) or -abs(line.get('amount_currency', False)),
-            'currency_id': line.get('currency_id', False),
-            'ref': line.get('ref', False),
-            'quantity': line.get('quantity',1.00),
-            'product_id': line.get('product_id', False),
-            'product_uom_id': line.get('uos_id', False),
-            'analytic_account_id': line.get('account_analytic_id', False),
-            'invoice': line.get('invoice', False),
-            'tax_ids': line.get('tax_ids', False),
-            'tax_line_id': line.get('tax_line_id', False),
-        }
 
     @api.multi
     def action_number(self):
@@ -1197,6 +1185,20 @@ class account_invoice_line(models.Model, aml_creator_mixin):
     _name = "account.invoice.line"
     _description = "Invoice Line"
     _order = "invoice_id,sequence,id"
+
+    @api.v8
+    def get_aml_dict(self, date, partner_id):
+        res = super(account_invoice_line, self).get_aml_dict(date, partner_id)
+        for val in res:
+            val['invoice'] = self.invoice_id.id
+        return res
+
+    @api.v8
+    def get_subtotal_prices(self):
+        price = self.invoice_id.currency_id.compute(self.price_subtotal, self.company_id.currency_id)
+        price_in_currency = self.invoice_id.currency_id != self.company_id.currency_id and self.price_subtotal or 0
+        currency_id = self.invoice_id.currency_id != self.company_id.currency_id and self.invoice_id.currency_id.id or False
+        return price, price_in_currency, currency_id
 
     @api.one
     @api.depends('price_unit', 'discount', 'invoice_line_tax_id', 'quantity',

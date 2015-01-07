@@ -64,22 +64,22 @@ class aml_creator_mixin(osv.AbstractModel):
                 {
                     'name': self.name[:64],
                     'quantity': self.quantity,
-                    'price': product_cost,
+                    'debit': product_cost > 0 and product_cost,
+                    'credit': product_cost < 0 and -product_cost,
                     'account_id': dacc,
                     'product_id': self.product_id.id,
-                    'uos_id': self.uos_id.id,
+                    'product_uom_id': self.uos_id.id,
                     'account_analytic_id': False,
-                    'taxes': self.invoice_line_tax_id,
                 },
                 {
                     'name': self.name[:64],
                     'quantity': self.quantity,
-                    'price': -1 * product_cost,
+                    'debit': -product_cost > 0 and product_cost,
+                    'credit': -product_cost < 0 and -product_cost,
                     'account_id': cacc,
                     'product_id': self.product_id.id,
-                    'uos_id': self.uos_id.id,
+                    'product_uom_id': self.uos_id.id,
                     'account_analytic_id': False,
-                    'taxes': self.invoice_line_tax_id,
                 }]
         return []
 
