@@ -30,6 +30,7 @@ from openerp.tools.translate import _
 from openerp import netsvc
 from openerp import tools
 from openerp.tools import float_compare, DEFAULT_SERVER_DATETIME_FORMAT
+from openerp import SUPERUSER_ID
 import openerp.addons.decimal_precision as dp
 import logging
 _logger = logging.getLogger(__name__)
@@ -2348,7 +2349,7 @@ class stock_move(osv.osv):
                     new_std_price = ((amount_unit * product_avail[product.id])\
                         + (new_price * qty))/(product_avail[product.id] + qty)
 
-                product_obj.write(cr, uid, [product.id],{'standard_price': new_std_price})
+                product_obj.write(cr, SUPERUSER_ID, [product.id],{'standard_price': new_std_price})
 
                 product_avail[product.id] += qty
 
