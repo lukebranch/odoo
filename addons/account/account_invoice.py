@@ -5,6 +5,7 @@ import json
 from lxml import etree
 
 from openerp import api, fields, models, _
+from openerp.osv import osv
 from openerp.exceptions import except_orm, RedirectWarning, Warning
 from openerp.tools import float_compare
 import openerp.addons.decimal_precision as dp
@@ -26,6 +27,41 @@ TYPE2REFUND = {
 }
 
 MAGIC_COLUMNS = ('id', 'create_uid', 'create_date', 'write_uid', 'write_date')
+
+
+class aml_creator_mixin(osv.AbstractModel):
+    """Mixin class for objects that aim to create account move lines.
+
+    Use this mixin class on every object that may have a different behavior
+    in anglo saxon or storno mode. For instance account invoice lines.
+
+    TODO: below doc
+    Models using the 'need_action' feature should override the
+    ``_needaction_domain_get`` method. This method returns a
+    domain to filter records requiring an action for a specific user.
+
+    This class also offers several global services:
+    - ``_needaction_count``: returns the number of actions uid has to perform
+    """
+
+    _name = 'aml.creator.mixin'
+
+    @api.v8
+    def get_aml_dict(self):
+        move_line_dict = {
+            'name': self.name.split('\n')[0][:64],
+            'quantity': self.quantity,
+            'price': self.price_subtotal,
+            'account_id': self.account_id.id,
+            'product_id': self.product_id.id,
+            'uos_id': self.uos_id.id,
+            'account_analytic_id': self.account_analytic_id.id,
+            'tax_ids': [(4, id, None) for id in self.invoice_line_tax_id.ids]
+        }
+        if move_line_dict['account_analytic_id']:
+            move_line_dict['analytic_lines'] = [(0,0, self._get_analytic_line())]
+        return [move_line_dict]
+ 
 
 
 class account_invoice(models.Model):
@@ -681,23 +717,7 @@ class account_invoice(models.Model):
     def invoice_line_move_line_get(self):
         res = []
         for line in self.invoice_line:
-            tax_ids = [(4, id, None) for id in line.invoice_line_tax_id.ids]
-            move_line_dict = {
-                'invl_id': line.id,
-                'type': 'src',
-                'name': line.name.split('\n')[0][:64],
-                'price_unit': line.price_unit,
-                'quantity': line.quantity,
-                'price': line.price_subtotal,
-                'account_id': line.account_id.id,
-                'product_id': line.product_id.id,
-                'uos_id': line.uos_id.id,
-                'account_analytic_id': line.account_analytic_id.id,
-                'tax_ids': tax_ids,
-            }
-            if line['account_analytic_id']:
-                move_line_dict['analytic_lines'] = [(0,0, line._get_analytic_line())]
-            res.append(move_line_dict)
+            res.extend(line.get_aml_dict())
         return res
 
     @api.multi
@@ -809,6 +829,7 @@ class account_invoice(models.Model):
 
             diff_currency = inv.currency_id != company_currency
             # create one move line for the total and possibly adjust the other lines amount
+
             total, total_currency, iml = inv.with_context(ctx).compute_invoice_totals(company_currency, ref, iml)
 
             name = inv.name or inv.supplier_invoice_number or '/'
@@ -903,11 +924,11 @@ class account_invoice(models.Model):
             'partner_id': part,
             'name': line['name'][:64],
             'date': date,
-            'debit': line['price']>0 and line['price'],
-            'credit': line['price']<0 and -line['price'],
+            'debit': line['price'] > 0 and line['price'],
+            'credit': line['price'] < 0 and -line['price'],
             'account_id': line['account_id'],
             'analytic_lines': line.get('analytic_lines', []),
-            'amount_currency': line['price']>0 and abs(line.get('amount_currency', False)) or -abs(line.get('amount_currency', False)),
+            'amount_currency': line['price'] > 0 and abs(line.get('amount_currency', False)) or -abs(line.get('amount_currency', False)),
             'currency_id': line.get('currency_id', False),
             'ref': line.get('ref', False),
             'quantity': line.get('quantity',1.00),
@@ -1172,7 +1193,7 @@ class account_invoice(models.Model):
                     writeoff_acc_id, writeoff_journal_id, name=name)
 
 
-class account_invoice_line(models.Model):
+class account_invoice_line(models.Model, aml_creator_mixin):
     _name = "account.invoice.line"
     _description = "Invoice Line"
     _order = "invoice_id,sequence,id"
