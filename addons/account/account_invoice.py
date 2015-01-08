@@ -62,9 +62,9 @@ class aml_creator_mixin(osv.AbstractModel):
             'currency_id': currency_id,
             'account_id': self.account_id.id,
             'product_id': self.product_id.id,
-            'product_uom_id': self.uos_id.id,
+            'product_uom_id': self.get_uom_id(),
             'analytic_account_id': self.account_analytic_id.id,
-            'tax_ids': [(4, id, None) for id in self.invoice_line_tax_id.ids]
+            'tax_ids': [(4, t.id, None) for t in self.tax_ids]
         }
         if move_line_dict.get('analytic_account_id'):
             move_line_dict['analytic_lines'] = [(0,0, self._get_analytic_line())]
@@ -72,6 +72,10 @@ class aml_creator_mixin(osv.AbstractModel):
  
     @api.v8
     def get_mixin_type(self):
+        raise Warning(_('Not implemented.'))
+
+    @api.v8
+    def get_subtotal_prices(self):
         raise Warning(_('Not implemented.'))
 
 
@@ -626,7 +630,7 @@ class account_invoice(models.Model):
             tax_grouped = {}
             for line in self.invoice_line:
                 price_unit = line.price_unit * (1 - (line.discount or 0.0) / 100.0)
-                taxes = line.invoice_line_tax_id.compute_all(price_unit, self.currency_id, line.quantity, line.product_id, self.partner_id)['taxes']
+                taxes = line.tax_ids.compute_all(price_unit, self.currency_id, line.quantity, line.product_id, self.partner_id)['taxes']
                 for tax in taxes:
                     val = {
                         'invoice_id': self.id,
@@ -1020,7 +1024,7 @@ class account_invoice(models.Model):
                     values[name] = line[name].id
                 elif field.type not in ['many2many', 'one2many']:
                     values[name] = line[name]
-                elif name == 'invoice_line_tax_id':
+                elif name == 'tax_ids':
                     values[name] = [(6, 0, line[name].ids)]
             result.append((0, 0, values))
         return result
@@ -1187,6 +1191,10 @@ class account_invoice_line(models.Model):
         return res
 
     @api.v8
+    def get_uos_id(self):
+        return self.uom_id.id
+
+    @api.v8
     def get_mixin_type(self):
         return self.invoice_id.type
 
@@ -1200,12 +1208,12 @@ class account_invoice_line(models.Model):
         return price, price_in_currency, currency_id
 
     @api.one
-    @api.depends('price_unit', 'discount', 'invoice_line_tax_id', 'quantity',
+    @api.depends('price_unit', 'discount', 'tax_ids', 'quantity',
         'product_id', 'invoice_id.partner_id', 'invoice_id.currency_id')
     def _compute_price(self):
         currency = self.invoice_id and self.invoice_id.currency_id or None
         price = self.price_unit * (1 - (self.discount or 0.0) / 100.0)
-        taxes = self.invoice_line_tax_id.compute_all(price, currency, self.quantity, product=self.product_id, partner=self.invoice_id.partner_id)
+        taxes = self.tax_ids.compute_all(price, currency, self.quantity, product=self.product_id, partner=self.invoice_id.partner_id)
         self.price_subtotal = taxes['total_excluded']
 
     @api.model
@@ -1219,7 +1227,7 @@ class account_invoice_line(models.Model):
                 vals = l[2]
                 price = vals.get('price_unit', 0) * (1 - vals.get('discount', 0) / 100.0)
                 total = total - (price * vals.get('quantity'))
-                taxes = vals.get('invoice_line_tax_id')
+                taxes = vals.get('tax_ids')
                 if taxes and len(taxes[0]) >= 3 and taxes[0][2]:
                     taxes = self.env['account.tax'].browse(taxes[0][2])
                     tax_res = taxes.compute_all(price, currency, vals.get('quantity'), vals.get('product_id'), self._context.get('partner_id'))
@@ -1260,9 +1268,9 @@ class account_invoice_line(models.Model):
         required=True, default=1)
     discount = fields.Float(string='Discount (%)', digits= dp.get_precision('Discount'),
         default=0.0)
-    invoice_line_tax_id = fields.Many2many('account.tax',
+    tax_ids = fields.Many2many('account.tax',
         'account_invoice_line_tax', 'invoice_line_id', 'tax_id',
-        string='Taxes', domain=[('type_tax_use','!=','as_child')])
+        string='Taxes', domain=[('type_tax_use','!=','as_child')], oldname='invoice_line_tax_ids')
     account_analytic_id = fields.Many2one('account.analytic.account',
         string='Analytic Account')
     company_id = fields.Many2one('res.company', string='Company',
@@ -1330,7 +1338,7 @@ class account_invoice_line(models.Model):
                 values['name'] += '\n' + product.description_purchase
 
         taxes = fpos.map_tax(taxes)
-        values['invoice_line_tax_id'] = taxes.ids
+        values['tax_ids'] = taxes.ids
 
         if type in ('in_invoice', 'in_refund'):
             values['price_unit'] = price_unit or product.standard_price
@@ -1395,9 +1403,9 @@ class account_invoice_line(models.Model):
         else:
             product_change_result = self.product_id_change(product_id, False, type=inv_type,
                 partner_id=partner_id, fposition_id=fposition_id, company_id=account.company_id.id)
-            if 'invoice_line_tax_id' in product_change_result.get('value', {}):
-                unique_tax_ids = product_change_result['value']['invoice_line_tax_id']
-        return {'value': {'invoice_line_tax_id': unique_tax_ids}}
+            if 'tax_ids' in product_change_result.get('value', {}):
+                unique_tax_ids = product_change_result['value']['tax_ids']
+        return {'value': {'tax_ids': unique_tax_ids}}
 
 
 class account_invoice_tax(models.Model):

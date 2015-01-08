@@ -59,24 +59,6 @@ class account_move_line(models.Model):
             currency = self.env['account.journal'].browse(context['default_journal_id']).currency
         return currency
 
-    @api.model
-    def _get_journal(self):
-        """ Return journal based on the journal type """
-        context = dict(self._context or {})
-        journal_id = context.get('journal_id', False)
-        if journal_id:
-            return journal_id
-
-        journal_type = context.get('journal_type', False)
-        if journal_type:
-            recs = self.env['account.journal'].search([('type','=',journal_type)])
-            if not recs:
-                action = self.env.ref('account.action_account_journal_form')
-                msg = _("""Cannot find any account journal of "%s" type for this company, You should create one.\n Please go to Journal Configuration""") % journal_type.replace('_', ' ').title()
-                raise RedirectWarning(msg, action.id, _('Go to the configuration panel'))
-            journal_id = recs[0].id
-        return journal_id
-
     name = fields.Char(required=True)
     quantity = fields.Float(digits=(16,2),
         help="The optional quantity expressed by this line, eg: number of product sold. The quantity is not a legal requirement but is very useful for some reports.")
@@ -84,7 +66,7 @@ class account_move_line(models.Model):
     product_id = fields.Many2one('product.product', string='Product')
     debit = fields.Float(digits=0, default=0.0)
     credit = fields.Float(digits=0, default=0.0)
-    amount_currency = fields.Float(string='Amount Currency', default=0.0,  digits=0,
+    amount_currency = fields.Float(string='Amount Currency', default=0.0, digits=0,
         help="The amount expressed in an optional other currency if it is a multi-currency entry.")
     currency_id = fields.Many2one('res.currency', string='Currency', default=_get_currency,
         help="The optional other currency if it is a multi-currency entry.")
@@ -105,13 +87,12 @@ class account_move_line(models.Model):
         help='Moves in which this move is involved for partial reconciliation')
     reconcile_partial_ids = fields.One2many('account.partial.reconcile', 'debit_move_id', String='Partial Reconciliation',
         help='Moves involved in this move partial reconciliation')
-    journal_id = fields.Many2one('account.journal', related='move_id.journal_id', string='Journal',
-        default=_get_journal, required=True, index=True, store=True)
+    journal_id = fields.Many2one('account.journal', related='move_id.journal_id', string='Journal', index=True, store=True)
     blocked = fields.Boolean(string='No Follow-up', default=False,
         help="You can check this box to mark this journal item as a litigation with the associated partner")
     date_maturity = fields.Date(string='Due date', index=True ,
         help="This field is used for payable and receivable journal entries. You can put the limit date for the payment of this line.")
-    date = fields.Date(related='move_id.date', string='Effective date', required=True, index=True, default=fields.Date.context_today, store=True)
+    date = fields.Date(related='move_id.date', string='Effective date', index=True, default=fields.Date.context_today, store=True)
     analytic_lines = fields.One2many('account.analytic.line', 'move_id', string='Analytic lines')
     tax_ids = fields.Many2many('account.tax', string='Taxes', copy=False, readonly=True)
     tax_line_id = fields.Many2one('account.tax', string='Originator tax', copy=False, readonly=True)
@@ -615,65 +596,24 @@ class account_move_line(models.Model):
     @api.model
     def create(self, vals, check=True):
         AccountObj = self.env['account.account']
-        TaxObj = self.env['account.tax']
-        MoveObj = self.env['account.move']
-        context = dict(self._context or {})
         amount = vals.get('debit', 0.0) - vals.get('credit', 0.0)
 
-        if vals.get('move_id', False):
-            move = MoveObj.browse(vals['move_id'])
-            if move.company_id:
-                vals['company_id'] = move.company_id.id
-            if move.date and not vals.get('date'):
-                vals['date'] = move.date
         if ('account_id' in vals) and AccountObj.browse(vals['account_id']).deprecated:
             raise Warning(_('You cannot use deprecated account.'))
-        if 'journal_id' in vals and vals['journal_id']:
-            context['journal_id'] = vals['journal_id']
-        if 'date' in vals and vals['date']:
-            context['date'] = vals['date']
-        if ('journal_id' not in context) and ('move_id' in vals) and vals['move_id']:
-            m = MoveObj.browse(vals['move_id'])
-            context['journal_id'] = m.journal_id.id
-            context['date'] = m.date
-        #we need to treat the case where a value is given in the context for period_id as a string
-        if not context.get('journal_id', False) and context.get('search_default_journal_id', False):
-            context['journal_id'] = context.get('search_default_journal_id')
-        if 'date' not in context:
-            context['date'] = fields.Date.context_today(self)
-        self.with_context(context)._update_journal_check(context['journal_id'], context['date'])
-        move_id = vals.get('move_id', False)
-        journal = self.env['account.journal'].browse(context['journal_id'])
-        vals['journal_id'] = vals.get('journal_id') or context.get('journal_id')
-        vals['date'] = vals.get('date') or context.get('date')
-        if not move_id:
-            if not vals.get('move_id', False):
-                if journal.sequence_id:
-                    #name = self.pool.get('ir.sequence').next_by_id(cr, uid, journal.sequence_id.id)
-                    v = {
-                        'date': vals.get('date', time.strftime('%Y-%m-%d')),
-                        'journal_id': context['journal_id']
-                    }
-                    if vals.get('ref', ''):
-                        v.update({'ref': vals['ref']})
-                    move_id = MoveObj.with_context(context).create(v)
-                    vals['move_id'] = move_id.id
-                else:
-                    raise Warning(_('Cannot create an automatic sequence for this piece.\nPut a sequence in the journal definition for automatic numbering or create a sequence manually for this piece.'))
-        ok = not (journal.type_control_ids or journal.account_control_ids)
+        #ok = not (journal.type_control_ids or journal.account_control_ids)
         if ('account_id' in vals):
             account = AccountObj.browse(vals['account_id'])
-            if journal.type_control_ids:
-                type = account.user_type
-                for t in journal.type_control_ids:
-                    if type.code == t.code:
-                        ok = True
-                        break
-            if journal.account_control_ids and not ok:
-                for a in journal.account_control_ids:
-                    if a.id == vals['account_id']:
-                        ok = True
-                        break
+            #if journal.type_control_ids:
+            #    type = account.user_type
+            #    for t in journal.type_control_ids:
+            #        if type.code == t.code:
+            #            ok = True
+            #            break
+            #if journal.account_control_ids and not ok:
+            #    for a in journal.account_control_ids:
+            #        if a.id == vals['account_id']:
+            #            ok = True
+            #            break
             # Automatically convert in the account's secondary currency if there is one and
             # the provided values were not already multi-currency
             if account.currency_id and 'amount_currency' not in vals and account.currency_id.id != account.company_id.currency_id.id:
@@ -682,8 +622,8 @@ class account_move_line(models.Model):
                 if 'date' in vals:
                     ctx['date'] = vals['date']
                 vals['amount_currency'] = account.company_id.currency_id.with_context(ctx).compute(amount, account.currency_id)
-        if not ok:
-            raise Warning(_('You cannot use this general account in this journal, check the tab \'Entry Controls\' on the related journal.'))
+        #if not ok:
+        #    raise Warning(_('You cannot use this general account in this journal, check the tab \'Entry Controls\' on the related journal.'))
 
         # WIP
         # Create tax lines
@@ -692,15 +632,14 @@ class account_move_line(models.Model):
             # taxes = TaxObj.compute_all(self._cr, self._uid, vals['tax_ids'], amount, vals.get('currency_id', None), 1, vals.get('product_id', None), vals.get('partner_id', None), context=context)['taxes']
             # for vals in self.get_tax_move_lines(taxes):
                 # super(account_move_line, self).create(vals)
-
         result = super(account_move_line, self).create(vals)
 
-        if check and not context.get('novalidate') and (context.get('recompute', True) or journal.entry_posted):
-            move = MoveObj.browse(vals['move_id'])
-            # TODO: FIX ME
-            # move.with_context(context)._post_validate()
-            if journal.entry_posted:
-                move.with_context(context).button_validate()
+        #if check and not context.get('novalidate') and (context.get('recompute', True) or journal.entry_posted):
+        #    move = MoveObj.browse(vals['move_id'])
+        #    # TODO: FIX ME
+        #    # move.with_context(context)._post_validate()
+        #    if journal.entry_posted:
+        #        move.with_context(context).button_validate()
         return result
 
     @api.multi

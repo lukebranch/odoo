@@ -271,47 +271,29 @@ class account_voucher(models.Model):
             ctx = self._context.copy()
             ctx['date'] = date
             self.with_context(ctx)
-            prec = self.company_id.currency_id.rounding
             for line in voucher.line_ids:
                 line_vals = line.get_aml_dict(date, voucher.partner_id.id)
-                #create one move line per voucher line where amount is not 0.0
-                # AND (second part of the clause) only if the original move line was not having debit = credit = 0 (which is a legal value)
-                if not line.amount and not (line.move_line_id and not float_compare(line.move_line_id.debit, line.move_line_id.credit, precision_digits=prec) and not float_compare(line.move_line_id.debit, 0.0, precision_digits=prec)):
-                    continue
-                # convert the amount set on the voucher line into the currency of the voucher's company
-                # this calls res_curreny.compute() with the right context, so that it will take either the rate on the voucher if it is relevant or will use the default behaviour
-                amount = voucher._convert_amount(line.untax_amount or line.amount)
-                move_line = {
-                    'move_id': move_id,
-                    'quantity': 1,
-                    'credit': 0.0,
-                    'debit': 0.0,
-                    'date': voucher.date
-                }
-                if amount < 0:
-                    amount = -amount
-                    if line.type == 'dr':
-                        line.type = 'cr'
-                    else:
-                        line.type = 'dr'
-
-                if (line.type=='dr'):
-                    tot_line += amount
-                    move_line['debit'] = amount
-                else:
-                    tot_line -= amount
-                    move_line['credit'] = amount
-
-                if voucher.tax_id and voucher.voucher_type in ('sale', 'purchase'):
-                    move_line.update({
-                        'account_tax_id': voucher.tax_id.id,
-                    })
-
-                # compute the amount in foreign currency
-                amount_currency = False
-
-                move_line['amount_currency'] = amount_currency
-                self.env['account.move.line'].create(move_line)
+                taxes = []
+                for vals in line_vals:
+                    vals['move_id'] = move_id
+                    if vals['tax_ids']:
+                        tax_ids = [t[1] for t in vals['tax_ids']]
+                        for tax in self.env['account.tax'].browse(tax_ids).compute_all(line.price_subtotal, voucher.currency_id)['taxes']:
+                            tax_amount = voucher.voucher_type == 'sale' and -tax['amount'] or tax['amount']
+                            tax_amount = voucher.with_context(ctx).currency_id.compute(tax_amount, voucher.company_id.currency_id)
+                            taxes.append({
+                                'tax_line_id': tax['id'],
+                                'name': tax['name'],
+                                'quantity': 1,
+                                'move_id': move_id,
+                                'debit': tax_amount > 0 and tax_amount,
+                                'credit': tax_amount < 0 and -tax_amount,
+                                'account_id': tax['account_id'] or vals['account_id'],
+                                'account_analytic_id': tax['analytic'] and vals['account_analytic_id'],
+                            })
+                    self.env['account.move.line'].create(vals)
+                for vals in taxes:
+                    self.env['account.move.line'].create(vals)
         return tot_line
 
 
@@ -381,6 +363,23 @@ class account_voucher_line(models.Model):
     _description = 'Voucher Lines'
 
     _inherit = ['aml.creator.mixin']
+
+    @api.v8
+    def get_uom_id(self):
+        return self.product_id and self.product_id.uom_id.id or False
+
+    @api.v8
+    def get_mixin_type(self):
+        return self.voucher_id.voucher_type == "sale" and 'out_invoice' or 'in_invoice'
+
+    @api.v8
+    def get_subtotal_prices(self):
+        price = self.voucher_id.currency_id.compute(self.price_subtotal, self.company_id.currency_id)
+        price_in_currency = self.voucher_id.currency_id != self.company_id.currency_id and self.price_subtotal or 0
+        currency_id = self.voucher_id.currency_id != self.company_id.currency_id and self.voucher_id.currency_id.id or False
+        if self.get_mixin_type() == 'out_invoice':
+            return -price, -price_in_currency, currency_id
+        return price, price_in_currency, currency_id
 
     @api.one
     @api.depends('price_unit', 'tax_ids', 'quantity', 'product_id', 'voucher_id.currency_id')
