@@ -29,16 +29,22 @@ class account_move_line(models.Model):
             amount = abs(line.debit - line.credit)
             sign = 1 if (line.debit - line.credit) > 0 else -1
 
+            amount_residual_currency = abs(line.amount_currency) or 0.0
+            digits_rounding_precision = line.currency_id.rounding if line.currency_id else line.company_id.currency_id.rounding
+
             for partial_line in (line.reconcile_partial_ids + line.reconcile_partial_with_ids):
+                date = partial_line.credit_move_id.date if partial_line.debit_move_id == line else partial_line.debit_move_id.date
                 amount -= partial_line.amount
+                if line.currency_id:
+                    if partial_line.currency_id and partial_line.currency_id == line.currency_id:
+                        amount_residual_currency -= partial_line.amount_currency
+                    elif partial_line.currency_id and partial_line.currency_id != line.currency_id:
+                        amount_residual_currency -= line.currency_id.with_context(date=date).compute(partial_line.amount_currency, partial_line.currency_id)
+                    else:
+                        amount_residual_currency -= line.currency_id.with_context(date=date).compute(partial_line.amount, line.company_id.currency_id)
 
             line.amount_residual = amount*sign
-            if line.currency_id:
-                line.amount_residual_currency = line.company_id.currency_id.compute(amount, line.currency_id)
-                digits_rounding_precision = line.currency_id.rounding
-            else:
-                line.amount_residual_currency = 0.0
-                digits_rounding_precision = line.company_id.currency_id.rounding
+            line.amount_residual_currency = amount_residual_currency*sign
 
             if float_is_zero(amount, digits_rounding_precision):
                 line.reconciled = True
@@ -76,15 +82,15 @@ class account_move_line(models.Model):
         help="The optional quantity expressed by this line, eg: number of product sold. The quantity is not a legal requirement but is very useful for some reports.")
     product_uom_id = fields.Many2one('product.uom', string='Unit of Measure')
     product_id = fields.Many2one('product.product', string='Product')
-    debit = fields.Float(digits=dp.get_precision('Account'), default=0.0)
-    credit = fields.Float(digits=dp.get_precision('Account'), default=0.0)
-    amount_currency = fields.Float(string='Amount Currency', default=0.0,  digits=dp.get_precision('Account'),
+    debit = fields.Float(digits=0, default=0.0)
+    credit = fields.Float(digits=0, default=0.0)
+    amount_currency = fields.Float(string='Amount Currency', default=0.0,  digits=0,
         help="The amount expressed in an optional other currency if it is a multi-currency entry.")
     currency_id = fields.Many2one('res.currency', string='Currency', default=_get_currency,
         help="The optional other currency if it is a multi-currency entry.")
-    amount_residual = fields.Float(compute='_amount_residual', string='Residual Amount', store=True, digits=dp.get_precision('Account'),
+    amount_residual = fields.Float(compute='_amount_residual', string='Residual Amount', store=True, digits=0,
         help="The residual amount on a journal item expressed in the company currency.")
-    amount_residual_currency = fields.Float(compute='_amount_residual', string='Residual Amount in Currency', store=True, digits=dp.get_precision('Account'),
+    amount_residual_currency = fields.Float(compute='_amount_residual', string='Residual Amount in Currency', store=True, digits=0,
         help="The residual amount on a journal item expressed in its currency (possibly not the company currency).")
     account_id = fields.Many2one('account.account', string='Account', required=True, index=True,
         ondelete="cascade", domain=[('deprecated', '=', False)], default=lambda self: self._context.get('account_id', False))
@@ -489,7 +495,18 @@ class account_move_line(models.Model):
         if amount_reconcile == sm_credit_move.amount_residual:
             self -= sm_credit_move
 
-        self.env['account.partial.reconcile'].create({'debit_move_id': sm_debit_move.id, 'credit_move_id': sm_credit_move.id, 'amount': amount_reconcile,})
+        #Check for currency
+        currency = False
+        amount_reconcile_currency = 0
+        if sm_debit_move.currency_id == sm_credit_move.currency_id:
+            currency = sm_credit_move.currency_id
+            amount_reconcile_currency = min(sm_debit_move.amount_residual_currency, -sm_credit_move.amount_residual_currency)
+
+        self.env['account.partial.reconcile'].create({'debit_move_id': sm_debit_move.id, 
+            'credit_move_id': sm_credit_move.id, 
+            'amount': amount_reconcile,
+            'amount_currency': amount_reconcile_currency,
+            'currency_id': currency and currency.id or False,})
 
         #Iterate process again on self
         return self.auto_reconcile_lines()
@@ -513,7 +530,7 @@ class account_move_line(models.Model):
         if len(set(all_accounts)) > 1:
             raise Warning(_('Entries are not of the same account!'))
         if not all_accounts[0].reconcile:
-            raise Warning(_('The account '+all_accounts[0].name+' ('+all_accounts[0].code+') is not marked as reconciliable !'))
+            raise Warning(_('The account %s (%s) is not marked as reconciliable !') % (all_accounts[0].name, all_accounts[0].code))
         if len(set(partners)) > 1:
             raise Warning(_('The partner has to be the same on all lines for receivable and payable accounts!'))
 
@@ -522,7 +539,7 @@ class account_move_line(models.Model):
         
         #if writeoff_acc_id specified, then create write-off move with value the remaining amount from move in self
         if writeoff_acc_id and writeoff_journal_id and remaining_moves:
-            writeoff_to_reconcile = remaining_moves._create_writeoff({'account_id': writeoff_acc_id, 'journal_id': writeoff_journal_id})
+            writeoff_to_reconcile = remaining_moves._create_writeoff({'account_id': writeoff_acc_id.id, 'journal_id': writeoff_journal_id.id})
             #add writeoff line to reconcile algo and finish the reconciliation
             remaining_moves = (remaining_moves+writeoff_to_reconcile).auto_reconcile_lines()
 
@@ -704,31 +721,22 @@ class account_move_line(models.Model):
 
     @api.multi
     def write(self, vals, check=True, update_check=True):
-        if vals.get('account_tax_id', False):
+        if vals.get('tax_line_id') or vals.get('tax_ids'):
             raise Warning(_('You cannot change the tax, you should remove and recreate lines.'))
         if ('account_id' in vals) and self.env['account.account'].browse(vals['account_id']).deprecated:
             raise Warning(_('You cannot use deprecated account.'))
-        if update_check:
-            if ('account_id' in vals) or ('journal_id' in vals) or ('date' in vals) or ('move_id' in vals) or ('debit' in vals) or ('credit' in vals) or ('date' in vals):
-                self._update_check()
+        if update_check and any(key in vals for key in ('account_id', 'journal_id', 'date', 'move_id', 'debit', 'credit')):
+            self._update_check()
 
-        todo_date = None
-        if vals.get('date', False):
-            todo_date = vals['date']
-            del vals['date']
-
+        # Check for centralisation
         for line in self:
-            ctx = dict(self._context or {})
-            if not ctx.get('journal_id'):
-                if line.move_id:
-                   ctx['journal_id'] = line.move_id.journal_id.id
-                else:
-                    ctx['journal_id'] = line.journal_id.id
-            if not ctx.get('date'):
-                if line.move_id:
-                    ctx['date'] = line.move_id.date
-                else:
-                    ctx['date'] = line.date
+            journal = line.move_id and line.move_id.journal_id or line.journal_id
+            journal = self._context.get('journal_id') and self.env['account.journal'].browse(self._context.get('journal_id')) or journal # Legacy
+            if journal.centralisation:
+                pass
+                # Do something here
+
+        todo_date = vals.pop('date', False)
         result = super(account_move_line, self).write(vals)
         if check:
             done = []
@@ -800,15 +808,6 @@ class account_move_line(models.Model):
         debit = amount > 0 and amount or 0.0
         credit = amount < 0 and -amount or 0.0
         return debit, credit, amount_currency
-
-    @api.model
-    def list_journals(self):
-        ng = dict(self.env['account.journal'].name_search('',[]))
-        ids = ng.keys()
-        result = []
-        for journal in self.env['account.journal'].browse(ids):
-            result.append((journal.id, ng[journal.id], journal.type, bool(journal.currency), bool(journal.analytic_journal_id)))
-        return result
 
     @api.multi
     def create_analytic_lines(self):

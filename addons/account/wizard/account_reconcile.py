@@ -12,9 +12,10 @@ class account_move_line_reconcile(models.TransientModel):
     _description = 'Account move line reconcile'
 
     trans_nbr = fields.Integer(string='# of Transaction', readonly=True)
-    credit = fields.Float(string='Credit amount', readonly=True, digits=dp.get_precision('Account'))
-    debit = fields.Float(string='Debit amount', readonly=True, digits=dp.get_precision('Account'))
-    writeoff = fields.Float(string='Write-Off amount', readonly=True, digits=dp.get_precision('Account'))
+    credit = fields.Float(string='Credit amount', readonly=True, digits=0)
+    debit = fields.Float(string='Debit amount', readonly=True, digits=0)
+    writeoff = fields.Float(string='Write-Off amount', readonly=True, digits=0)
+    company_id = fields.Many2one('res.company', string='Company', required=True, default=lambda self: self.env.user.company_id)
 
     @api.model
     def default_get(self, fields):
@@ -40,7 +41,7 @@ class account_move_line_reconcile(models.TransientModel):
             if not line.reconciled:
                 credit += line.credit
                 debit += line.debit
-        precision = self.env['decimal.precision'].precision_get('Account')
+        precision = self.company_id.currency_id.decimal_places
         writeoff = float_round(debit-credit, precision_digits=precision)
         credit = float_round(credit, precision_digits=precision)
         debit = float_round(debit, precision_digits=precision)
@@ -102,5 +103,5 @@ class account_move_line_reconcile_writeoff(models.TransientModel):
         if self.analytic_id:
             context['analytic_id'] = self.analytic_id.id
         move_lines = self.env['account.move.line'].browse(self._context.get('active_ids', []))
-        move_lines.with_context(context).reconcile(self.writeoff_acc_id.id, self.journal_id.id)
+        move_lines.with_context(context).reconcile(self.writeoff_acc_id, self.journal_id)
         return {'type': 'ir.actions.act_window_close'}
