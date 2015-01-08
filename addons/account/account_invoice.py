@@ -70,6 +70,9 @@ class aml_creator_mixin(osv.AbstractModel):
             move_line_dict['analytic_lines'] = [(0,0, self._get_analytic_line())]
         return [move_line_dict]
  
+    @api.v8
+    def get_mixin_type(self):
+        raise Warning(_('Not implemented.'))
 
 
 class account_invoice(models.Model):
@@ -757,12 +760,15 @@ class account_invoice(models.Model):
     def tax_line_move_line_get(self):
         res = []
         for tax_line in self.tax_line:
+            tax_amount = tax_line.amount
+            if self.invoice_id.type in ['in_invoice', 'out_refund']:
+                tax_amount = -tax_amount
             res.append({
                 'tax_line_id': tax_line.tax_id.id,
                 'name': tax_line.name,
                 'quantity': 1,
-                'debit': tax_line.amount > 0 and tax_line.amount,
-                'credit': tax_line.amount < 0 and -tax_line.amount,
+                'debit': tax_amount > 0 and tax_amount,
+                'credit': tax_amount < 0 and -tax_amount,
                 'account_id': tax_line.account_id.id,
                 'account_analytic_id': tax_line.account_analytic_id.id,
             })
@@ -1194,10 +1200,16 @@ class account_invoice_line(models.Model, aml_creator_mixin):
         return res
 
     @api.v8
+    def get_mixin_type(self):
+        return self.invoice_id.type
+
+    @api.v8
     def get_subtotal_prices(self):
         price = self.invoice_id.currency_id.compute(self.price_subtotal, self.company_id.currency_id)
         price_in_currency = self.invoice_id.currency_id != self.company_id.currency_id and self.price_subtotal or 0
         currency_id = self.invoice_id.currency_id != self.company_id.currency_id and self.invoice_id.currency_id.id or False
+        if self.get_mixin_type() in ['in_invoice', 'out_refund']:
+            return -price, -price_in_currency, currency_id
         return price, price_in_currency, currency_id
 
     @api.one

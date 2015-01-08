@@ -30,15 +30,11 @@ class aml_creator_mixin(osv.AbstractModel):
     _inherit = "aml.creator.mixin"
 
     @api.v8
-    def get_type(self):
-        raise Warning(_('Not implemented.'))
-
-    @api.v8
     def get_aml_dict(self):
         res = super(aml_creator_mixin,self).get_aml_dict()
         if self.company_id.anglo_saxon_accounting:
             if self.product_id and self.product_id.valuation == 'real_time' and self.product_id.type != 'service':
-                mixin_type = self.get_type()
+                mixin_type = self.get_mixin_type()
                 if mixin_type in ('out_invoice', 'out_refund'):
                     #extend with cost of sale lines
                     res.extend(self._anglo_saxon_sale_move_lines())
@@ -111,10 +107,6 @@ class account_invoice_line(osv.osv):
     _columns = {
         'move_id': fields.many2one('stock.move', string="Move line", help="If the invoice was generated from a stock.picking, reference to the related move line."),
     }
-
-    @api.v8
-    def get_type(self):
-        return self.invoice_id.type
 
     @api.v8
     def get_invoice_line_account(self, product, fpos):
