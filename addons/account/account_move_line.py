@@ -3,6 +3,7 @@
 import time
 from datetime import datetime
 
+import openerp
 from openerp import workflow
 from openerp import api, fields, models, _
 from openerp.osv import osv, expression
@@ -11,6 +12,9 @@ import openerp.addons.decimal_precision as dp
 from openerp import tools
 from openerp.report import report_sxw
 from openerp.tools import float_is_zero
+
+class Float(fields.Float):
+    related_rounding = None
 
 class account_move_line(models.Model):
     _name = "account.move.line"
@@ -78,13 +82,13 @@ class account_move_line(models.Model):
         return journal_id
 
     name = fields.Char(required=True)
-    quantity = fields.Float(digits=(16,2),
+    quantity = fields.Float(related_rounding='product_uom_id',
         help="The optional quantity expressed by this line, eg: number of product sold. The quantity is not a legal requirement but is very useful for some reports.")
     product_uom_id = fields.Many2one('product.uom', string='Unit of Measure')
     product_id = fields.Many2one('product.product', string='Product')
-    debit = fields.Float(digits=0, default=0.0)
-    credit = fields.Float(digits=0, default=0.0)
-    amount_currency = fields.Float(string='Amount Currency', default=0.0,  digits=0,
+    debit = fields.Float(digits=0, related_rounding='company_id.currency_id', default=0.0)
+    credit = fields.Float(digits=0, related_rounding='company_id.currency_id', default=0.0)
+    amount_currency = fields.Float(string='Amount Currency', default=0.0, digits=0, related_rounding='currency_id',
         help="The amount expressed in an optional other currency if it is a multi-currency entry.")
     currency_id = fields.Many2one('res.currency', string='Currency', default=_get_currency,
         help="The optional other currency if it is a multi-currency entry.")
@@ -693,6 +697,7 @@ class account_move_line(models.Model):
             # for vals in self.get_tax_move_lines(taxes):
                 # super(account_move_line, self).create(vals)
 
+        self._apply_related_field_dependant_roundings(vals)
         result = super(account_move_line, self).create(vals)
 
         if check and not context.get('novalidate') and (context.get('recompute', True) or journal.entry_posted):
@@ -738,7 +743,18 @@ class account_move_line(models.Model):
         #         # Do something here
 
         todo_date = vals.pop('date', False)
-        result = super(account_move_line, self).write(vals)
+
+        # If we're setting value on a field which has related_rounding, and the value of the related_rounding is not
+        # the same for all records in self, we need to apply the related-field rounding on a per-record basis.
+        related_rounding_fields = [getattr(self._columns[field_name], 'related_rounding') for field_name in vals.keys() if hasattr(self._columns[field_name], 'related_rounding')]
+        if related_rounding_fields and any(field.related_rounding != field[0].related_rounding for field in related_rounding_fields):
+            for rec in self:
+                rec_vals = vals.copy()
+                rec._apply_related_field_dependant_roundings(rec_vals)
+                super(account_move_line, rec).write(rec_vals)
+        else:
+            super(account_move_line, self).write(vals)
+
         if check:
             done = []
             for line in self:
@@ -747,7 +763,42 @@ class account_move_line(models.Model):
                     line.move_id._post_validate()
                     if todo_date:
                         line.move_id.write({'date': todo_date})
-        return result
+
+    import logging
+    _logger = logging.getLogger(__name__)
+
+    # TODO : rounding must be recomputed if a related_rounding changes as well
+    @api.model
+    def _apply_related_field_dependant_roundings(self, vals):
+        """ Round vals whose precision depends on a related field (works in-place)
+            :param vals: dict of values to assignate to fields, as in create or write
+        """
+        def get_round_function(field, path):
+            """ Get the round function of the related field by following the many2one leading to it.
+                If a field in the path has no value, return False.
+                If the path is false or the related field doesn't have a round function, it throws an AttributeError.
+            """
+            if len(path) == 0: return getattr(field, 'round')
+            next_field_name = path.pop(0)
+            next_field = getattr(field, next_field_name)
+            return next_field and get_round_function(next_field, path) or False
+
+        for field_name, new_val in vals.items():
+            field = self._columns[field_name]
+            if hasattr(field, 'related_rounding'):
+                rel_path = field.related_rounding.split('.')
+                first_rel_field_name = rel_path.pop(0)
+                if first_rel_field_name in vals:
+                    comodel_name = self._columns[first_rel_field_name]._obj
+                    start = self.env[comodel_name].browse(vals[first_rel_field_name])
+                else:
+                    start = getattr(self, first_rel_field_name)
+                round_function = get_round_function(start, rel_path)
+                if round_function:
+                    vals[field_name] = round_function(new_val)
+                else:
+                    _logger.warning("The fields %s of the record %s can not be rounded because the relation %s is undefined !" % field_name, rec, field.related_rounding)
+
 
     @api.multi
     def _update_check(self):

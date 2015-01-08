@@ -201,6 +201,9 @@ class product_uom(osv.osv):
                     raise osv.except_osv(_('Warning!'),_("Cannot change the category of existing Unit of Measure '%s'.") % (uom.name,))
         return super(product_uom, self).write(cr, uid, ids, vals, context=context)
 
+    def round(self, amount):
+        """ Return `amount` rounded according to UOM `self`. """
+        return float_round(amount, precision_rounding=self.rounding)
 
 
 class product_ul(osv.osv):
