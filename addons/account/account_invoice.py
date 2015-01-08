@@ -66,7 +66,7 @@ class aml_creator_mixin(osv.AbstractModel):
             'analytic_account_id': self.account_analytic_id.id,
             'tax_ids': [(4, id, None) for id in self.invoice_line_tax_id.ids]
         }
-        if move_line_dict['account_analytic_id']:
+        if move_line_dict.get('analytic_account_id'):
             move_line_dict['analytic_lines'] = [(0,0, self._get_analytic_line())]
         return [move_line_dict]
  
@@ -702,33 +702,19 @@ class account_invoice(models.Model):
         return move_lines
 
     @api.multi
-    def compute_invoice_totals(self, company_currency, ref, invoice_move_lines):
+    def compute_invoice_totals(self, invoice_move_lines):
         total = 0
         total_currency = 0
         for line in invoice_move_lines:
-            if self.currency_id != company_currency:
-                currency = self.currency_id.with_context(date=self.date_invoice or fields.Date.context_today(self))
-                line['currency_id'] = currency.id
-                line['amount_currency'] = line['price']
-                line['price'] = currency.compute(line['price'], company_currency)
-            else:
-                line['currency_id'] = False
-                line['amount_currency'] = False
-            line['ref'] = ref
-            if self.type in ('out_invoice','in_refund'):
-                total += line['price']
-                total_currency += line['amount_currency'] or line['price']
-                line['price'] = - line['price']
-            else:
-                total -= line['price']
-                total_currency -= line['amount_currency'] or line['price']
-        return total, total_currency, invoice_move_lines
+            total += line.get('debit', 0) - line.get('credit', 0)
+            total_currency += line.get('amount_currency', 0)
+        return total, total_currency
 
     @api.model
     def invoice_line_move_line_get(self):
         res = []
         for line in self.invoice_line:
-            res.extend(line.get_aml_dict())
+            res.extend(line.get_aml_dict(line.invoice_id.date_invoice, line.invoice_id.partner_id.id))
         return res
 
     @api.multi
@@ -761,7 +747,7 @@ class account_invoice(models.Model):
         res = []
         for tax_line in self.tax_line:
             tax_amount = tax_line.amount
-            if self.invoice_id.type in ['in_invoice', 'out_refund']:
+            if self.type in ['in_refund', 'out_invoice']:
                 tax_amount = -tax_amount
             res.append({
                 'tax_line_id': tax_line.tax_id.id,
@@ -843,7 +829,7 @@ class account_invoice(models.Model):
             diff_currency = inv.currency_id != company_currency
             # create one move line for the total and possibly adjust the other lines amount
 
-            total, total_currency, iml = inv.with_context(ctx).compute_invoice_totals(company_currency, ref, iml)
+            total, total_currency = inv.with_context(ctx).compute_invoice_totals(iml)
 
             name = inv.name or inv.supplier_invoice_number or '/'
             date = date_invoice
@@ -866,8 +852,8 @@ class account_invoice(models.Model):
 
                     iml.append({
                         'name': name,
-                        'debit': t[1] > 0 and t[1],
-                        'credit': t[1] < 0 and -t[1],
+                        'debit': t[1] < 0 and -t[1],
+                        'credit': t[1] > 0 and t[1],
                         'account_id': inv.account_id.id,
                         'date_maturity': t[0],
                         'date': date,
@@ -880,8 +866,8 @@ class account_invoice(models.Model):
             else:
                 iml.append({
                     'name': name,
-                    'debit': total > 0 and total,
-                    'credit': total < 0 and -total,
+                    'debit': total < 0 and -total,
+                    'credit': total > 0 and total,
                     'account_id': inv.account_id.id,
                     'date_maturity': inv.date_due,
                     'date': date,
@@ -1187,10 +1173,11 @@ class account_invoice(models.Model):
                     writeoff_acc_id, writeoff_journal_id, name=name)
 
 
-class account_invoice_line(models.Model, aml_creator_mixin):
+class account_invoice_line(models.Model):
     _name = "account.invoice.line"
     _description = "Invoice Line"
     _order = "invoice_id,sequence,id"
+    _inherit = ["aml.creator.mixin"]
 
     @api.v8
     def get_aml_dict(self, date, partner_id):
@@ -1208,7 +1195,7 @@ class account_invoice_line(models.Model, aml_creator_mixin):
         price = self.invoice_id.currency_id.compute(self.price_subtotal, self.company_id.currency_id)
         price_in_currency = self.invoice_id.currency_id != self.company_id.currency_id and self.price_subtotal or 0
         currency_id = self.invoice_id.currency_id != self.company_id.currency_id and self.invoice_id.currency_id.id or False
-        if self.get_mixin_type() in ['in_invoice', 'out_refund']:
+        if self.get_mixin_type() in ['in_refund', 'out_invoice']:
             return -price, -price_in_currency, currency_id
         return price, price_in_currency, currency_id
 

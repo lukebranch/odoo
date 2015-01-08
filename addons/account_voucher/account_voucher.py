@@ -377,9 +377,11 @@ class account_voucher(models.Model):
         return True
 
 
-class account_voucher_line(models.Model, osv.aml_creator_mixin):
+class account_voucher_line(models.Model):
     _name = 'account.voucher.line'
     _description = 'Voucher Lines'
+
+    _inherit = ['aml.creator.mixin']
 
     @api.one
     @api.depends('price_unit', 'tax_ids', 'quantity', 'product_id', 'voucher_id.currency_id')
