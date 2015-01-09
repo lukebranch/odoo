@@ -48,6 +48,7 @@ class aml_creator_mixin(osv.AbstractModel):
 
     @api.v8
     def get_aml_dict(self, date, partner_id):
+        """return a list of dictionaries where each can be used as it is to create an account.move.line"""
         ctx = self._context.copy()
         ctx['date'] = date
         price, price_in_currency, currency_id = self.with_context(ctx).get_subtotal_prices()
@@ -66,10 +67,12 @@ class aml_creator_mixin(osv.AbstractModel):
             'analytic_account_id': self.account_analytic_id.id,
             'tax_ids': [(4, t.id, None) for t in self.tax_ids]
         }
-        if move_line_dict.get('analytic_account_id'):
-            move_line_dict['analytic_lines'] = [(0,0, self._get_analytic_line())]
         return [move_line_dict]
  
+    @api.v8
+    def get_uom_id(self):
+        return self.product_id and self.product_id.uom_id.id or False
+
     @api.v8
     def get_mixin_type(self):
         raise Warning(_('Not implemented.'))
@@ -620,12 +623,12 @@ class account_invoice(models.Model):
     @api.multi
     def compute_taxes(self):
         account_invoice_tax = self.env['account.invoice.tax']
-        ctx = dict(self._context)
+        #ctx = dict(self._context)
         for invoice in self:
             # Delete non-manual tax lines
             self._cr.execute("DELETE FROM account_invoice_tax WHERE invoice_id=%s AND manual is False", (invoice.id,))
             self.invalidate_cache()
-            
+
             # Generate one tax line per tax, however many invoice lines it's applied to
             tax_grouped = {}
             for line in self.invoice_line:
@@ -639,17 +642,9 @@ class account_invoice(models.Model):
                         'amount': tax['amount'],
                         'manual': False,
                         'sequence': tax['sequence'],
-                        'account_analytic_id': line.account_analytic_id.id,
+                        'account_analytic_id': tax.get('analytic') and line.account_analytic_id.id,
                         'account_id': self.type in ('out_invoice','in_invoice') and (tax['account_id'] or line.account_id.id) or (tax['refund_account_id'] or line.account_id.id),
                     }
-
-                    # If the taxes generate moves on the same financial account as the invoice line
-                    # and no default analytic account is defined at the tax level, propagate the
-                    # analytic account from the invoice line to the tax line. This is necessary
-                    # in situations were (part of) the taxes cannot be reclaimed,
-                    # to ensure the tax move is allocated to the proper analytic account.
-                    if not val.get('account_analytic_id') and line.account_analytic_id and val['account_id'] == line.account_id.id:
-                        val['account_analytic_id'] = line.account_analytic_id.id
 
                     key = tax['id']
                     if key not in tax_grouped:
@@ -660,12 +655,12 @@ class account_invoice(models.Model):
             # Create new tax lines
             for tax in tax_grouped.values():
                 account_invoice_tax.create(tax)
-        
+        return
         # dummy write on self to trigger recomputations
-        ctx = dict(self._context) # TODO : why lang in context ?
-        if self[0].partner_id.lang:
-            ctx['lang'] = self[0].partner_id.lang
-        return self.with_context(ctx).write({'invoice_line': []})
+        #ctx = dict(self._context) # TODO : why lang in context ?
+        #if self[0].partner_id.lang:
+        #    ctx['lang'] = self[0].partner_id.lang
+        #return self.with_context(ctx).write({'invoice_line': []})
 
 
     @api.multi
@@ -720,31 +715,6 @@ class account_invoice(models.Model):
         for line in self.invoice_line:
             res.extend(line.get_aml_dict(line.invoice_id.date_invoice, line.invoice_id.partner_id.id))
         return res
-
-    @api.multi
-    def _get_analytic_line(self):
-        company_currency = self.company_id.currency_id
-        sign = 1 if self.type in ('out_invoice', 'in_refund') else -1
-        if self.type in ('in_invoice', 'in_refund'):
-            ref = self.reference
-        else:
-            ref = self.number
-        if not self.journal_id.analytic_journal_id:
-            raise except_orm(_('No Analytic Journal!'),
-                _("You have to define an analytic journal on the '%s' journal!") % (self.journal_id.name,))
-        currency = self.currency_id.with_context(date=self.date_invoice)
-        return {
-            'name': il['name'],
-            'date': self.date_invoice,
-            'account_id': il['account_analytic_id'],
-            'unit_amount': il['quantity'],
-            'amount': currency.compute(il['price'], company_currency) * sign,
-            'product_id': il['product_id'],
-            'product_uom_id': il['uos_id'],
-            'general_account_id': il['account_id'],
-            'journal_id': self.journal_id.analytic_journal_id.id,
-            'ref': ref,
-        }
 
     @api.model
     def tax_line_move_line_get(self):
@@ -1191,8 +1161,8 @@ class account_invoice_line(models.Model):
         return res
 
     @api.v8
-    def get_uos_id(self):
-        return self.uom_id.id
+    def get_uom_id(self):
+        return self.uos_id.id
 
     @api.v8
     def get_mixin_type(self):

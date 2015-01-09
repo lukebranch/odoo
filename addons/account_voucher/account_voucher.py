@@ -365,10 +365,6 @@ class account_voucher_line(models.Model):
     _inherit = ['aml.creator.mixin']
 
     @api.v8
-    def get_uom_id(self):
-        return self.product_id and self.product_id.uom_id.id or False
-
-    @api.v8
     def get_mixin_type(self):
         return self.voucher_id.voucher_type == "sale" and 'out_invoice' or 'in_invoice'
 
