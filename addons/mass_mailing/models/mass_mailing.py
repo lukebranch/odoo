@@ -7,11 +7,10 @@ import re
 
 from openerp import tools
 from openerp import models, api, _
-from openerp.exceptions import Warning
 from openerp.tools import ustr
 from openerp.tools.misc import DEFAULT_SERVER_DATETIME_FORMAT
+from openerp.exceptions import UserError
 from openerp.tools.safe_eval import safe_eval as eval
-from openerp.tools import ustr
 from openerp.tools.translate import _
 from openerp.osv import osv, fields
 
@@ -776,7 +775,7 @@ class MassMailing(osv.Model):
             # instantiate an email composer + send emails
             res_ids = self.get_remaining_recipients(cr, uid, mailing, context=context)
             if not res_ids:
-                raise Warning('Please select recipients.')
+                raise UserError(_('Please select recipients.'))
 
             if context:
                 comp_ctx = dict(context, active_ids=res_ids)
