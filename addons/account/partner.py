@@ -30,8 +30,8 @@ class account_fiscal_position(osv.osv):
     _description = 'Fiscal Position'
     _order = 'sequence'
     _columns = {
-        'sequence': fields.integer('Sequence'),
-        'name': fields.char('Fiscal Position', required=True),
+        'sequence': fields.integer('Sequence', help="Determine the priority, the lower the first to be selected"),
+        'name': fields.char('Fiscal Position Name', required=True),
         'active': fields.boolean('Active', help="By unchecking the active field, you may hide a fiscal position without deleting it."),
         'company_id': fields.many2one('res.company', 'Company'),
         'account_ids': fields.one2many('account.fiscal.position.account', 'position_id', 'Account Mapping', copy=True),
