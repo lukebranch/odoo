@@ -1,3 +1,4 @@
+#-*- encoding: utf-8 -*-
 import website_crm_score
 import crm_lead
 import ir

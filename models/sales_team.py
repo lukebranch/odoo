@@ -1,3 +1,4 @@
+#-*- encoding: utf-8 -*-
 from openerp.osv import osv
 from openerp import fields, api, models
 import datetime
@@ -14,8 +15,6 @@ evaluation_context = {
 }
 
 try:
-    from flanker.addresslib import address
-
     def checkmail(mail):
         return bool(address.validate_address(mail))
 
@@ -134,9 +133,10 @@ class crm_case_section(osv.osv):
         while haslead:
             haslead = False
             for salesteam in all_salesteams:
-                domain = safe_eval(salesteam['score_section_domain'], evaluation_context)
+                base_domain = safe_eval(salesteam['score_section_domain'], evaluation_context)
+                base_domain.extend(['|', ('stage_id.on_change', '=', False), '&', ('stage_id.probability', '!=', 0), ('stage_id.probability', '!=', 100)])
+                domain = base_domain[:]
                 domain.extend([('section_id', '=', False), ('user_id', '=', False)])
-                domain.extend(['|', ('stage_id.on_change', '=', False), '&', ('stage_id.probability', '!=', 0), ('stage_id.probability', '!=', 100)])
                 leads = self.env["crm.lead"].search(domain, limit=50)
                 haslead = haslead or (len(leads) == 50 and not dry)
 
@@ -161,7 +161,14 @@ class crm_case_section(osv.osv):
                         if lead.id not in leads_done:
                             leads_duplicated = lead.get_duplicated_leads(False)
                             if len(leads_duplicated) > 1:
-                                self.env["crm.lead"].browse(leads_duplicated).merge_opportunity(False, False)
+                                merged_id = self.env["crm.lead"].browse(leads_duplicated).merge_opportunity(False, False)
+                                # check that merged lead has always all conditions from the base_domain of the current salesteam.
+                                check_domain = base_domain[:]
+                                check_domain.extend([('id', '=', merged_id)])
+                                if not self.env["crm.lead"].search_count(check_domain):
+                                    merged_lead = self.env["crm.lead"].browse(merged_id)
+                                    merged_lead.write({'section_id': False})
+
                             leads_done += leads_duplicated
                         self._cr.commit()
                 self._cr.commit()
@@ -241,6 +248,9 @@ class crm_case_section(osv.osv):
         # casting the list into a dict to ease the access afterwards
 
         all_section_users = self.env['section.user'].search([('running', '=', True)])
+
+        # Compute score before assign to salesteam, because we are not sure that lead has been already scored.
+        self.env['website.crm.score'].assign_scores_to_leads()
 
         self.assign_leads_to_salesteams(all_salesteams, dry=dry)
 
