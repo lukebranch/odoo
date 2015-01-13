@@ -60,4 +60,8 @@ class PosboxHomepage(openerp.addons.web.controllers.main.Home):
     def index(self):
         #return request.render('hw_posbox_homepage.index',mimetype='text/html')
         return index_template
+
+    @http.route('/pos/screen', type='http', auth='none', website=True)
+    def screen(self):
+        
         
