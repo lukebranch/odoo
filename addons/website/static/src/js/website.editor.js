@@ -892,8 +892,7 @@ define(['summernote/summernote'], function () {
             this.$('#website-top-view').hide();
             this.$el.show();
             this.$('#website-top-edit').show();
-            $('.css_non_editable_mode_hidden').removeClass("css_non_editable_mode_hidden");
-            
+
             if (!no_editor) {
                 this.rte.start_edition();
                 this.trigger('rte:called');
@@ -1169,7 +1168,7 @@ define(['summernote/summernote'], function () {
             });
 
             $('.o_not_editable').attr("contentEditable", false);
-
+            $('#wrapwrap').addClass('editor_editable');
             $('#wrapwrap [data-oe-model]')
                 .not('.o_not_editable')
                 .filter(function () {
