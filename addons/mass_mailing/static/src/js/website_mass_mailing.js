@@ -82,4 +82,15 @@
                 }); 
         });
     });
+
+    $('input[name=unsubscription_reason]').change(function(e){
+         if (this.id == 'rdo_unsubscribe') {
+            $('.spec_reason').show();
+            $('.spec_reason').attr('required', '');
+         } else {
+            $('.spec_reason').hide();
+            $('.spec_reason').removeAttr('required');
+         }
+    });
+
 })();

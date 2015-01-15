@@ -52,6 +52,7 @@ professional emails and reuse templates in a few clicks.
         'views/email_template.xml',
         'views/website_mass_mailing.xml',
         'views/snippets.xml',
+        'views/template.xml',
         'security/ir.model.access.csv',
         'views/mass_mailing.xml',
         'views/unsubscribe.xml',

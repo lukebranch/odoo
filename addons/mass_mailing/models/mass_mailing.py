@@ -49,6 +49,7 @@ class MassMailingContact(osv.Model):
         ),
         'opt_out': fields.boolean('Opt Out', help='The contact has chosen not to receive mails anymore from this list'),
         'unsubscription_date': fields.datetime('Unsubscription Date'),
+        'reason_to_unsubscribe': fields.char('Unsubscription Reason'),
         'message_bounce': fields.integer('Bounce', help='Counter of the number of bounced emails for this contact.'),
     }
 
