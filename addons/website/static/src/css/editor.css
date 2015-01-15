@@ -74,6 +74,11 @@
   box-shadow: 0 0 10px 3px rgba(94, 255, 0, 0.8);
 }
 
+/* Summernote not Support for placeholder text https://github.com/summernote/summernote/issues/581 */
+[contentEditable=true]:empty:not(:focus):before {
+  content: attr(placeholder)
+}
+
 /* Prevent the text contents of draggable elements from being selectable. */
 [draggable] {
   -moz-user-select: none;

@@ -1183,6 +1183,7 @@ define(['summernote/summernote'], function () {
             $('.o_editable').each(function () {
                 var node = this;
                 var $node = $(node);
+                node.contentEditable = true;
                 // start element observation
                 observer.observe(node, OBSERVER_CONFIG);
                 $(node).one('content_changed', function () {
