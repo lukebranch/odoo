@@ -43,7 +43,6 @@ class MassMailController(http.Controller):
                     txt_msg = post['txt_unsubscription_reason']
                 values.update(post)
                 request.registry[mailing.mailing_model].write(cr, SUPERUSER_ID, int(post['record_ids']), {'opt_out': True, 'reason_to_unsubscribe': txt_msg}, context=context)
-                # *******************************Email Sending*******************************
                 mailing_email = request.registry[mailing.mailing_model].browse(cr, SUPERUSER_ID, int(post['record_ids']), context=context)
                 mail_values = {
                     'email_from': 'admin@example.com',
@@ -57,7 +56,6 @@ class MassMailController(http.Controller):
                 mail_mail_obj = Mail.browse(cr, SUPERUSER_ID, mailing_ids, context=context)
                 Mail.write(cr, SUPERUSER_ID, mailing_ids, {'body_html': mail_values['body_html']}, context=context)
                 Mail.send(cr, SUPERUSER_ID, mailing_ids, context=context)
-                # ****************************************************************************
                 return request.website.render('mass_mailing.unsubscribe_template', values)
         else:
             values = {'mailing_id': mailing_id, 'record_ids': res_id}
@@ -71,7 +69,6 @@ class MassMailController(http.Controller):
                 record_ids = model.search(cr, SUPERUSER_ID, [('id', '=', res_id), (email_fname, 'ilike', email)], context=context)
             if 'opt_out' in model._fields:
                 model.write(cr, SUPERUSER_ID, record_ids, {'opt_out': True}, context=context)
-            # *******************************Email Sending*******************************
             mailing_email = request.registry[mailing.mailing_model].browse(cr, SUPERUSER_ID, int(record_ids[0]), context=context)
             mail_values = {
                 'email_from': 'admin@example.com',
@@ -85,7 +82,6 @@ class MassMailController(http.Controller):
             mail_mail_obj = Mail.browse(cr, SUPERUSER_ID, mailing_ids, context=context)
             Mail.write(cr, SUPERUSER_ID, mailing_ids, {'body_html': mail_values['body_html']}, context=context)
             Mail.send(cr, SUPERUSER_ID, mailing_ids, context=context)
-            # ****************************************************************************
             return request.website.render('mass_mailing.unsubscribe_template', values)
 
     @http.route('/website_mass_mailing/<mailing_id>/subscribe/<record_ids>', type='http', auth='none', website=True)
@@ -99,7 +95,6 @@ class MassMailController(http.Controller):
             model.write(cr, SUPERUSER_ID, int(post['record_ids']), {'opt_out': False, 'reason_to_unsubscribe': ' '}, context=context)
         else:
             model.write(cr, SUPERUSER_ID, int(post['record_ids']), {'opt_out': False}, context=context)
-        # '*************************************Email sending**********************************'
         mailing_email = model.browse(cr, SUPERUSER_ID, int(post['record_ids']), context=context)
         mail_values = {
             'email_from': 'admin@example.com',
@@ -113,7 +108,6 @@ class MassMailController(http.Controller):
         mail_mail_obj = Mail.browse(cr, SUPERUSER_ID, mailing_ids, context=context)
         Mail.write(cr, SUPERUSER_ID, mailing_ids, {'body_html': mail_values['body_html']}, context=context)
         Mail.send(cr, SUPERUSER_ID, mailing_ids, context=context)
-        # '*************************************Email sending**********************************'
         return 'ok'
 
     @http.route(['/mail/mailing/unsubscribe'], type='json', auth='none', website=True)

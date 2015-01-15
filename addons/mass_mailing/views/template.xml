@@ -1,0 +1,87 @@
+<?xml version="1.0"?>
+<openerp>
+    <data>
+        <template id="unsubscribe_template" name="mail">
+            <t t-call="website.layout">
+                <div class="snippet_row" style="padding:0px;width:600px;margin:auto;background-color:#fff">
+                    <table style="margin: 0" cellpadding="0" cellspacing="0">
+                        <tbody>
+                            <tr>
+                                <td valign="center" style="text-align:center">
+                                    <a t-att-href="(website.company_id.website) or '#'" style="text-decoration:none">
+                                        <img src="/logo.png" style="padding:10px;height:auto;max-width:600px;width:200px" alt="Your Logo" />
+                                    </a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <table>
+                        <tr>
+                            <td style="color:#8B8284">
+                                <p style="font-size:30px;margin-bottom:20px">You have unsubscribed from the <a href="#">[mailing list].</a></p>
+                                <p>If you unsubscribed by mistake, click <a t-att-href="'/website_mass_mailing/' + str(mailing_id) + '/subscribe/' + str(record_ids)">here.</a></p>
+                                <p>We will always be pleased to see you around on <a t-att-href="(website.company_id.website) or '#'">Odoo.</a></p>
+                            </td>
+                            <td>
+                                <img src="/fa_to_img/%EF%80%AA/rgb(0,0,0)/200" alt="image"/>
+                            </td>
+                        </tr>
+                    </table>
+                    <table cellspacing="0" cellpadding="0" style="margin: 20px auto">
+                        <tbody>
+                            <tr style="text-align:center">
+                                <td>
+                                    <a t-att-href="(website.social_facebook) or '#'">
+                                        <img src="/website_mail/static/src/img/theme_imgs/social_facebook.png" style="height:auto;max-width:600px" alt="social icon" />
+                                    </a>
+                                    <a t-att-href="(website.social_twitter) or '#'">
+                                        <img src="/website_mail/static/src/img/theme_imgs/social_twitter.png" style="height:auto;max-width:600px" alt="social icon" />
+                                    </a>
+                                    <a t-att-href="(website.social_googleplus) or '#'">
+                                        <img src="/website_mail/static/src/img/theme_imgs/social_googleplus.png" style="height:auto;max-width:600px" alt="social icon" />
+                                    </a>
+                                    <a t-att-href="(website.social_linkedin) or '#'">
+                                        <img src="/website_mail/static/src/img/theme_imgs/social_linkedin.png" style="height:auto;max-width:600px" alt="social icon" />
+                                    </a>
+                                    <a href="#">
+                                        <img src="/website_mail/static/src/img/theme_imgs/social_rss.png" style="height:auto;max-width:600px" alt="social icon" />
+                                    </a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </t>
+        </template>
+        <template id="unsubscription_reason">
+            <t t-call="website.layout">
+                <div class="snippet_row" style="padding:0px;width:100%;margin:auto;background-color:#fff">
+                    <table style="margin:0 auto">
+                        <tr>
+                            <td style="color:#8B8284">
+                                <p style="font-size:24px;margin-bottom:20px">Choose reason for unsubscription and click on the link below</p>
+                                <div style="width:50%;margin: 15px auto">
+                                    <form t-att-action="'/mail/mailing/' + str(mailing_id) + '/unsubscribe/' + str(record_ids)" method="post">
+                                        <input type="hidden" name="ans_id" value="True"/>
+                                        <input type="radio" name="unsubscription_reason" value="Mails are too frequent" checked="checked" id="reason_rd1">    <label for="reason_rd1">Mails are too frequent</label>
+                                        </input><br/><br/>
+                                        <input type="radio" name="unsubscription_reason" value="Content is not relavant" id="reason_rd2">
+                                            <label for="reason_rd2"> Content is not relavant</label>
+                                        </input><br/><br/>
+                                        <input type="radio" name="unsubscription_reason" value="This list is not my cup of tea anymore" id="reason_rd3">    <label for="reason_rd3"> This list is not my cup of tea anymore</label>
+                                        </input><br/><br/>
+                                        <input type="radio" id="rdo_unsubscribe" name="unsubscription_reason" value="Other"> 
+                                            <label for="rdo_unsubscribe">Other</label>
+                                        </input><br/><br/>
+                                        <input type="text" class="form-control spec_reason" name="txt_unsubscription_reason" style="display:none" placeholder="Please provide a specific reason"/><br/>
+                                        <button type="submit" name="submit" class="btn btn-primary">Unsubscribe</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </t>
+        </template>
+    </data>
+</openerp>
