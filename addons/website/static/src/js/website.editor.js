@@ -1168,7 +1168,7 @@ define(['summernote/summernote'], function () {
             });
 
             $('.o_not_editable').attr("contentEditable", false);
-            $('#wrapwrap').addClass('editor_editable');
+            $('#wrapwrap').addClass('editor_enable');
             $('#wrapwrap [data-oe-model]')
                 .not('.o_not_editable')
                 .filter(function () {

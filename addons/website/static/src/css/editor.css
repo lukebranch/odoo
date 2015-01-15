@@ -156,11 +156,11 @@
   display: none !important;
 }
 
-.editor_editable .css_editable_mode_hidden {
+.editor_enable .css_editable_mode_hidden {
   display: none;
 }
 
-.editor_editable .css_non_editable_mode_hidden {
+.editor_enable .css_non_editable_mode_hidden {
   display: block !important;
 }
 
