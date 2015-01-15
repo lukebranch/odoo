@@ -23,7 +23,7 @@
                                 <p>We will always be pleased to see you around on <a t-att-href="(website.company_id.website) or '#'">Odoo.</a></p>
                             </td>
                             <td>
-                                <img src="/fa_to_img/%EF%80%AA/rgb(0,0,0)/200" alt="image"/>
+                                <img src="/mass_mailing/static/src/img/blocks/button_newsletter.png" alt="image"/>
                             </td>
                         </tr>
                     </table>

@@ -36,7 +36,6 @@ class MassMailController(http.Controller):
                 values.update(temp)
                 return request.website.render('mass_mailing.unsubscription_reason', values)
             else:
-                email_sub = mail.mass_mailing.name
                 values = {'mailing_id': mailing_id}
                 txt_msg = post['unsubscription_reason']
                 if txt_msg == 'Other':
