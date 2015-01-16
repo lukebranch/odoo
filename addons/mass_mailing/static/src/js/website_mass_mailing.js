@@ -93,4 +93,12 @@
          }
     });
 
+    $('.cancel_tab').click(function(){
+        var i= confirm('Are you sure you want to cancel?');
+        if(i == true)
+            window.close();
+        else
+            this.close();
+
+    })
 })();

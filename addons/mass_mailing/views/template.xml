@@ -18,12 +18,11 @@
                     <table>
                         <tr>
                             <td style="color:#8B8284">
-                                <p style="font-size:30px;margin-bottom:20px">You have unsubscribed from the <a href="#">[mailing list].</a></p>
-                                <p>If you unsubscribed by mistake, click <a t-att-href="'/website_mass_mailing/' + str(mailing_id) + '/subscribe/' + str(record_ids)">here.</a></p>
+                                <p style="font-size:30px;margin-bottom:20px">You have unsubscribed from the Mailing List <t t-esc="'%s' % (mailing_list)"/></p>
                                 <p>We will always be pleased to see you around on <a t-att-href="(website.company_id.website) or '#'">Odoo.</a></p>
                             </td>
                             <td>
-                                <img src="/mass_mailing/static/src/img/blocks/button_newsletter.png" alt="image"/>
+                                <img src="/mass_mailing/static/src/img/blocks/unsubscription.png" alt="image"/>
                             </td>
                         </tr>
                     </table>
@@ -61,8 +60,7 @@
                             <td style="color:#8B8284">
                                 <p style="font-size:24px;margin-bottom:20px">Choose reason for unsubscription and click on the link below</p>
                                 <div style="width:50%;margin: 15px auto">
-                                    <form t-att-action="'/mail/mailing/' + str(mailing_id) + '/unsubscribe/' + str(record_ids)" method="post">
-                                        <input type="hidden" name="ans_id" value="True"/>
+                                    <form t-att-action="'/mail/mailing/%s/unsubscribe?res_id=%s&amp;ans_id=%s' % ( str(mailing_id),str(record_ids), str(ans_id))" method="post">
                                         <input type="radio" name="unsubscription_reason" value="Mails are too frequent" checked="checked" id="reason_rd1">    <label for="reason_rd1">Mails are too frequent</label>
                                         </input><br/><br/>
                                         <input type="radio" name="unsubscription_reason" value="Content is not relavant" id="reason_rd2">
@@ -75,6 +73,7 @@
                                         </input><br/><br/>
                                         <input type="text" class="form-control spec_reason" name="txt_unsubscription_reason" style="display:none" placeholder="Please provide a specific reason"/><br/>
                                         <button type="submit" name="submit" class="btn btn-primary">Unsubscribe</button>
+                                        <button type="button" name="cancel" class="btn btn-primary cancel_tab">Cancel</button>
                                     </form>
                                 </div>
                             </td>

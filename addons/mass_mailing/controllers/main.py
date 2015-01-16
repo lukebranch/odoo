@@ -18,7 +18,7 @@ class MassMailController(http.Controller):
 
         return response
 
-    @http.route(['/mail/mailing/<int:mailing_id>/unsubscribe', '/mail/mailing/<int:mailing_id>/unsubscribe/<record_ids>'], type='http', methods=['GET', 'POST'], auth='none', website=True)
+    @http.route('/mail/mailing/<int:mailing_id>/unsubscribe', type='http', auth='none', website=True)
     def mailing(self, mailing_id, email=None, res_id=None, ans_id=None, **post):
         cr, uid, context = request.cr, request.uid, request.context
         Mail = request.registry['mail.mail']
@@ -32,22 +32,22 @@ class MassMailController(http.Controller):
                 values = {}
                 list_ids = [l.id for l in mailing.contact_list_ids]
                 record_ids = request.registry[mailing.mailing_model].search(cr, SUPERUSER_ID, [('list_id', 'in', list_ids), ('id', '=', res_id), ('email', 'ilike', email)], context=context)
-                temp = {'record_ids': record_ids[0], 'mailing_id': mailing_id}
+                temp = {'record_ids': record_ids[0], 'mailing_id': mailing_id, 'res_id': res_id, 'ans_id': True}
                 values.update(temp)
                 return request.website.render('mass_mailing.unsubscription_reason', values)
             else:
-                values = {'mailing_id': mailing_id}
+                values = {'mailing_id': mailing_id, 'mailing_list': mailing.name}
                 txt_msg = post['unsubscription_reason']
                 if txt_msg == 'Other':
                     txt_msg = post['txt_unsubscription_reason']
                 values.update(post)
-                request.registry[mailing.mailing_model].write(cr, SUPERUSER_ID, int(post['record_ids']), {'opt_out': True, 'reason_to_unsubscribe': txt_msg}, context=context)
-                mailing_email = request.registry[mailing.mailing_model].browse(cr, SUPERUSER_ID, int(post['record_ids']), context=context)
+                request.registry[mailing.mailing_model].write(cr, SUPERUSER_ID, int(res_id), {'opt_out': True, 'reason_to_unsubscribe': txt_msg}, context=context)
+                mailing_email = request.registry[mailing.mailing_model].browse(cr, SUPERUSER_ID, int(res_id), context=context)
                 mail_values = {
-                    'email_from': 'admin@example.com',
+                    'email_from': mailing.email_from,
                     'email_to': mailing_email.email,
-                    'subject': 'Mass Mailing Unsubscription',
-                    'body_html': '<div class="snippet_row" style="padding:0px;width:600px;margin:auto;background-color:#fff"><table style="margin: 0" cellpadding="0" cellspacing="0"><tbody><tr><td valign="center" style="text-align:center"><a href="http://www.example.com" style="text-decoration:none"><img src="/logo.png" style="padding:10px;height:auto;max-width:600px;width:200px" alt="Your Logo"></a></td></tr></tbody></table><table><tbody><tr><td style="color:#8B8284"><p style="font-size:30px;margin-bottom:20px">You have unsubscribed from the <a href="#">[mailing list].</a></p><p>If you unsubscribed by mistake, click <a t-att-href="/website_mass_mailing/subscribe/">here.</a></p><p>We will always be pleased to see you around on <a href="http://www.example.com">Odoo.</a></p></td><td><img src="/fa_to_img/%EF%80%AA/rgb(0,0,0)/200" alt="image"></td></tr></tbody></table><table cellspacing="0" cellpadding="0" style="margin: 20px auto"><tbody><tr style="text-align:center"><td><a href="https://www.facebook.com/Odoo"><img src="/website_mail/static/src/img/theme_imgs/social_facebook.png" style="height:auto;max-width:600px" alt="social icon"></a><a href="https://twitter.com/Odoo"><img src="/website_mail/static/src/img/theme_imgs/social_twitter.png" style="height:auto;max-width:600px" alt="social icon"></a><a href="https://plus.google.com/+Odooapps"><img src="/website_mail/static/src/img/theme_imgs/social_googleplus.png" style="height:auto;max-width:600px" alt="social icon"></a><a href="https://www.linkedin.com/company/odoo"><img src="/website_mail/static/src/img/theme_imgs/social_linkedin.png" style="height:auto;max-width:600px" alt="social icon"></a><a href="#"><img src="/website_mail/static/src/img/theme_imgs/social_rss.png" style="height:auto;max-width:600px" alt="social icon"></a></td></tr></tbody></table></div>',
+                    'subject': 'Unsubscription to Mailing List '+mailing.name,
+                    'body_html': '<div class="snippet_row" style="padding:0px;width:600px;margin:auto;background-color:#fff"><table style="margin: 0" cellpadding="0" cellspacing="0"><tbody><tr><td valign="center" style="text-align:center"><a href="http://www.odoo.com" style="text-decoration:none"><img src="/logo.png" style="padding:10px;height:auto;max-width:600px;width:200px" alt="Your Logo"></a></td></tr></tbody></table><table><tbody><tr><td style="color:#8B8284"><p style="font-size:30px;margin-bottom:20px">You have unsubscribed from the <a href="#">[mailing list].</a></p><p>We will always be pleased to see you around on <a href="http://www.example.com">Odoo.</a></p></td><td><img src="/mass_mailing/static/src/img/blocks/unsubscription.png" alt="image"></td></tr></tbody></table><table cellspacing="0" cellpadding="0" style="margin: 20px auto"><tbody><tr style="text-align:center"><td><a href="https://www.facebook.com/Odoo"><img src="/website_mail/static/src/img/theme_imgs/social_facebook.png" style="height:auto;max-width:600px" alt="social icon"></a><a href="https://twitter.com/Odoo"><img src="/website_mail/static/src/img/theme_imgs/social_twitter.png" style="height:auto;max-width:600px" alt="social icon"></a><a href="https://plus.google.com/+Odooapps"><img src="/website_mail/static/src/img/theme_imgs/social_googleplus.png" style="height:auto;max-width:600px" alt="social icon"></a><a href="https://www.linkedin.com/company/odoo"><img src="/website_mail/static/src/img/theme_imgs/social_linkedin.png" style="height:auto;max-width:600px" alt="social icon"></a><a href="#"><img src="/website_mail/static/src/img/theme_imgs/social_rss.png" style="height:auto;max-width:600px" alt="social icon"></a></td></tr></tbody></table></div>',
                     'notification': True,
                     'mailing_id': mailing_id
                 }
@@ -70,10 +70,10 @@ class MassMailController(http.Controller):
                 model.write(cr, SUPERUSER_ID, record_ids, {'opt_out': True}, context=context)
             mailing_email = request.registry[mailing.mailing_model].browse(cr, SUPERUSER_ID, int(record_ids[0]), context=context)
             mail_values = {
-                'email_from': 'admin@example.com',
+                'email_from': mailing.email_from,
                 'email_to': mailing_email.email,
-                'subject': 'Mass Mailing Unsubscription',
-                'body_html': '<div class="snippet_row" style="padding:0px;width:600px;margin:auto;background-color:#fff"><table style="margin: 0" cellpadding="0" cellspacing="0"><tbody><tr><td valign="center" style="text-align:center"><a href="http://www.example.com" style="text-decoration:none"><img src="/logo.png" style="padding:10px;height:auto;max-width:600px;width:200px" alt="Your Logo"></a></td></tr></tbody></table><table><tbody><tr><td style="color:#8B8284"><p style="font-size:30px;margin-bottom:20px">You have unsubscribed from the <a href="#">[mailing list].</a></p><p>If you unsubscribed by mistake, click <a t-att-href="/website_mass_mailing/subscribe/">here.</a></p><p>We will always be pleased to see you around on <a href="http://www.example.com">Odoo.</a></p></td><td><img src="/fa_to_img/%EF%80%AA/rgb(0,0,0)/200" alt="image"></td></tr></tbody></table><table cellspacing="0" cellpadding="0" style="margin: 20px auto"><tbody><tr style="text-align:center"><td><a href="https://www.facebook.com/Odoo"><img src="/website_mail/static/src/img/theme_imgs/social_facebook.png" style="height:auto;max-width:600px" alt="social icon"></a><a href="https://twitter.com/Odoo"><img src="/website_mail/static/src/img/theme_imgs/social_twitter.png" style="height:auto;max-width:600px" alt="social icon"></a><a href="https://plus.google.com/+Odooapps"><img src="/website_mail/static/src/img/theme_imgs/social_googleplus.png" style="height:auto;max-width:600px" alt="social icon"></a><a href="https://www.linkedin.com/company/odoo"><img src="/website_mail/static/src/img/theme_imgs/social_linkedin.png" style="height:auto;max-width:600px" alt="social icon"></a><a href="#"><img src="/website_mail/static/src/img/theme_imgs/social_rss.png" style="height:auto;max-width:600px" alt="social icon"></a></td></tr></tbody></table></div>',
+                'subject': 'Unsubscription to Mailing List '+mailing.name,
+                'body_html': '<div class="snippet_row" style="padding:0px;width:600px;margin:auto;background-color:#fff"><table style="margin: 0" cellpadding="0" cellspacing="0"><tbody><tr><td valign="center" style="text-align:center"><a href="http://www.example.com" style="text-decoration:none"><img src="/logo.png" style="padding:10px;height:auto;max-width:600px;width:200px" alt="Your Logo"></a></td></tr></tbody></table><table><tbody><tr><td style="color:#8B8284"><p style="font-size:30px;margin-bottom:20px">You have unsubscribed from the <a href="#">[mailing list].</a></p><p>We will always be pleased to see you around on <a href="http://www.example.com">Odoo.</a></p></td><td><img src="/mass_mailing/static/src/img/blocks/unsubscription.png" alt="image"></td></tr></tbody></table><table cellspacing="0" cellpadding="0" style="margin: 20px auto"><tbody><tr style="text-align:center"><td><a href="https://www.facebook.com/Odoo"><img src="/website_mail/static/src/img/theme_imgs/social_facebook.png" style="height:auto;max-width:600px" alt="social icon"></a><a href="https://twitter.com/Odoo"><img src="/website_mail/static/src/img/theme_imgs/social_twitter.png" style="height:auto;max-width:600px" alt="social icon"></a><a href="https://plus.google.com/+Odooapps"><img src="/website_mail/static/src/img/theme_imgs/social_googleplus.png" style="height:auto;max-width:600px" alt="social icon"></a><a href="https://www.linkedin.com/company/odoo"><img src="/website_mail/static/src/img/theme_imgs/social_linkedin.png" style="height:auto;max-width:600px" alt="social icon"></a><a href="#"><img src="/website_mail/static/src/img/theme_imgs/social_rss.png" style="height:auto;max-width:600px" alt="social icon"></a></td></tr></tbody></table></div>',
                 'notification': True,
                 'mailing_id': mailing_id
             }
@@ -82,32 +82,6 @@ class MassMailController(http.Controller):
             Mail.write(cr, SUPERUSER_ID, mailing_ids, {'body_html': mail_values['body_html']}, context=context)
             Mail.send(cr, SUPERUSER_ID, mailing_ids, context=context)
             return request.website.render('mass_mailing.unsubscribe_template', values)
-
-    @http.route('/website_mass_mailing/<mailing_id>/subscribe/<record_ids>', type='http', auth='none', website=True)
-    def subscribe_mail(self, **post):
-        cr, uid, context = request.cr, request.uid, request.context
-        Mail = request.registry['mail.mail']
-        MassMailing = request.registry['mail.mass_mailing']
-        mailing = MassMailing.browse(cr, SUPERUSER_ID, int(post['mailing_id']), context=context)
-        model = request.registry[mailing.mailing_model]
-        if 'reason_to_unsubscribe' in model._fields:
-            model.write(cr, SUPERUSER_ID, int(post['record_ids']), {'opt_out': False, 'reason_to_unsubscribe': ' '}, context=context)
-        else:
-            model.write(cr, SUPERUSER_ID, int(post['record_ids']), {'opt_out': False}, context=context)
-        mailing_email = model.browse(cr, SUPERUSER_ID, int(post['record_ids']), context=context)
-        mail_values = {
-            'email_from': 'admin@example.com',
-            'email_to': mailing_email.email,
-            'subject': 'Mass Mailing subscription',
-            'body_html': '<div class="snippet_row" style="padding:0px;width:600px;margin:auto;background-color:#fff"><table style="margin: 0" cellpadding="0" cellspacing="0"><tbody><tr><td valign="center" style="text-align:center"><a href="http://www.example.com" style="text-decoration:none"><img src="/logo.png" style="padding:10px;height:auto;max-width:600px;width:200px" alt="Your Logo"></a></td></tr></tbody></table><table><tbody><tr><td style="color:#8B8284"><p style="font-size:30px;margin-bottom:20px">You have subscribed from the <a href="#">[mailing list].</a></p><p>We will always be pleased to see you around on <a href="http://www.odoo.com">Odoo.</a></p></td><td><img src="/fa_to_img/%EF%80%AA/rgb(0,0,0)/200" alt="image"></td></tr></tbody></table><table cellspacing="0" cellpadding="0" style="margin: 20px auto"><tbody><tr style="text-align:center"><td><a href="https://www.facebook.com/Odoo"><img src="/website_mail/static/src/img/theme_imgs/social_facebook.png" style="height:auto;max-width:600px" alt="social icon"></a><a href="https://twitter.com/Odoo"><img src="/website_mail/static/src/img/theme_imgs/social_twitter.png" style="height:auto;max-width:600px" alt="social icon"></a><a href="https://plus.google.com/+Odooapps"><img src="/website_mail/static/src/img/theme_imgs/social_googleplus.png" style="height:auto;max-width:600px" alt="social icon"></a><a href="https://www.linkedin.com/company/odoo"><img src="/website_mail/static/src/img/theme_imgs/social_linkedin.png" style="height:auto;max-width:600px" alt="social icon"></a><a href="#"><img src="/website_mail/static/src/img/theme_imgs/social_rss.png" style="height:auto;max-width:600px" alt="social icon"></a></td></tr></tbody></table></div>',
-            'notification': True,
-            'mailing_id': int(post['mailing_id']),
-        }
-        mailing_ids = Mail.create(cr, SUPERUSER_ID, mail_values, context=context)
-        mail_mail_obj = Mail.browse(cr, SUPERUSER_ID, mailing_ids, context=context)
-        Mail.write(cr, SUPERUSER_ID, mailing_ids, {'body_html': mail_values['body_html']}, context=context)
-        Mail.send(cr, SUPERUSER_ID, mailing_ids, context=context)
-        return 'ok'
 
     @http.route(['/mail/mailing/unsubscribe'], type='json', auth='none', website=True)
     def unsubscribe(self, mailing_id, opt_in_ids, opt_out_ids, email):
