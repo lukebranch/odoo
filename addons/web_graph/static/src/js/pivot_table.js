@@ -432,6 +432,9 @@ openerp.web_graph.PivotTable = openerp.web.Class.extend({
                         var grp = grouped_on[i],
                             field = self.fields[grp];
                         if (attrs.value[i] === false) {
+                        	if (field && field.type === 'boolean'){
+                            	return _t('false');
+                            	}
                             return _t('Undefined');
                         } else if (attrs.value[i] instanceof Array) {
                             return attrs.value[i][1];
