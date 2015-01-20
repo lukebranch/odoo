@@ -25,11 +25,15 @@ class event_track(models.Model):
     _name = "event.track"
     _description = 'Event Tracks'
     _order = 'priority, date'
-    _inherit = ['mail.thread', 'ir.needaction_mixin', 'website.seo.metadata']
+    _inherit = ['mail.thread', 'ir.needaction_mixin', 'website.seo.metadata', 'website.published.mixin']
 
-    @api.one
-    def _compute_website_url(self):
-        self.website_url = "/event/%s/track/%s" % (slug(self.event_id), slug(self))
+    @api.multi
+    @api.depends('name')
+    def _website_url(self, field_name, arg):
+        res = super(event_track, self)._website_url(field_name, arg)
+        for track in self:
+            res[track.id] = "/event/%s/track/%s" % (slug(track.event_id), slug(track))
+        return res
 
     name = fields.Char('Title', required=True, translate=True)
 
@@ -49,8 +53,6 @@ class event_track(models.Model):
         ('0', 'Low'), ('1', 'Medium'),
         ('2', 'High'), ('3', 'Highest')],
         'Priority', required=True, default='1')
-    website_published = fields.Boolean('Available in the website', copy=False)
-    website_url = fields.Char("Website url", compute='_compute_website_url')
     image = fields.Binary('Image', compute='_compute_image', readonly=True, store=True)
 
     @api.one
