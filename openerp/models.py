@@ -1715,6 +1715,9 @@ class BaseModel(object):
         :rtype: list
         :return: list of pairs ``(id, text_repr)`` for all matching records.
         """
+        if name == '' and self._fields[self._rec_name].type == 'integer':
+            _logger.warning("You shouldn't use a field of type integer "
+                            "as _rec_name for model %s.", self._name)
         return self._name_search(name, args, operator, limit=limit)
 
     def _name_search(self, cr, user, name='', args=None, operator='ilike', context=None, limit=100, name_get_uid=None):
