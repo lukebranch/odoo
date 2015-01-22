@@ -793,9 +793,27 @@ class account_bank_statement_line(osv.osv):
                     if debit_at_old_rate - debit_at_current_rate:
                         currency_diff = debit_at_current_rate - debit_at_old_rate
                         to_create.append(self.get_currency_rate_line(cr, uid, st_line, -currency_diff, move_id, context=context))
+                        # create debit entry based on current rate
+                        mv_line_dict['credit'] = credit_at_current_rate
+                        mv_line_dict['debit'] = debit_at_current_rate
+                        # create exchange rate difference debit entry
+                        debit_diff_dict = dict(mv_line_dict)
+                        debit_diff_dict['credit'] = credit_at_old_rate - credit_at_current_rate
+                        debit_diff_dict['debit'] = debit_at_old_rate - debit_at_current_rate
+                        debit_diff_dict['amount_currency'] = 0.0
+                        to_create.append(debit_diff_dict)
                     if credit_at_old_rate - credit_at_current_rate:
                         currency_diff = credit_at_current_rate - credit_at_old_rate
                         to_create.append(self.get_currency_rate_line(cr, uid, st_line, currency_diff, move_id, context=context))
+                        # create credit entry based on current rate
+                        mv_line_dict['credit'] = credit_at_current_rate
+                        mv_line_dict['debit'] = debit_at_current_rate
+                        # create exchange rate difference credit entry
+                        credit_diff_dict = dict(mv_line_dict)
+                        credit_diff_dict['credit'] = credit_at_old_rate - credit_at_current_rate
+                        credit_diff_dict['debit'] = debit_at_old_rate - debit_at_current_rate
+                        credit_diff_dict['amount_currency'] = 0.0
+                        to_create.append(credit_diff_dict)
                 else:
                     mv_line_dict['debit'] = debit_at_current_rate
                     mv_line_dict['credit'] = credit_at_current_rate
