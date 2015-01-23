@@ -97,7 +97,7 @@ class TestReconciliation(TransactionCase):
                 self.assertEquals(move_line.credit, 0.0)
                 checked_line += 1
                 continue
-        self.assertEquals(checked_line, 3)
+        self.assertEquals(checked_line, 4)
 
         
 
@@ -169,5 +169,5 @@ class TestReconciliation(TransactionCase):
                 self.assertEquals(move_line.credit, 10.74)
                 checked_line += 1
                 continue
-        self.assertEquals(checked_line, 3)
+        self.assertEquals(checked_line, 4)
 
