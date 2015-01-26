@@ -850,7 +850,7 @@
             <field name="model">event.participation</field>
             <field name="priority">100</field>
             <field name="arch" type="xml">
-                <tree string="Participations" create="0" delete="0">
+                <tree string="Prestations" create="0" delete="0">
                     <field name="role"/>
                     <field name="partner_id" on_change="onchange_partner(partner_id)" required="1"/>
                     <field name="name" invisible="1"/>
@@ -875,12 +875,80 @@
             </field>
         </record>
 
+        <record id="view_event_resource_participation_form" model="ir.ui.view">
+            <field name="name">event.participation.resource.form</field>
+            <field name="model">event.participation</field>
+            <field name="arch" type="xml">
+                <form string="Prestations" version="7.0">
+                    <header>
+                        <button name="button_set_draft"
+                            states="confirm,cancel"
+                            string="Set Draft" type="object"
+                            icon="terp-crm" groups="event.group_event_manager,event.group_event_planning"/>
+                        <button name="button_set_confirm" string="Confirm"
+                            states="draft,cancel"
+                            type="object" icon="gtk-apply" groups="event.group_event_manager,event.group_event_planning"/>
+                        <button name="button_set_cancel" string="Cancel"
+                            states="draft,confirm"
+                            type="object" icon="gtk-cancel" groups="event.group_event_manager,event.group_event_planning"/>
+                        <field name="state" widget="statusbar" statusbar_visible="draft,done" groups="event.group_event_manager,event.group_event_planning"/>
+                    </header>
+                    <sheet>
+                        <div class="oe_right oe_button_box" name="buttons">
+                            <button name="button_take_presence" type="object"
+                                    string="Mark as Present" icon="kanban-apply"
+                                    attrs="{'invisible': ['|',('state','not in',['draft','confirm']),('presence','=','present')]}"
+                                    context="{'presence': 'present'}"/>
+                            <button name="button_take_presence" type="object"
+                                    string="Mark as Absent" icon="kanban-stop"
+                                    attrs="{'invisible': ['|', ('state','not in',['draft','confirm']),('presence','=','absent')]}"
+                                    context="{'presence': 'absent'}"/>
+                            <button name="%(action_event_participation_take_presence_wizard)d" type="action"
+                                    string="Mark as Late" icon="kanban-pause"
+                                    attrs="{'invisible': ['|',('state','not in',['draft','confirm']),('presence','=','late')]}"
+                                    context="{'default_status': 'late'}"/>
+                        </div>
+                        <div class="oe_title">
+                            <label for="name" class="oe_edit_only"/>
+                            <h1><field name="name"/></h1>
+                        </div>
+                        <notebook>
+                            <page string="Information">
+                                <group>
+                                    <group>
+                                        <field name="seance_id" on_change="onchange_seance(seance_id, context)"/>
+                                        <field name="partner_id"/>
+                                    </group>
+                                    <group>
+                                        <field name="presence" invisible="1"/>
+                                        <field name="presence_summary"/>
+                                        <field name="arrival_time"/>
+                                        <field name="departure_time"/>
+                                    </group>
+                                </group>
+                            </page>
+                            <page string="Configuration" groups="base.group_no_one">
+                                <group>
+                                    <group></group>
+                                    <group></group>
+                                </group>
+                            </page>
+                        </notebook>
+                    </sheet>
+                    <div class="oe_chatter">
+                        <field name="message_follower_ids" widget="mail_followers"/>
+                        <field name="message_ids" widget="mail_thread"/>
+                    </div>
+                </form>
+            </field>
+        </record>
+
         <record id="view_event_participation_resource_search" model="ir.ui.view">
             <field name="name">event.participation.resource.search</field>
             <field name="model">event.participation</field>
             <field name="priority">100</field>
             <field name="arch" type="xml">
-                <search string="Participations">
+                <search string="Prestations">
                     <field name="partner_id"/>
                     <field name="seance_id" invisible="1"/>
                     <field name="name" filter_domain="[('seance_id.name', 'ilike', self)]" string="Seance Name"/>
@@ -907,7 +975,7 @@
         </record>
 
         <record id="action_event_resource_participation" model="ir.actions.act_window">
-            <field name="name">Participations</field>
+            <field name="name">Prestations</field>
             <field name="res_model">event.participation</field>
             <field name="view_type">form</field>
             <field name="view_mode">tree,form</field>
@@ -924,10 +992,11 @@
         <record id="action_event_participation_form" model="ir.actions.act_window.view">
             <field name="act_window_id" ref="action_event_resource_participation"/>
             <field name="view_mode">form</field>
-            <field name="view_id" ref=""/>
+            <field name="view_id" ref="view_event_resource_participation_form"/>
         </record>
 
         <menuitem id="menu_event_resource_participation"
+                    name="Prestations"
                     parent="menu_event_resources_root"
                     action="action_event_resource_participation"
                     groups="event.group_event_manager,event.group_event_planning"
