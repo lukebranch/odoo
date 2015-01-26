@@ -41,7 +41,7 @@ import subprocess
 from contextlib import closing
 from distutils.version import LooseVersion
 from functools import partial
-from pyPdf import PdfFileWriter, PdfFileReader
+from PyPDF2 import PdfFileReader, PdfFileMerger
 
 
 #--------------------------------------------------------------------------
@@ -546,20 +546,13 @@ class Report(osv.Model):
         :param documents: list of path of pdf files
         :returns: path of the merged pdf
         """
-        writer = PdfFileWriter()
-        streams = []  # We have to close the streams *after* PdfFilWriter's call to write()
+        writer = PdfFileMerger()
         for document in documents:
-            pdfreport = file(document, 'rb')
-            streams.append(pdfreport)
-            reader = PdfFileReader(pdfreport)
-            for page in range(0, reader.getNumPages()):
-                writer.addPage(reader.getPage(page))
+            pdfreport = PdfFileReader(document)
+            writer.append(pdfreport, import_bookmarks = False)
 
         merged_file_fd, merged_file_path = tempfile.mkstemp(suffix='.html', prefix='report.merged.tmp.')
-        with closing(os.fdopen(merged_file_fd, 'w')) as merged_file:
+        with closing(os.fdopen(merged_file_fd, 'wb')) as merged_file:
             writer.write(merged_file)
-
-        for stream in streams:
-            stream.close()
 
         return merged_file_path

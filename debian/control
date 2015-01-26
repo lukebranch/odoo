@@ -35,7 +35,6 @@ Depends:
  python-pychart,
  python-pydot,
  python-pyparsing,
- python-pypdf,
  python-reportlab,
  python-requests,
  python-simplejson,

@@ -90,7 +90,7 @@ def py2exe_options():
                         'pychart',
                         'pydot',
                         'pyparsing',
-                        'pyPdf',
+                        'PyPDF2',
                         'pytz',
                         'reportlab',
                         'requests',
@@ -147,7 +147,7 @@ setup(
         'pychart',  # not on pypi, use: pip install http://download.gna.org/pychart/PyChart-1.39.tar.gz
         'pydot',
         'pyparsing < 2',
-        'pypdf',
+        'PyPDF2',
         'pyserial',
         'python-dateutil',
         'python-ldap',  # optional

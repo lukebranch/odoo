@@ -450,12 +450,12 @@ class report_sxw(report_rml, preprocess.report):
                 results.append(result)
             if results:
                 if results[0][1]=='pdf':
-                    from pyPdf import PdfFileWriter, PdfFileReader
-                    output = PdfFileWriter()
+                    print 'report_sxw merge'
+                    from PyPDF2 import PdfFileReader, PdfFileMerger
+                    output = PdfFileMerger()
                     for r in results:
                         reader = PdfFileReader(cStringIO.StringIO(r[0]))
-                        for page in range(reader.getNumPages()):
-                            output.addPage(reader.getPage(page))
+                        output.append(reader)
                     s = cStringIO.StringIO()
                     output.write(s)
                     return s.getvalue(), results[0][1]
