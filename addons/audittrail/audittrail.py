@@ -358,11 +358,13 @@ class audittrail_objects_proxy(object_proxy):
                             # we need to remove current resource_id from the many2many to prevent an infinit loop
                             if resource_id in field_resource_ids:
                                 field_resource_ids.remove(resource_id)
-                            if args.get('old_resource_id') in field_resource_ids:
-                                field_resource_ids.remove(args['old_resource_id'])
-                            # To avoid infinite loop when two partners are in each other's many2many list, we need to pass the current
-                            # resource_id in args to get_data(...) so that we can check for it and skip adding it in data dictionary.
-                            args['old_resource_id'] = resource_id
+                            if args.get(field) in field_resource_ids:
+                                field_resource_ids.remove(args[field])
+                            # avoid infinite loop when resource_id itself is present inside many2many's many2many list
+                            # Ex. res.partner contains res.partner as many2many
+                            # Ex. Partner A contains Partner B, and Partner B contain partner A again
+                            # pass resource_id in args to get_data(...) to skip adding it in data dictionary
+                            args[field] = resource_id
                         data.update(self.get_data(cr, SUPERUSER_ID, pool, field_resource_ids, x2m_model, method, args))
     
             data[(model.id, resource_id)] = {'text':values_text, 'value': values}
@@ -430,11 +432,13 @@ class audittrail_objects_proxy(object_proxy):
                         # we need to remove current resource_id from the many2many to prevent an infinit loop
                         if resource_id in res_ids:
                             res_ids.remove(resource_id)
-                        if args.get('old_resource_id') in res_ids:
-                            res_ids.remove(args['old_resource_id'])
-                        # To avoid infinite loop when two partners are in each other's many2many list, we need to pass the current
-                        # resource_id in args to prepare_audittrail_log_line(...) so that we can check for it and skip adding it in lines dictionary.
-                        args['old_resource_id'] = resource_id
+                        if args.get(field_name) in res_ids:
+                            res_ids.remove(args[field_name])
+                        # avoid infinite loop when resource_id itself is present inside many2many's many2many list
+                        # Ex. res.partner contains res.partner as many2many
+                        # where Partner A contains Partner B, and Partner B contain partner A again
+                        # pass resource_id in args to prepare_audittrail_log_line(...) to skip adding it in data dictionary.
+                        args[field_name] = resource_id
                     for res_id in res_ids:
                         lines.update(self.prepare_audittrail_log_line(cr, SUPERUSER_ID, pool, x2m_model, res_id, method, old_values, new_values, field_list, args))
             # if the value value is different than the old value: record the change
