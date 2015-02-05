@@ -429,6 +429,7 @@ class res_partner(models.Model):
     payment_earliest_due_date = fields.Date(compute='_get_amounts_and_date', string="Worst Due Date", store=False,
                                             search='_payment_earliest_date_search')
     depends_field = fields.Integer(default=0)
+    trust = fields.Selection([('good', 'Good Debtor'), ('normal', 'Normal Debtor'), ('bad', 'Bad Debtor')], string='Degree of trust you have in this debtor', default='normal')
 
 
 class account_config_settings(models.TransientModel):

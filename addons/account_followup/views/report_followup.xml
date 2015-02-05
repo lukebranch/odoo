@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <openerp>
 <data>
+<template id='report_followup_body' inherit_id='account.report_followup_body'>
+    <xpath expr="//h2">
+        asdfasdfasdf
+    </xpath>
+</template>
 <template id="report_followup">
     <t t-call="report.html_container">
         <t t-foreach="ids_to_objects(data['form']['partner_ids'])" t-as="o">
