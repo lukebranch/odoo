@@ -169,18 +169,29 @@
             <t t-if="page == 1"><i class="fa fa-fw fa-chevron-circle-left fa-2x disabled"></i></t>
             <t t-if="page > 1"><a t-att-href="'/account/followup_report/all/page/' + str(page - 1)"><i class="fa fa-fw fa-chevron-circle-left fa-2x"></i></a></t>
             <a t-att-href="'/account/followup_report/all/page/' + str(page + 1)"><i class="fa fa-fw fa-chevron-circle-right fa-2x"></i></a>
-            <t t-foreach="progressbar.get_alerts()" t-as="alert">
+            <t t-foreach="context_all.get_alerts()" t-as="alert">
                 <div class="alert alert-info alert-dismissible" role="alert">
                     <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&amp;times;</span></button>
                     <b t-esc="alert['title']" /> <t t-esc="alert['message']" />
                 </div>
             </t>
-            <div class="progress">
-                <div class="progress-bar" role="progressbar" t-att-aria-valuenow="progressbar.valuenow" aria-valuemin="0" t-att-aria-valuemax="progressbar.valuemax" t-att-style="'width: ' + str(progressbar.percentage) + '%;'">
-                    <span class="show"><t t-esc="str(progressbar.valuenow) + '/' + str(progressbar.valuemax)" /></span>
+            <div class="progress" t-if="context_all.partner_filter == 'action'">
+                <div class="progress-bar" role="context_all" t-att-aria-valuenow="context_all.valuenow" aria-valuemin="0" t-att-aria-valuemax="context_all.valuemax" t-att-style="'width: ' + str(context_all.percentage) + '%;'">
+                    <span class="show"><t t-esc="str(context_all.valuenow) + '/' + str(context_all.valuemax)" /></span>
                 </div>
             </div>
         </div>
+        <form class="form-inline" t-if="len(reports) != 0 or page > 1">
+            <div class="form-group">
+                <select class="form-control" name="partner_filter">
+                    <option t-if="context_all.partner_filter != 'all'" value='all'>All partners with overdue invoices</option>
+                    <option t-if="context_all.partner_filter != 'action'" value='action'>All partners in need of action</option>
+                    <option selected='selected' t-if="context_all.partner_filter == 'all'" value='all'>All partners with overdue invoices</option>
+                    <option selected='selected' t-if="context_all.partner_filter == 'action'" value='action'>All partners in need of action</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-default">Update</button>
+        </form>
         <t t-foreach='reports' t-as='data'>
             <t t-set='context' t-value="data['context']" />
             <t t-set='lines' t-value="data['lines']" />
@@ -198,8 +209,8 @@
                 <div class="row mt32">
                     <div class="alert alert-success" role="alert">
                         <p><strong>Good job!</strong> All followup letters and emails have been sent.</p>
-                        <p>You have sent <t t-esc="progressbar.valuemax" /> reports in <t t-esc="progressbar.get_total_time()" />s<br />
-                        That means you have spent on average <t t-esc="progressbar.get_time_per_report()" />s per report.</p>
+                        <p>You have sent <t t-esc="context_all.valuemax" /> reports in <t t-esc="context_all.get_total_time()" />s<br />
+                        That means you have spent on average <t t-esc="context_all.get_time_per_report()" />s per report.</p>
                     </div>
                 </div>
             </div>

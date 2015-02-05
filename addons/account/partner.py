@@ -269,6 +269,17 @@ class res_partner(models.Model):
                     break
         return result
 
+    def get_partners_with_overdue(self):
+        result = self.browse()
+        today = fields.Date.context_today(self)
+        for partner in self.search([]):
+            domain = [('partner_id', '=', partner.id), ('reconciled', '=', False), ('account_id.deprecated', '=', False), ('account_id.internal_type', '=', 'receivable'), ('blocked', '=', False)]
+            for aml in self.env['account.move.line'].search(domain):
+                if aml.date_maturity < today:
+                    result = result | partner
+                    break
+        return result
+
     @api.multi
     def update_next_action(self):
         for partner in self:

@@ -104,8 +104,8 @@ class report_account_followup_report(models.AbstractModel):
         return 'account.report_followup'
 
 
-class account_report_followup_progressbar(models.TransientModel):
-    _name = "account.report.followup.progressbar"
+class account_report_context_followup_all(models.TransientModel):
+    _name = "account.report.context.followup.all"
     _description = "A progress bar for followup reports"
 
     @api.depends('valuenow', 'valuemax')
@@ -117,6 +117,7 @@ class account_report_followup_progressbar(models.TransientModel):
     valuemax = fields.Integer('total amount of invoices to do')
     percentage = fields.Integer(compute='_compute_percentage')
     started = fields.Datetime('Starting time', default=lambda self: fields.datetime.now())
+    partner_filter = fields.Selection([('all', 'All partners with overdue invoices'), ('action', 'All partners in need of action')], string='Partner Filter', default='action')
 
     def get_total_time(self):
         delta = fields.datetime.now() - datetime.strptime(self.started, tools.DEFAULT_SERVER_DATETIME_FORMAT)

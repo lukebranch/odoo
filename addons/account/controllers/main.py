@@ -60,20 +60,25 @@ class FinancialReportController(http.Controller):
         uid = request.session.uid
         context_obj = request.env['account.report.context.followup']
         report_obj = request.env['account.followup.report']
-        progressbar_obj = request.env['account.report.followup.progressbar']
+        context_all_obj = request.env['account.report.context.followup.all']
         reports = []
-        progressbar_id = progressbar_obj.sudo(uid).search([('create_uid', '=', uid)], limit=1)
+        context_all_id = context_all_obj.sudo(uid).search([('create_uid', '=', uid)], limit=1)
         partners = request.env['res.partner'].get_partners_in_need_of_action()
-        if not progressbar_id:
-            progressbar_id = progressbar_obj.sudo(uid).create({'valuemax': len(partners)})
-        if 'partner_done' in kw:
-            progressbar_id.write({'valuenow': progressbar_id.valuenow + 1})
-            if kw['partner_done'] == 'all':
-                partners.update_next_action()
-                progressbar_id.write({'valuenow': progressbar_id.valuemax})
-                partners = partners - partners
-        if progressbar_id.valuemax != progressbar_id.valuenow + len(partners):
-            progressbar_id.write({'valuemax': progressbar_id.valuenow + len(partners)})
+        if not context_all_id:
+            context_all_id = context_all_obj.sudo(uid).create({'valuemax': len(partners)})
+        if 'partner_filter' in kw:
+            context_all_id.write({'partner_filter': kw['partner_filter']})
+        if 'partner_done' in kw and 'partner_filter' not in kw:
+            if context_all_id.partner_filter == 'action':
+                context_all_id.write({'valuenow': context_all_id.valuenow + 1})
+                if kw['partner_done'] == 'all':
+                    partners.update_next_action()
+                    context_all_id.write({'valuenow': context_all_id.valuemax})
+                    partners = partners - partners
+        if context_all_id.valuemax != context_all_id.valuenow + len(partners):
+            context_all_id.write({'valuemax': context_all_id.valuenow + len(partners)})
+        if context_all_id.partner_filter == 'all':
+            partners = request.env['res.partner'].get_partners_with_overdue()
         for partner in partners[((page - 1) * 15):(page * 15)]:
             context_id = context_obj.sudo(uid).search([('partner_id', '=', partner.id)], limit=1)
             if not context_id:
@@ -88,7 +93,7 @@ class FinancialReportController(http.Controller):
             'report': report_obj,
             'mode': 'display',
             'page': page,
-            'progressbar': progressbar_id,
+            'context_all': context_all_id,
             'just_arrived': 'partner_done' not in kw,
         }
         return request.render('account.report_followup_all', rcontext)
