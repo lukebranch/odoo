@@ -82,23 +82,22 @@
                 }); 
         });
     });
-
-    $('input[name=unsubscription_reason]').change(function(e){
-         if (this.id == 'rdo_unsubscribe') {
-            $('.spec_reason').show();
-            $('.spec_reason').attr('required', '');
-         } else {
-            $('.spec_reason').hide();
-            $('.spec_reason').removeAttr('required');
-         }
+    $(document).ready(function(){
+        $('input[name=unsubscription_reason]').on('change', function(e) {
+             if (this.id == 'rdo_unsubscribe') {
+                $('.spec_reason').show();
+                $('.spec_reason').attr('required', '');
+             } else {
+                $('.spec_reason').hide();
+                $('.spec_reason').removeAttr('required');
+             }
+        });
+        $('.cancel_tab').on('click', function() {
+            var i = confirm('Are you sure you want to cancel?');
+            if (i == true)
+                window.close();
+            else
+                this.close();
+        });
     });
-
-    $('.cancel_tab').click(function(){
-        var i= confirm('Are you sure you want to cancel?');
-        if(i == true)
-            window.close();
-        else
-            this.close();
-
-    })
 })();

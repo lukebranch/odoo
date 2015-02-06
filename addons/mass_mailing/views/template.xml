@@ -61,14 +61,16 @@
                                 <p style="font-size:24px;margin-bottom:20px">Choose reason for unsubscription and click on the link below</p>
                                 <div style="width:50%;margin: 15px auto">
                                     <form t-att-action="'/mail/mailing/%s/unsubscribe?res_id=%s&amp;ans_id=%s' % ( str(mailing_id),str(record_ids), str(ans_id))" method="post">
-                                        <input type="radio" name="unsubscription_reason" value="Mails are too frequent" checked="checked" id="reason_rd1">    <label for="reason_rd1">Mails are too frequent</label>
+                                        <input type="radio" class="test" name="unsubscription_reason" value="Mails are too frequent" checked="checked" id="reason_rd1">
+                                            <label for="reason_rd1">Mails are too frequent</label>
                                         </input><br/><br/>
-                                        <input type="radio" name="unsubscription_reason" value="Content is not relavant" id="reason_rd2">
+                                        <input type="radio" class="test" name="unsubscription_reason" value="Content is not relavant" id="reason_rd2">
                                             <label for="reason_rd2"> Content is not relavant</label>
                                         </input><br/><br/>
-                                        <input type="radio" name="unsubscription_reason" value="This list is not my cup of tea anymore" id="reason_rd3">    <label for="reason_rd3"> This list is not my cup of tea anymore</label>
+                                        <input type="radio" class="test" name="unsubscription_reason" value="This list is not my cup of tea anymore" id="reason_rd3">
+                                            <label for="reason_rd3"> This list is not my cup of tea anymore</label>
                                         </input><br/><br/>
-                                        <input type="radio" id="rdo_unsubscribe" name="unsubscription_reason" value="Other"> 
+                                        <input type="radio" class="test" id="rdo_unsubscribe" name="unsubscription_reason" value="Other">
                                             <label for="rdo_unsubscribe">Other</label>
                                         </input><br/><br/>
                                         <input type="text" class="form-control spec_reason" name="txt_unsubscription_reason" style="display:none" placeholder="Please provide a specific reason"/><br/>
