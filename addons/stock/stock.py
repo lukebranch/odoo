@@ -3683,16 +3683,10 @@ class stock_package(osv.osv):
         """Returns packages from quants for store"""
         res = set()
         for quant in self.browse(cr, uid, ids, context=context):
-            if quant.package_id:
-                res.add(quant.package_id.id)
-        return list(res)
-
-    def _get_packages_to_relocate(self, cr, uid, ids, context=None):
-        res = set()
-        for pack in self.browse(cr, uid, ids, context=context):
-            res.add(pack.id)
-            if pack.parent_id:
-                res.add(pack.parent_id.id)
+            pack = quant.package_id
+            while pack:
+                res.add(pack.id)
+                pack = pack.parent_id
         return list(res)
 
     def _get_package_info(self, cr, uid, ids, name, args, context=None):
@@ -3708,6 +3702,14 @@ class stock_package(osv.osv):
                 res[pack.id]['owner_id'] = pack.children_ids[0].owner_id and pack.children_ids[0].owner_id.id or False
                 res[pack.id]['company_id'] = pack.children_ids[0].company_id and pack.children_ids[0].company_id.id or False
         return res
+
+    def _get_packages_to_relocate(self, cr, uid, ids, context=None):
+        res = set()
+        for pack in self.browse(cr, uid, ids, context=context):
+            res.add(pack.id)
+            if pack.parent_id:
+                res.add(pack.parent_id.id)
+        return list(res)
 
     _columns = {
         'name': fields.char('Package Reference', select=True, copy=False),
