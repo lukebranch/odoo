@@ -411,7 +411,11 @@ class stock_quant(osv.osv):
             self.move_quants_write(cr, uid, to_move_quants, move, location_to, dest_package_id, context=context)
             self.pool.get('stock.move').recalculate_move_state(cr, uid, to_recompute_move_ids, context=context)
         if location_to.usage == 'internal':
-            if self.search(cr, uid, [('product_id', '=', move.product_id.id), ('qty','<', 0)], limit=1, context=context):
+            cr.execute("""
+                SELECT id FROM stock_quant WHERE product_id = %s AND location_id = %s AND qty < 0.0 LIMIT 1
+            """, (move.product_id.id, location_to.id))
+            res = cr.fetchall()
+            if res and res[0]:
                 for quant in quants_reconcile:
                     self._quant_reconcile_negative(cr, uid, quant, move, context=context)
 
