@@ -53,7 +53,7 @@ index_template = """
 </html>
 
 """
-
+screen = ''
 
 class PosboxHomepage(openerp.addons.web.controllers.main.Home):
     @http.route('/', type='http', auth='none', website=True)
@@ -61,7 +61,13 @@ class PosboxHomepage(openerp.addons.web.controllers.main.Home):
         #return request.render('hw_posbox_homepage.index',mimetype='text/html')
         return index_template
 
-    @http.route('/pos/screen', type='http', auth='none', website=True)
+    @http.route('/screen/view', type='http', auth='none', website=True)
     def screen(self):
+        return screen
+
+    @http.route('/screen/set', type='json', auth='none', website=True)
+    def screen(self, ** kwargs):
+        print kwargs
+        screen = ''
         
         
