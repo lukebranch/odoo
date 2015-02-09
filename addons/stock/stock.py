@@ -414,8 +414,7 @@ class stock_quant(osv.osv):
             cr.execute("""
                 SELECT id FROM stock_quant WHERE product_id = %s AND location_id = %s AND qty < 0.0 LIMIT 1
             """, (move.product_id.id, location_to.id))
-            res = cr.fetchall()
-            if res and res[0]:
+            if cr.fetchone():
                 for quant in quants_reconcile:
                     self._quant_reconcile_negative(cr, uid, quant, move, context=context)
 
