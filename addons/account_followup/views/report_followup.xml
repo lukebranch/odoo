@@ -2,8 +2,26 @@
 <openerp>
 <data>
 <template id='report_followup_body' inherit_id='account.report_followup_body'>
-    <xpath expr="//h2">
-        asdfasdfasdf
+    <xpath expr="//h2/t" position='before'>
+        <span class="dropdown" t-att-partner='context.partner_id.id'>
+            <span data-toggle="dropdown">
+                <i t-if="context.partner_id.trust == 'good'" class="fa fa-circle" style="color: green;"></i>
+                <i t-if="context.partner_id.trust == 'normal'" class="fa fa-circle" style="color: grey;"></i>
+                <i t-if="context.partner_id.trust == 'bad'" class="fa fa-circle" style="color: red;"></i>
+            </span>
+            <ul class="dropdown-menu" role="menu">
+                <li><a class='changeTrust' new-trust='good'>Good Debtor</a></li>
+                <li><a class='changeTrust' new-trust='normal'>Normal Debtor</a></li>
+                <li><a class='changeTrust' new-trust='bad'>Bad Debtor</a></li>
+            </ul>
+        </span>
+    </xpath>
+    <xpath expr="//div[@id='action-buttons']" position='replace'>
+        <div id='action-buttons' t-if="mode != 'print'" style='text-align: right;'>
+            <a type="button" class="btn btn-default followup-skip" t-att-partner="str(context.partner_id.id)">Skip</a>
+            <a type="button" class="btn btn-primary followup-letter" t-att-target="'/account/followup_report/' + str(context.partner_id.id) + '/?pdf'">Print Letter</a>
+            <a type="button" class="btn btn-primary followup-email">Send by email</a>
+        </div>
     </xpath>
 </template>
 <template id="report_followup">

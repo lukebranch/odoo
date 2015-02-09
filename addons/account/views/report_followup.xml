@@ -72,7 +72,7 @@
         <t t-call='account.report_followup_line' />
     </xpath>
     <xpath expr="//div[@class='summary']" position="before">
-        <div t-if="mode != 'print'" style='text-align: right;'>
+        <div id='action-buttons' t-if="mode != 'print'" style='text-align: right;'>
             <a type="button" class="btn btn-default followup-skip" t-att-partner="str(context.partner_id.id)">Skip</a>
             <a type="button" class="btn btn-primary followup-letter" t-att-target="'/account/followup_report/' + str(context.partner_id.id) + '/?pdf'">Print Letter</a>
             <a type="button" class="btn btn-primary followup-email">Send by email</a>

@@ -96,7 +96,7 @@
                     <span class="caret"></span>
                 </a>
                 <t t-call="account.report_financial_footnote_sup" />
-                <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel" style="margin-left: 70px">
+                <ul class="dropdown-menu" role="menu" style="margin-left: 70px">
                     <li role="presentation" t-if="a['type'] == 'account_id'"><a role="menuitem" tabindex="-1" class="to_graph">Graph</a></li>
                     <li role="presentation" t-if="a['type'] == 'account_id'"><a role="menuitem" tabindex="-1" class="to_amls">Account Move Lines</a></li>
                     <li role="presentation"><a role="menuitem" tabindex="-1" class="add_footnote">Add Footnote</a></li>

@@ -46,6 +46,26 @@
                 'click .followup-letter': 'printFollowupLetter',
                 'click .followup-skip': 'skipPartner',
                 "change *[name='blocked']": 'onChangeBlocked',
+                'click .changeTrust': 'changeTrust',
+            },
+            changeTrust: function(e) {
+                e.stopPropagation();
+                e.preventDefault();
+                var partner_id = $(e.target).parents('span.dropdown').attr("partner");
+                var newTrust = $(e.target).attr("new-trust");
+                var color = 'grey';
+                switch(newTrust) {
+                    case 'good':
+                        color = 'green';
+                        break;
+                    case 'bad':
+                        color = 'red'
+                        break;
+                }
+                var model = new openerp.Model('res.partner');
+                model.call('write', [[parseInt(partner_id)], {'trust': newTrust}]).then(function (result) {
+                    $(e.target).parents('span.dropdown').find('i.fa').attr('style', 'color: ' + color + ';')
+                });
             },
             onChangeBlocked: function(e) {
                 e.stopPropagation();

@@ -111,7 +111,7 @@ class res_partner(models.Model):
         return res
 
     @api.one
-    @api.depends('unreconciled_aml_ids.followup_line_id', 'unreconciled_aml_ids.followup_date', 'unreconciled_aml_ids.blocked')
+    @api.depends('unreconciled_aml_ids', 'unreconciled_aml_ids.followup_line_id', 'unreconciled_aml_ids.followup_date', 'unreconciled_aml_ids.blocked')
     def _get_latest(self, company_id=None):
         if company_id == None:
             company = self.env.user.company_id
@@ -398,6 +398,15 @@ class res_partner(models.Model):
             return [('id', '=', '0')]
         return [('id', 'in', [x[0] for x in res])]
 
+    def max_followup_id(self):
+        for partner in self.search([]):
+            domain = [('partner_id', '=', partner.id), ('reconciled', '=', False), ('account_id.deprecated', '=', False), ('account_id.internal_type', '=', 'receivable'), ('blocked', '=', False)]
+            for aml in self.env['account.move.line'].search(domain):
+                if aml.date_maturity < today:
+                    result = result | partner
+                    break
+        return result
+
     payment_responsible_id = fields.Many2one('res.users', ondelete='set null', string='Follow-up Responsible',
                                              help="Optionally you can assign a user to this field, which will make him responsible for the action.",
                                              track_visibility="onchange", copy=False)
@@ -412,16 +421,16 @@ class res_partner(models.Model):
                                                 "his promises.")
     unreconciled_aml_ids = fields.One2many('account.move.line', 'partner_id', domain=['&', ('reconciled', '=', False), '&',
                                            ('account_id.deprecated', '=', False), '&', ('account_id.internal_type', '=', 'receivable')])
-    latest_followup_date = fields.Date(compute='_get_latest', method=True, string="Latest Follow-up Date",
+    latest_followup_date = fields.Date(compute='_get_latest', string="Latest Follow-up Date",
                                        help="Latest date that the follow-up level of the partner was changed",
-                                       store=False, multi="latest")
-    latest_followup_level_id = fields.Many2one('account_followup.followup.line', compute='_get_latest', method=True,
+                                       store=False)
+    latest_followup_level_id = fields.Many2one('account_followup.followup.line', compute='_get_latest',
                                                help="The maximum follow-up level", string="Latest Follow-up Level",
-                                               store=True, multi="latest")
+                                               store=True)
     latest_followup_level_id_without_lit = fields.Many2one('account_followup.followup.line', compute='_get_latest',
-        method=True, string="Latest Follow-up Level without litigation",
+        string="Latest Follow-up Level without litigation",
         help="The maximum follow-up level without taking into account the account move lines with litigation",
-        store=True, multi="latest")
+        store=True)
     payment_amount_due = fields.Float(compute='_get_amounts_and_date', string="Amount Due",
                                       store=False, search='_payment_due_search')
     payment_amount_overdue = fields.Float(compute='_get_amounts_and_date', string="Amount Overdue",

@@ -29,12 +29,6 @@ p.footnote i.fa{
 p.footnote:hover i.fa{
     visibility: visible;
 }
-h2 i.fa{
-    visibility: hidden;
-}
-h2:hover i.fa{
-    visibility: visible;
-}
 .progress {
   position: relative;
 }
