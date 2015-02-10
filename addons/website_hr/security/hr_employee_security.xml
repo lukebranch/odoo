@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<openerp>
-<data>
-    <record id="hr_employee_public" model="ir.rule">
+<odoo>
+    <record id="hr_employee_rule_public" model="ir.rule">
         <field name="name">hr_employee: Public</field>
         <field name="model_id" ref="hr.model_hr_employee"/>
         <field name="domain_force">[('website_published', '=', True)]</field>
@@ -11,5 +10,4 @@
         <field name="perm_create" eval="False"/>
         <field name="perm_unlink" eval="False"/>
     </record>
-</data>
-</openerp>
+</odoo>

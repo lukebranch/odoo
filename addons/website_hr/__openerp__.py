@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 {
     'name': 'Team Page',
     'category': 'Website',
@@ -8,18 +10,17 @@ Our Team Page
 =============
 
         """,
-    'author': 'OpenERP SA',
+    'author': 'Odoo S.A.',
     'depends': ['website', 'hr'],
     'demo': [
-        'data/website_hr_demo.xml',
+        'data/hr_employee_demo.xml'
     ],
     'data': [
         'data/website_hr_data.xml',
-        'views/website_hr.xml',
-        'views/website_hr_view.xml',
+        'views/hr_employee_views.xml',
+        'views/website_hr_templates.xml',
         'security/ir.model.access.csv',
-        'security/website_hr.xml',
+        'security/hr_employee_security.xml'
     ],
-    'qweb': ['static/src/xml/*.xml'],
-    'installable': True,
+    'installable': True
 }
