@@ -9,16 +9,15 @@
     'description': """
 Online Events
         """,
-    'author': 'OpenERP SA',
+    'author': 'Odoo S.A.',
     'depends': ['website', 'website_partner', 'website_mail', 'event'],
     'data': [
         'data/event_data.xml',
-        'views/website_event.xml',
-        'views/website_event_backend.xml',
+        'views/event_templates.xml',
+        'views/event_views.xml',
         'security/ir.model.access.csv',
-        'security/website_event.xml',
+        'security/event_security.xml',
     ],
-    'qweb': ['static/src/xml/*.xml'],
     'demo': [
         'data/event_demo.xml'
     ],
