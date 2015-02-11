@@ -421,7 +421,7 @@ class stock_quant(osv.osv):
             # Do manual search for quant to avoid full table scan (order by id)
             cr.execute("""
                 SELECT 0 FROM stock_quant, stock_location WHERE product_id = %s AND stock_quant.location_id = stock_location.id AND
-                stock_location.parent_left < %s AND stock_location.parent_left >= %s AND qty < 0.0 LIMIT 1
+                stock_location.parent_left <= %s AND stock_location.parent_left >= %s AND qty < 0.0 LIMIT 1
             """, (move.product_id.id, location_to.parent_right, location_to.parent_left))
             if cr.fetchone():
                 for quant in quants_reconcile:
