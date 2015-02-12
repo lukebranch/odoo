@@ -11,14 +11,13 @@ Online Event's Tickets
 ======================
 
         """,
-    'author': 'OpenERP SA',
+    'author': 'Odoo S.A.',
     'depends': ['website_event', 'event_sale', 'website_sale'],
     'data': [
-        'views/website_event_sale.xml',
+        'views/website_event_templates.xml',
         'security/ir.model.access.csv',
-        'security/website_event_sale.xml',
+        'security/website_event_sale_security.xml',
     ],
-    'qweb': ['static/src/xml/*.xml'],
     'installable': True,
     'auto_install': True
 }
