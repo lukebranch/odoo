@@ -43,14 +43,17 @@ class TestSale(TestMail):
         sale_advance_payment_inv = self.registry('sale.advance.payment.inv')
         invoice_obj = self.registry('account.invoice')
         voucher_obj = self.registry('account.voucher')
+        account_obj = self.registry('account.account')
+        account_journal_obj = self.registry('account.journal')
         
         # Usefull record id
         group_id = data_obj.get_object_reference(cr, uid, 'account', 'group_account_invoice')[1]
         product_ref = data_obj.get_object_reference(cr, uid, 'product', 'product_category_5')
         product_id = product_ref and product_ref[1] or False
-        account_id = data_obj.get_object_reference(cr, uid, 'account', 'cash')[1]
+        account_id = account_obj.search(cr, uid, [('internal_type', '=', 'liquidity')])[0]
+        journal_id = account_journal_obj.search(cr, uid, [('type', '=', 'bank')])[0]
+
         company_id = data_obj.get_object_reference(cr, uid, 'base', 'main_company')[1]
-        journal_id = data_obj.get_object_reference(cr, uid, 'account', 'bank_journal')[1]
         date = time.strftime("%Y/%m/%d")
         
         # In order to test, I create new user and applied Invoicing & Payments group.
