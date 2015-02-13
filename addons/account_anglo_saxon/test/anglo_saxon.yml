@@ -31,7 +31,7 @@
 -
   !record {model: account.account, id: account_anglo_cash}:
     code: X5000
-    name: Cash/Bank Account 
+    name: Cash/Bank Account
     user_type: account.data_account_type_liquidity
     reconcile: True
 -
