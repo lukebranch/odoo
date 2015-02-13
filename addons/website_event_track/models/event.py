@@ -1,51 +1,50 @@
 # -*- coding: utf-8 -*-
 
-from openerp import models, fields, api
-from openerp.tools.translate import _
+from openerp import api, fields, models, _
 from openerp.addons.website.models.website import slug
 
 
-class event_track_tag(models.Model):
+class EventTrackTag(models.Model):
     _name = "event.track.tag"
     _description = 'Track Tag'
     _order = 'name'
 
-    name = fields.Char('Tag', translate=True)
+    name = fields.Char(string='Tag', translate=True)
     track_ids = fields.Many2many('event.track', string='Tracks')
 
 
-class event_track_location(models.Model):
+class EventTrackLocation(models.Model):
     _name = "event.track.location"
     _description = 'Track Location'
 
-    name = fields.Char('Room')
+    name = fields.Char(string='Room')
 
 
-class event_track(models.Model):
+class EventTrack(models.Model):
     _name = "event.track"
     _description = 'Event Track'
     _order = 'priority, date'
     _inherit = ['mail.thread', 'ir.needaction_mixin', 'website.seo.metadata', 'website.published.mixin']
 
-    name = fields.Char('Title', required=True, translate=True)
+    name = fields.Char(string='Title', required=True, translate=True)
 
-    user_id = fields.Many2one('res.users', 'Responsible', track_visibility='onchange', default=lambda self: self.env.user)
+    user_id = fields.Many2one('res.users', string='Responsible', track_visibility='onchange', default=lambda self: self.env.uid)
     speaker_ids = fields.Many2many('res.partner', string='Speakers')
     tag_ids = fields.Many2many('event.track.tag', string='Tags')
     state = fields.Selection([
         ('draft', 'Proposal'), ('confirmed', 'Confirmed'), ('announced', 'Announced'), ('published', 'Published')],
-        'Status', default='draft', required=True, copy=False, track_visibility='onchange')
-    description = fields.Html('Track Description', translate=True)
-    date = fields.Datetime('Track Date')
-    duration = fields.Float('Duration', digits=(16, 2), default=1.5)
-    location_id = fields.Many2one('event.track.location', 'Room')
-    event_id = fields.Many2one('event.event', 'Event', required=True)
+        string='Status', default='draft', required=True, copy=False, track_visibility='onchange')
+    description = fields.Html(string='Track Description', translate=True)
+    date = fields.Datetime(string='Track Date')
+    duration = fields.Float(digits=(16, 2), default=1.5)
+    location_id = fields.Many2one('event.track.location', string='Room')
+    event_id = fields.Many2one('event.event', string='Event', required=True)
     color = fields.Integer('Color Index')
     priority = fields.Selection([
         ('0', 'Low'), ('1', 'Medium'),
         ('2', 'High'), ('3', 'Highest')],
-        'Priority', required=True, default='1')
-    image = fields.Binary('Image', compute='_compute_image', readonly=True, store=True)
+        required=True, default='1')
+    image = fields.Binary(compute='_compute_image', readonly=True, store=True)
 
     @api.one
     @api.depends('speaker_ids.image')
@@ -57,25 +56,20 @@ class event_track(models.Model):
 
     @api.model
     def create(self, vals):
-        res = super(event_track, self).create(vals)
+        res = super(EventTrack, self).create(vals)
         res.message_subscribe(res.speaker_ids.ids)
         return res
 
     @api.multi
     def write(self, vals):
-        res = super(event_track, self).write(vals)
+        res = super(EventTrack, self).write(vals)
         if vals.get('speaker_ids'):
-            self.message_subscribe([speaker['id'] for speaker in self.resolve_2many_commands('speaker_ids', vals['speaker_ids'], ['id'])])
+            for track in self:
+                track.message_subscribe(track.speaker_ids.ids)
         return res
 
-    @api.multi
-    @api.depends('name')
-    def _website_url(self, field_name, arg):
-        res = super(event_track, self)._website_url(field_name, arg)
-        res.update({(track.id, '/event/%s/track/%s' % (slug(track.event_id), slug(track))) for track in self})
-        return res
-
-    def read_group(self, cr, uid, domain, fields, groupby, offset=0, limit=None, context=None, orderby=False, lazy=True):
+    @api.model
+    def read_group(self, domain, fields, groupby, offset=0, limit=None, orderby=False, lazy=True):
         """ Override read_group to always display all states. """
         if groupby and groupby[0] == "state":
             # Default result structure
@@ -88,7 +82,7 @@ class event_track(models.Model):
                 'state_count': 0,
             } for state_value, state_name in states]
             # Get standard results
-            read_group_res = super(event_track, self).read_group(cr, uid, domain, fields, groupby, offset=offset, limit=limit, context=context, orderby=orderby)
+            read_group_res = super(EventTrack, self).read_group(domain, fields, groupby, offset=offset, limit=limit, orderby=orderby)
             # Update standard results with default results
             result = []
             for state_value, state_name in states:
@@ -99,23 +93,40 @@ class event_track(models.Model):
                 result.append(res[0])
             return result
         else:
-            return super(event_track, self).read_group(cr, uid, domain, fields, groupby, offset=offset, limit=limit, context=context, orderby=orderby)
+            return super(EventTrack, self).read_group(domain, fields, groupby, offset=offset, limit=limit, orderby=orderby)
 
-    def open_track_speakers_list(self, cr, uid, track_id, context=None):
-        track_id = self.browse(cr, uid, track_id, context=context)
+    @api.multi
+    @api.depends('name')
+    def _website_url(self, field_name, arg):
+        res = super(EventTrack, self)._website_url(field_name, arg)
+        res.update({(track.id, '/event/%s/track/%s' % (slug(track.event_id), slug(track))) for track in self})
+        return res
+
+    @api.multi
+    def open_track_speakers_list(self):
+        self.ensure_one()
         return {
             'name': _('Speakers'),
-            'domain': [('id', 'in', [partner.id for partner in track_id.speaker_ids])],
-            'view_type': 'form',
+            'domain': [('id', 'in', self.speaker_ids.ids)],
             'view_mode': 'kanban,form',
             'res_model': 'res.partner',
-            'view_id': False,
             'type': 'ir.actions.act_window',
         }
 
 
-class event_event(models.Model):
+class Event(models.Model):
     _inherit = "event.event"
+
+    track_ids = fields.One2many('event.track', 'event_id', string='Tracks')
+    sponsor_ids = fields.One2many('event.sponsor', 'event_id', string='Sponsors')
+    blog_id = fields.Many2one('blog.blog', string='Event Blog')
+    show_track_proposal = fields.Boolean(string='Talks Proposals')
+    show_tracks = fields.Boolean(string='Multiple Tracks')
+    show_blog = fields.Boolean(string='News')
+    count_tracks = fields.Integer(string='Tracks', compute='_count_tracks')
+    allowed_track_tag_ids = fields.Many2many('event.track.tag', relation='event_allowed_track_tags_rel', string='Available Track Tags')
+    tracks_tag_ids = fields.Many2many('event.track.tag', relation='event_track_tags_rel', string='Track Tags', compute='_get_tracks_tag_ids', store=True)
+    count_sponsor = fields.Integer(string='# Sponsors', compute='_count_sponsor')
 
     @api.one
     def _count_tracks(self):
@@ -130,20 +141,9 @@ class event_event(models.Model):
     def _get_tracks_tag_ids(self):
         self.tracks_tag_ids = self.track_ids.mapped('tag_ids').ids
 
-    track_ids = fields.One2many('event.track', 'event_id', 'Tracks')
-    sponsor_ids = fields.One2many('event.sponsor', 'event_id', 'Sponsors')
-    blog_id = fields.Many2one('blog.blog', 'Event Blog')
-    show_track_proposal = fields.Boolean('Talks Proposals')
-    show_tracks = fields.Boolean('Multiple Tracks')
-    show_blog = fields.Boolean('News')
-    count_tracks = fields.Integer('Tracks', compute='_count_tracks')
-    allowed_track_tag_ids = fields.Many2many('event.track.tag', relation='event_allowed_track_tags_rel', string='Available Track Tags')
-    tracks_tag_ids = fields.Many2many('event.track.tag', relation='event_track_tags_rel', string='Track Tags', compute='_get_tracks_tag_ids', store=True)
-    count_sponsor = fields.Integer('# Sponsors', compute='_count_sponsor')
-
     @api.one
     def _get_new_menu_pages(self):
-        result = super(event_event, self)._get_new_menu_pages()[0]  # TDE CHECK api.one -> returns a list with one item ?
+        result = super(Event, self)._get_new_menu_pages()[0]  # TDE CHECK api.one -> returns a list with one item ?
         if self.show_tracks:
             result.append((_('Talks'), '/event/%s/track' % slug(self)))
             result.append((_('Agenda'), '/event/%s/agenda' % slug(self)))
@@ -154,21 +154,21 @@ class event_event(models.Model):
         return result
 
 
-class event_sponsors_type(models.Model):
+class EventSponsorsType(models.Model):
     _name = "event.sponsor.type"
     _order = "sequence"
 
-    name = fields.Char('Sponsor Type', required=True, translate=True)
-    sequence = fields.Integer('Sequence')
+    name = fields.Char(string='Sponsor Type', required=True, translate=True)
+    sequence = fields.Integer()
 
 
-class event_sponsors(models.Model):
+class EventSponsors(models.Model):
     _name = "event.sponsor"
     _order = "sequence"
 
-    event_id = fields.Many2one('event.event', 'Event', required=True)
-    sponsor_type_id = fields.Many2one('event.sponsor.type', 'Sponsoring Type', required=True)
-    partner_id = fields.Many2one('res.partner', 'Sponsor/Customer', required=True)
-    url = fields.Char('Sponsor Website')
-    sequence = fields.Integer('Sequence', store=True, related='sponsor_type_id.sequence')
+    event_id = fields.Many2one('event.event', string='Event', required=True)
+    sponsor_type_id = fields.Many2one('event.sponsor.type', string='Sponsoring Type', required=True)
+    partner_id = fields.Many2one('res.partner', string='Sponsor/Customer', required=True)
+    url = fields.Char(string='Sponsor Website')
+    sequence = fields.Integer(store=True, related='sponsor_type_id.sequence')
     image_medium = fields.Binary(string='Logo', type='binary', related='partner_id.image_medium', store=True)

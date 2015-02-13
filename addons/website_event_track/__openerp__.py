@@ -18,16 +18,15 @@ Adds support for:
 - agenda
 - call for proposals
         """,
-    'author': 'OpenERP SA',
+    'author': 'Odoo S.A.',
     'depends': ['website_event', 'website_blog'],
     'data': [
         'data/event_data.xml',
-        'views/website_event.xml',
-        'views/event_backend.xml',
+        'views/event_track_templates.xml',
+        'views/event_track_views.xml',
         'security/ir.model.access.csv',
-        'security/event.xml',
+        'security/event_track_security.xml',
     ],
-    'qweb': ['static/src/xml/*.xml'],
     'demo': [
         'data/event_demo.xml',
         'data/website_event_track_demo.xml'

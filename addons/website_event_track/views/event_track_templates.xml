@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<openerp>
-<data>
+<odoo>
 
 <template id="assets_frontend" inherit_id="website.assets_frontend" name="Website Event Track Assets">
     <xpath expr="." position="inside">
@@ -145,7 +144,9 @@
                             </a>
                         </li>
                     </ul>
-                    <p class="mt8"><t t-esc="html2text(track.description or '')[0:500]"/><t t-if="track.description">...</t></p>
+                    <t t-if="track.description">
+                        <p class="mt8"><t t-esc="html2plaintext(track.description)[0:500]"/>...</p>
+                    </t>
                 </div>
             </div>
         </div>
@@ -431,5 +432,4 @@
     </t>
 </template>
 
-</data>
-</openerp>
+</odoo>
