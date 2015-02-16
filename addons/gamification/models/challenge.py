@@ -20,12 +20,12 @@
 ##############################################################################
 
 from openerp import SUPERUSER_ID
-from openerp.osv import fields, osv
-from openerp.tools import ustr, DEFAULT_SERVER_DATE_FORMAT as DF
+from openerp import api, fields, models
+from openerp.tools import ustr
 from openerp.tools.safe_eval import safe_eval as eval
 from openerp.tools.translate import _
 
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 import calendar
 import logging
 from openerp.exceptions import UserError
@@ -34,37 +34,8 @@ _logger = logging.getLogger(__name__)
 # display top 3 in ranking, could be db variable
 MAX_VISIBILITY_RANKING = 3
 
-def start_end_date_for_period(period, default_start_date=False, default_end_date=False):
-    """Return the start and end date for a goal period based on today
 
-    :return: (start_date, end_date), datetime.date objects, False if the period is
-    not defined or unknown"""
-    today = date.today()
-    if period == 'daily':
-        start_date = today
-        end_date = start_date
-    elif period == 'weekly':
-        delta = timedelta(days=today.weekday())
-        start_date = today - delta
-        end_date = start_date + timedelta(days=7)
-    elif period == 'monthly':
-        month_range = calendar.monthrange(today.year, today.month)
-        start_date = today.replace(day=1)
-        end_date = today.replace(day=month_range[1])
-    elif period == 'yearly':
-        start_date = today.replace(month=1, day=1)
-        end_date = today.replace(month=12, day=31)
-    else:  # period == 'once':
-        start_date = default_start_date  # for manual goal, start each time
-        end_date = default_end_date
-
-    if start_date and end_date:
-        return (datetime.strftime(start_date, DF), datetime.strftime(end_date, DF))
-    else:
-        return (start_date, end_date)
-
-
-class gamification_challenge(osv.Model):
+class gamification_challenge(models.Model):
     """Gamification challenge
 
     Set of predifined objectives assigned to people with rules for recurrence and
@@ -79,176 +50,185 @@ class gamification_challenge(osv.Model):
     _description = 'Gamification challenge'
     _inherit = 'mail.thread'
 
-    def _get_next_report_date(self, cr, uid, ids, field_name, arg, context=None):
-        """Return the next report date based on the last report date and report
-        period.
+    @api.model
+    def start_end_date_for_period(self, period, default_start_date=False, default_end_date=False):
+        """Return the start and end date for a goal period based on today
 
-        :return: a string in DEFAULT_SERVER_DATE_FORMAT representing the date"""
-        res = {}
-        for challenge in self.browse(cr, uid, ids, context=context):
-            last = datetime.strptime(challenge.last_report_date, DF).date()
+        :return: (start_date, end_date), datetime.date objects, False if the period is
+        not defined or unknown"""
+        today = fields.Date.context_today()
+        if period == 'daily':
+            start_date = today
+            end_date = start_date
+        elif period == 'weekly':
+            delta = timedelta(days=today.weekday())
+            start_date = today - delta
+            end_date = start_date + timedelta(days=7)
+        elif period == 'monthly':
+            month_range = calendar.monthrange(today.year, today.month)
+            start_date = today.replace(day=1)
+            end_date = today.replace(day=month_range[1])
+        elif period == 'yearly':
+            start_date = today.replace(month=1, day=1)
+            end_date = today.replace(month=12, day=31)
+        else:  # period == 'once':
+            start_date = default_start_date  # for manual goal, start each time
+            end_date = default_end_date
+
+        if start_date and end_date:
+            return (fields.Date.to_string(start_date), fields.Date.to_string(end_date))
+        else:
+            return (start_date, end_date)
+
+    @api.multi
+    def _get_next_report_date(self):
+        """Return the next report date based on the last report date and report
+        period."""
+        for challenge in self:
+            last = fields.Date.from_string(challenge.last_report_date)
             if challenge.report_message_frequency == 'daily':
                 next = last + timedelta(days=1)
-                res[challenge.id] = next.strftime(DF)
+                challenge.next_report_date = fields.Date.to_string(next)
             elif challenge.report_message_frequency == 'weekly':
                 next = last + timedelta(days=7)
-                res[challenge.id] = next.strftime(DF)
+                challenge.next_report_date = fields.Date.to_string(next)
             elif challenge.report_message_frequency == 'monthly':
                 month_range = calendar.monthrange(last.year, last.month)
                 next = last.replace(day=month_range[1]) + timedelta(days=1)
-                res[challenge.id] = next.strftime(DF)
+                challenge.next_report_date = fields.Date.to_string(next)
             elif challenge.report_message_frequency == 'yearly':
-                res[challenge.id] = last.replace(year=last.year + 1).strftime(DF)
+                challenge.next_report_date = fields.Date.to_string(last.replace(year=last.year + 1))
             # frequency == 'once', reported when closed only
             else:
-                res[challenge.id] = False
-
-        return res
+                challenge.next_report_date = False
     
-    def _get_categories(self, cr, uid, context=None):
+    @api.model
+    def _get_categories(self):
         return [
             ('hr', 'Human Ressources / Engagement'),
             ('other', 'Settings / Gamification Tools'),
         ]
 
-    def _get_report_template(self, cr, uid, context=None):
-        try:
-            return self.pool.get('ir.model.data').get_object_reference(cr, uid, 'gamification', 'simple_report_template')[1]
-        except ValueError:
-            return False
+    @api.model
+    def _get_report_template(self):
+        return self.env.ref('gamification.simple_report_template', False)
 
     _order = 'end_date, start_date, name, id'
-    _columns = {
-        'name': fields.char('Challenge Name', required=True, translate=True),
-        'description': fields.text('Description', translate=True),
-        'state': fields.selection([
-                ('draft', 'Draft'),
-                ('inprogress', 'In Progress'),
-                ('done', 'Done'),
-            ], copy=False,
-            string='State', required=True, track_visibility='onchange'),
-        'manager_id': fields.many2one('res.users',
-            string='Responsible', help="The user responsible for the challenge."),
 
-        'user_ids': fields.many2many('res.users', 'gamification_challenge_users_rel',
-            string='Users',
-            help="List of users participating to the challenge"),
-        'user_domain': fields.char('User domain', help="Alternative to a list of users"),
+    name = fields.Char('Challenge Name', required=True, translate=True)
+    description = fields.Text('Description', translate=True)
+    state = fields.Selection([
+            ('draft', 'Draft'),
+            ('inprogress', 'In Progress'),
+            ('done', 'Done'),
+        ], copy=False, state='draft',
+        string='State', required=True, track_visibility='onchange'),
+    manager_id = fields.Many2one('res.users',
+        string='Responsible', default=lambda self: self.env.uid,
+        help="The user responsible for the challenge.")
 
-        'period': fields.selection([
-                ('once', 'Non recurring'),
-                ('daily', 'Daily'),
-                ('weekly', 'Weekly'),
-                ('monthly', 'Monthly'),
-                ('yearly', 'Yearly')
-            ],
-            string='Periodicity',
-            help='Period of automatic goal assigment. If none is selected, should be launched manually.',
-            required=True),
-        'start_date': fields.date('Start Date',
-            help="The day a new challenge will be automatically started. If no periodicity is set, will use this date as the goal start date."),
-        'end_date': fields.date('End Date',
-            help="The day a new challenge will be automatically closed. If no periodicity is set, will use this date as the goal end date."),
+    user_ids = fields.Many2many('res.users', 'gamification_challenge_users_rel',
+        string='Users',
+        help="List of users participating to the challenge")
+    user_domain = fields.Char('User domain', help="Alternative to a list of users")
 
-        'invited_user_ids': fields.many2many('res.users', 'gamification_invited_user_ids_rel',
-            string="Suggest to users"),
+    period = fields.Selection([
+            ('once', 'Non recurring'),
+            ('daily', 'Daily'),
+            ('weekly', 'Weekly'),
+            ('monthly', 'Monthly'),
+            ('yearly', 'Yearly')
+        ],
+        string='Periodicity', required=True, default='once',
+        help='Period of automatic goal assigment. If none is selected, should be launched manually.')
+    start_date = fields.Date('Start Date',
+        help="The day a new challenge will be automatically started. If no periodicity is set, will use this date as the goal start date.")
+    end_date = fields.Date('End Date',
+        help="The day a new challenge will be automatically closed. If no periodicity is set, will use this date as the goal end date.")
 
-        'line_ids': fields.one2many('gamification.challenge.line', 'challenge_id',
-            string='Lines',
-            help="List of goals that will be set",
-            required=True, copy=True),
+    invited_user_ids = fields.Many2many('res.users', 'gamification_invited_user_ids_rel',
+        string="Suggest to users")
 
-        'reward_id': fields.many2one('gamification.badge', string="For Every Succeding User"),
-        'reward_first_id': fields.many2one('gamification.badge', string="For 1st user"),
-        'reward_second_id': fields.many2one('gamification.badge', string="For 2nd user"),
-        'reward_third_id': fields.many2one('gamification.badge', string="For 3rd user"),
-        'reward_failure': fields.boolean('Reward Bests if not Succeeded?'),
-        'reward_realtime': fields.boolean('Reward as soon as every goal is reached',
-            help="With this option enabled, a user can receive a badge only once. The top 3 badges are still rewarded only at the end of the challenge."),
+    line_ids = fields.One2many('gamification.challenge.line', 'challenge_id',
+        string='Lines', required=True, copy=True,
+        help="List of goals that will be set"),
 
-        'visibility_mode': fields.selection([
-                ('personal', 'Individual Goals'),
-                ('ranking', 'Leader Board (Group Ranking)'),
-            ],
-            string="Display Mode", required=True),
+    reward_id = fields.Many2one('gamification.badge', string="For Every Succeding User")
+    reward_first_id = fields.many2one('gamification.badge', string="For 1st user")
+    reward_second_id = fields.many2one('gamification.badge', string="For 2nd user")
+    reward_third_id = fields.many2one('gamification.badge', string="For 3rd user")
+    reward_failure = fields.boolean('Reward Bests if not Succeeded?')
+    reward_realtime = fields.boolean('Reward as soon as every goal is reached',
+        help="With this option enabled, a user can receive a badge only once. The top 3 badges are still rewarded only at the end of the challenge.")
 
-        'report_message_frequency': fields.selection([
-                ('never', 'Never'),
-                ('onchange', 'On change'),
-                ('daily', 'Daily'),
-                ('weekly', 'Weekly'),
-                ('monthly', 'Monthly'),
-                ('yearly', 'Yearly')
-            ],
-            string="Report Frequency", required=True),
-        'report_message_group_id': fields.many2one('mail.group',
-            string='Send a copy to',
-            help='Group that will receive a copy of the report in addition to the user'),
-        'report_template_id': fields.many2one('mail.template', string="Report Template", required=True),
-        'remind_update_delay': fields.integer('Non-updated manual goals will be reminded after',
-            help="Never reminded if no value or zero is specified."),
-        'last_report_date': fields.date('Last Report Date'),
-        'next_report_date': fields.function(_get_next_report_date,
-            type='date', string='Next Report Date', store=True),
+    visibility_mode = fields.Selection([
+            ('personal', 'Individual Goals'),
+            ('ranking', 'Leader Board (Group Ranking)'),
+        ],
+        string="Display Mode", required=True, default='personal')
 
-        'category': fields.selection(lambda s, *a, **k: s._get_categories(*a, **k),
-            string="Appears in", help="Define the visibility of the challenge through menus", required=True),
-        }
+    report_message_frequency = fields.selection([
+            ('never', 'Never'),
+            ('onchange', 'On change'),
+            ('daily', 'Daily'),
+            ('weekly', 'Weekly'),
+            ('monthly', 'Monthly'),
+            ('yearly', 'Yearly')
+        ],
+        string="Report Frequency", required=True, default='never')
+    report_message_group_id = fields.Many2one('mail.group',
+        string='Send a copy to',
+        help='Group that will receive a copy of the report in addition to the user')
+    report_template_id = fields.Many2one('mail.template', string="Report Template", required=True, default=_get_report_template)
+    remind_update_delay = fields.Integer('Non-updated manual goals will be reminded after',
+        help="Never reminded if no value or zero is specified.")
+    last_report_date = fields.Date('Last Report Date', default=fields.Date.today)
+    next_report_date = fields.Date(compute='_get_next_report_date',
+        string='Next Report Date', store=True)
 
-    _defaults = {
-        'period': 'once',
-        'state': 'draft',
-        'visibility_mode': 'personal',
-        'report_message_frequency': 'never',
-        'last_report_date': fields.date.today,
-        'manager_id': lambda s, cr, uid, c: uid,
-        'category': 'hr',
-        'reward_failure': False,
-        'report_template_id': lambda s, *a, **k: s._get_report_template(*a, **k),
-        'reward_realtime': True,
-    }
+    category = fields.Selection('_get_categories',
+        string="Appears in", required=True, default='hr',
+        help="Define the visibility of the challenge through menus")
 
-
-    def create(self, cr, uid, vals, context=None):
+    @api.model
+    def create(self, vals):
         """Overwrite the create method to add the user of groups"""
 
         if vals.get('user_domain'):
-            user_ids = self._get_challenger_users(cr, uid, vals.get('user_domain'), context=context)
+            user_ids = self._get_challenger_users(vals.get('user_domain'))
 
             if not vals.get('user_ids'):
                 vals['user_ids'] = []
             vals['user_ids'] += [(4, user_id) for user_id in user_ids]
 
-        return super(gamification_challenge, self).create(cr, uid, vals, context=context)
+        return super(gamification_challenge, self).create(vals)
 
-    def write(self, cr, uid, ids, vals, context=None):
-        if isinstance(ids, (int,long)):
-            ids = [ids]
-
+    @api.multi
+    def write(self, vals):
         if vals.get('user_domain'):
-            user_ids = self._get_challenger_users(cr, uid, vals.get('user_domain'), context=context)
+            user_ids = self._get_challenger_users(vals.get('user_domain'))
 
             if not vals.get('user_ids'):
                 vals['user_ids'] = []
             vals['user_ids'] += [(4, user_id) for user_id in user_ids]
 
-        write_res = super(gamification_challenge, self).write(cr, uid, ids, vals, context=context)
+        write_res = super(gamification_challenge, self).write(vals)
 
         if vals.get('report_message_frequency', 'never') != 'never':
             # _recompute_challenge_users do not set users for challenges with no reports, subscribing them now
-            for challenge in self.browse(cr, uid, ids, context=context):
-                self.message_subscribe(cr, uid, [challenge.id], [user.partner_id.id for user in challenge.user_ids], context=context)
+            for challenge in self:
+                self.message_subscribe([challenge.id], [user.partner_id.id for user in challenge.user_ids])
 
         if vals.get('state') == 'inprogress':
-            self._recompute_challenge_users(cr, uid, ids, context=context)
-            self._generate_goals_from_challenge(cr, uid, ids, context=context)
+            self._recompute_challenge_users()
+            self._generate_goals_from_challenge()
 
         elif vals.get('state') == 'done':
-            self.check_challenge_reward(cr, uid, ids, force=True, context=context)
+            self.check_challenge_reward(force=True)
 
         elif vals.get('state') == 'draft':
             # resetting progress
-            if self.pool.get('gamification.goal').search(cr, uid, [('challenge_id', 'in', ids), ('state', '=', 'inprogress')], context=context):
+            if self.env['gamification.goal'].search([('challenge_id', 'in', self.ids), ('state', '=', 'inprogress')]):
                 raise UserError(_("You can not reset a challenge with unfinished goals."))
 
         return write_res
@@ -256,103 +236,100 @@ class gamification_challenge(osv.Model):
 
     ##### Update #####
 
-    def _cron_update(self, cr, uid, context=None, ids=False):
+    @api.model
+    def _cron_update(self, ids=False):
         """Daily cron check.
 
         - Start planned challenges (in draft and with start_date = today)
         - Create the missing goals (eg: modified the challenge to add lines)
         - Update every running challenge
         """
-        if context is None:
-            context = {}
-
         # start scheduled challenges
-        planned_challenge_ids = self.search(cr, uid, [
+        self.search([
             ('state', '=', 'draft'),
-            ('start_date', '<=', fields.date.today())])
-        if planned_challenge_ids:
-            self.write(cr, uid, planned_challenge_ids, {'state': 'inprogress'}, context=context)
+            ('start_date', '<=', fields.Date.today())]
+        ).write({'state': 'inprogress'})
 
         # close scheduled challenges
-        planned_challenge_ids = self.search(cr, uid, [
+        self.search([
             ('state', '=', 'inprogress'),
-            ('end_date', '>=', fields.date.today())])
-        if planned_challenge_ids:
-            self.write(cr, uid, planned_challenge_ids, {'state': 'done'}, context=context)
+            ('end_date', '>=', fields.date.today())]
+        ).write({'state': 'done'})
 
-        if not ids:
-            ids = self.search(cr, uid, [('state', '=', 'inprogress')], context=context)
+        if ids:
+            challenges = self.browse(ids)
+        else:
+            challenges = self.search([('state', '=', 'inprogress')])
 
         # in cron mode, will do intermediate commits
         # TODO in trunk: replace by parameter
-        context = dict(context, commit_gamification=True)
-        return self._update_all(cr, uid, ids, context=context)
+        return challenges.with_context(commit_gamification=True)._update_all()
 
-    def _update_all(self, cr, uid, ids, context=None):
+    
+    def _update_all(self):
         """Update the challenges and related goals
 
         :param list(int) ids: the ids of the challenges to update, if False will
         update only challenges in progress."""
-        if not ids:
+        if not self:
             return True
 
-        if isinstance(ids, (int,long)):
-            ids = [ids]
-
-        goal_obj = self.pool.get('gamification.goal')
+        goal_obj = self.env['gamification.goal']
 
         # include yesterday goals to update the goals that just ended
         # exclude goals for users that did not connect since the last update
-        yesterday = date.today() - timedelta(days=1)
-        cr.execute("""SELECT gg.id
-                        FROM gamification_goal as gg,
-                             gamification_challenge as gc,
-                             res_users as ru
-                       WHERE gg.challenge_id = gc.id
-                         AND gg.user_id = ru.id
-                         AND gg.write_date < ru.login_date
-                         AND gg.closed IS false
-                         AND gc.id IN %s
-                         AND (gg.state = 'inprogress'
-                              OR (gg.state = 'reached'
-                                  AND (gg.end_date >= %s OR gg.end_date IS NULL)))
-        """, (tuple(ids), yesterday.strftime(DF)))
-        goal_ids = [res[0] for res in cr.fetchall()]
+        yesterday = fields.Date.to_string(fields.Date.today() - timedelta(days=1))
+
+        self.env.cr.execute("""SELECT gg.id
+                                FROM gamification_goal as gg,
+                                     gamification_challenge as gc,
+                                     res_users as ru
+                               WHERE gg.challenge_id = gc.id
+                                 AND gg.user_id = ru.id
+                                 AND gg.write_date < ru.login_date
+                                 AND gg.closed IS false
+                                 AND gc.id IN %s
+                                 AND (gg.state = 'inprogress'
+                                      OR (gg.state = 'reached'
+                                          AND (gg.end_date >= %s OR gg.end_date IS NULL)))
+        """, (tuple(self.ids), yesterday))
+        goal_ids = [res[0] for res in self.env.cr.fetchall()]
+        goals = goal_obj.browse(goal_ids)
         # update every running goal already generated linked to selected challenges
-        goal_obj.update(cr, uid, goal_ids, context=context)
+        goals.update()
 
-        self._recompute_challenge_users(cr, uid, ids, context=context)
-        self._generate_goals_from_challenge(cr, uid, ids, context=context)
+        self._recompute_challenge_users()
+        self._generate_goals_from_challenge()
 
-        for challenge in self.browse(cr, uid, ids, context=context):
+        for challenge in self:
 
-            if challenge.last_report_date != fields.date.today():
+            if challenge.last_report_date != fields.Date.today():
                 # goals closed but still opened at the last report date
-                closed_goals_to_report = goal_obj.search(cr, uid, [
+                closed_goals_to_report = goal_obj.search([
                     ('challenge_id', '=', challenge.id),
                     ('start_date', '>=', challenge.last_report_date),
                     ('end_date', '<=', challenge.last_report_date)
                 ])
 
                 if challenge.next_report_date and fields.date.today() >= challenge.next_report_date:
-                    self.report_progress(cr, uid, challenge, context=context)
+                    challenge.report_progress()
 
-                elif len(closed_goals_to_report) > 0:
+                elif closed_goals_to_report:
                     # some goals need a final report
-                    self.report_progress(cr, uid, challenge, subset_goal_ids=closed_goals_to_report, context=context)
+                    challenge.report_progress(subset_goal_ids=closed_goals_to_report)
 
-        self.check_challenge_reward(cr, uid, ids, context=context)
+        self.check_challenge_reward()
         return True
 
-    def quick_update(self, cr, uid, challenge_id, context=None):
+    @api.model
+    def quick_update(self, challenge_id):
         """Update all the goals of a specific challenge, no generation of new goals"""
-        goal_ids = self.pool.get('gamification.goal').search(cr, uid, [('challenge_id', '=', challenge_id)], context=context)
-        self.pool.get('gamification.goal').update(cr, uid, goal_ids, context=context)
-        return True
+        goals = self.env['gamification.goal'].search([('challenge_id', '=', challenge_id)])
+        return goals.update(goals)
 
-    def _get_challenger_users(self, cr, uid, domain, context=None):
-        user_domain = eval(ustr(domain))
-        return self.pool['res.users'].search(cr, uid, user_domain, context=context)
+    @api.model
+    def _get_challenger_users(self, domain):
+        return self.env['res.users'].search(eval(ustr(domain)))
 
     def _recompute_challenge_users(self, cr, uid, challenge_ids, context=None):
         """Recompute the domain to add new users and remove the one no longer matching the domain"""
@@ -402,7 +379,7 @@ class gamification_challenge(osv.Model):
 
         goal_obj = self.pool.get('gamification.goal')
         for challenge in self.browse(cr, uid, ids, context=context):
-            (start_date, end_date) = start_end_date_for_period(challenge.period)
+            (start_date, end_date) = self.start_end_date_for_period(challenge.period)
             to_update = []
 
             # if no periodicity, use challenge dates
@@ -528,7 +505,7 @@ class gamification_challenge(osv.Model):
         }
         """
         goal_obj = self.pool.get('gamification.goal')
-        (start_date, end_date) = start_end_date_for_period(challenge.period)
+        (start_date, end_date) = self.start_end_date_for_period(challenge.period)
 
         res_lines = []
         all_reached = True
@@ -716,7 +693,7 @@ class gamification_challenge(osv.Model):
             ids = [ids]
         commit = context.get('commit_gamification', False)
         for challenge in self.browse(cr, uid, ids, context=context):
-            (start_date, end_date) = start_end_date_for_period(challenge.period, challenge.start_date, challenge.end_date)
+            (start_date, end_date) = self.start_end_date_for_period(challenge.period, challenge.start_date, challenge.end_date)
             yesterday = date.today() - timedelta(days=1)
 
             rewarded_users = []
@@ -797,7 +774,7 @@ class gamification_challenge(osv.Model):
         higher one (eg: if 'second' == False, 'third' will be False)
         """
         goal_obj = self.pool.get('gamification.goal')
-        (start_date, end_date) = start_end_date_for_period(challenge.period, challenge.start_date, challenge.end_date)
+        (start_date, end_date) = self.start_end_date_for_period(challenge.period, challenge.start_date, challenge.end_date)
         challengers = []
         for user in challenge.user_ids:
             all_reached = True
