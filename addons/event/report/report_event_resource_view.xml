@@ -14,7 +14,9 @@
                     <field name="working_hours" widget="float_time"/>
                     <field name="leave_time" widget="float_time"/>
                     <field name="reserved_time" widget="float_time"/>
+                    <field name="preplanned_time" widget="float_time"/>
                     <field name="effective_time" widget="float_time"/>
+                    <field name="available_time" widget="float_time" sum="Total available time"/>
                     <field name="effective_rate"/>
                 </tree>
             </field>

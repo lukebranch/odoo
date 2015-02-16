@@ -30,6 +30,7 @@ from openerp import tools
 from openerp.addons.core_calendar.timeline import Availibility, Timeline
 from openerp.tools.translate import _
 from openerp.tools import DEFAULT_SERVER_DATETIME_FORMAT as DT_FMT
+from openerp.tools import DEFAULT_SERVER_DATE_FORMAT as D_FMT
 
 
 class report_event_resource(osv.Model):
@@ -42,6 +43,16 @@ class report_event_resource(osv.Model):
         ('room', 'Room'),
         ('equipment', 'Equipment'),
     ]
+
+    def _get_preplanned_seances_duration(self, cr, uid, partner_id, start, end, context=None):
+        EventSeance = self.pool.get('event.seance')
+        seance_ids = EventSeance.search(cr, uid, [
+            ('resource_participation_ids.partner_id', 'in', [partner_id]),
+            ('date_begin', '=', False),
+            ('planned_week_date', '>=', start.strftime(D_FMT)),
+            ('planned_week_date', '<', end.strftime(D_FMT)),
+        ], context=context)
+        return sum(s.duration for s in EventSeance.browse(cr, uid, seance_ids, context=context))
 
     def _compute_resource_hours(self, cr, uid, partner_id, timeline, start, end, context=None):
         # Working Hours
@@ -95,15 +106,21 @@ class report_event_resource(osv.Model):
                                                        layers=['events'])
                          if p.status >= Availibility.BUSY_TENTATIVE)
 
+        sum_preplanned = self._get_preplanned_seances_duration(cr, uid, partner_id,
+                                                               start, end, context=context)
+
         # Effective Rate
         sum_avail_time = sum_wkhours - sum_leaves
-        eff_rate = sum_events / (sum_avail_time or 1.0)
+        sum_effective = sum_events + sum_preplanned
+        eff_rate = sum_effective / (sum_avail_time or 1.0)
 
         return {
             'working_hours': sum_wkhours,
             'effective_time': sum_events,
             'effective_rate': eff_rate,
             'leave_time': sum_leaves,
+            'preplanned_time': sum_preplanned,
+            'available_time': max(sum_avail_time - sum_effective, 0.0), # do not allow negative 'available time'
             'reserved_time': 0.0,  # TODO: compute reserved time based on calendar preferences
         }
 
@@ -212,7 +229,9 @@ class report_event_resource(osv.Model):
         'working_hours': fields.function(_get_resource_hours, type='float', string='Working Hours', multi='hours'),
         'leave_time': fields.function(_get_resource_hours, type='float', string='Leaves', multi='hours'),
         'reserved_time': fields.function(_get_resource_hours, type='float', string='Reserved', multi='hours'),
+        'preplanned_time': fields.function(_get_resource_hours, type='float', string='Preplanned Time', multi='hours'),
         'effective_time': fields.function(_get_resource_hours, type='float', string='Effective Time', multi='hours'),
+        'available_time': fields.function(_get_resource_hours, type='float', string='Available Time', multi='hours'),
         'effective_rate': fields.function(_get_resource_hours, type='float', string='Effective Rate', multi='hours'),
     }
 
