@@ -1794,9 +1794,9 @@ class EventEvent(osv.Model):
         'date_end': fields.function(_get_date_end, type='datetime', string='End Date',
                                     required=False, readonly=True, states={'draft': [('readonly', False)]},
                                     fnct_inv=_set_date_end, store={
-                                        'event.event': (_store_get_events_from_events, ['date_begin', 'content_ids', 'has_program'], 10),
-                                        'event.content': (_store_get_events_from_contents, [], 10),
-                                        'event.seance': (_store_get_events_from_seances, ['date_begin', 'duration', 'state'], 10),
+                                        'event.event': (_store_get_events_from_events, ['date_begin', 'content_ids', 'has_program'], 20),
+                                        'event.content': (_store_get_events_from_contents, [], 20),
+                                        'event.seance': (_store_get_events_from_seances, ['date_begin', 'duration', 'state'], 20),
                                     }),
     }
 
