@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 {
     'name': 'Website Report',
     'category': 'Website',
@@ -6,10 +7,11 @@
     'description': """
 Use the website editor to customize your reports.
         """,
-    'author': 'OpenERP SA',
+    'author': 'Odoo S.A.',
     'depends': ['base', 'website', 'report'],
     'data': [
         'views/layouts_templates.xml',
+        'views/report_templates.xml'
     ],
     'installable': True,
     'auto_install': True,

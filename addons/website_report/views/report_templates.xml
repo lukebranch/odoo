@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+<template id="website_html_container" inherit_id="report.html_container">
+    <xpath expr="//t[@t-call='report.layout']" position="replace">
+        <t t-call="website_report.layout">
+            <t t-raw="0"/>
+        </t>
+    </xpath>
+</template>
+</odoo>
