@@ -12,7 +12,7 @@ class account_asset_category(models.Model):
     _name = 'account.asset.category'
     _description = 'Asset category'
 
-    name = fields.Char(required=True, select=1)
+    name = fields.Char(required=True, index=True)
     note = fields.Text()
     account_analytic_id = fields.Many2one('account.analytic.account', string='Analytic Account')
     account_asset_id = fields.Many2one('account.account', string='Asset Account', required=True, domain=[('type', '=', 'other')])
@@ -33,7 +33,7 @@ class account_asset_category(models.Model):
     method_end = fields.Date('Ending date')
     prorata = fields.Boolean(string='Prorata Temporis', help='Indicates that the first depreciation entry for this asset have to be done from the purchase date instead of the first January')
     open_asset = fields.Boolean(string='Skip Draft State', help="Check this if you want to automatically confirm the assets of this category when created by invoices.")
-    type = fields.Selection([('sale', 'Sale: Revenue Recognition'), ('purchase', 'Purchase: Asset')], required=True, select=True, default='purchase')
+    type = fields.Selection([('sale', 'Sale: Revenue Recognition'), ('purchase', 'Purchase: Asset')], required=True, index=True, default='purchase')
 
     @api.onchange('account_asset_id')
     def onchange_account_asset(self):
@@ -52,6 +52,40 @@ class account_asset_asset(models.Model):
     _name = 'account.asset.asset'
     _description = 'Asset/Revenue Recognition'
     _inherit = ['mail.thread', 'ir.needaction_mixin']
+
+    account_move_line_ids = fields.One2many('account.move.line', 'asset_id', string='Entries', readonly=True, states={'draft': [('readonly', False)]})
+    entry_count = fields.Integer(compute='_entry_count', string='# Asset Entries')
+    name = fields.Char(string='Asset Name', required=True, readonly=True, states={'draft': [('readonly', False)]})
+    code = fields.Char(string='Reference', size=32, readonly=True, states={'draft': [('readonly', False)]}, default=lambda self: self.env['ir.sequence'].next_by_code('account.asset.code'))
+    value = fields.Float(string='Gross Value', required=True, readonly=True, digits=dp.get_precision('Account'), states={'draft': [('readonly', False)]})
+    currency_id = fields.Many2one('res.currency', string='Currency', required=True, readonly=True, states={'draft': [('readonly', False)]}, default=lambda self: self.env['res.users'].browse(self._uid).company_id.currency_id.id)
+    company_id = fields.Many2one('res.company', string='Company', required=True, readonly=True, states={'draft': [('readonly', False)]}, default=lambda self: self.env['res.company']._company_default_get('account.asset.asset'))
+    note = fields.Text(string='Note')
+    category_id = fields.Many2one('account.asset.category', string='Category', required=True, change_default=True, readonly=True, states={'draft': [('readonly', False)]})
+    date = fields.Date(string='Date', required=True, readonly=True, states={'draft': [('readonly', False)]}, default=fields.Date.context_today)
+    state = fields.Selection([('draft', 'Draft'), ('open', 'Running'), ('close', 'Close')], 'Status', required=True, copy=False, default='draft',
+        help="When an asset is created, the status is 'Draft'.\n"
+             "If the asset is confirmed, the status goes in 'Running' and the depreciation lines can be posted in the accounting.\n"
+             "You can manually close an asset when the depreciation is over. If the last line of depreciation is posted, the asset automatically goes in that status.")
+    active = fields.Boolean(string='Active', default=True)
+    partner_id = fields.Many2one('res.partner', string='Partner', readonly=True, states={'draft': [('readonly', False)]})
+    method = fields.Selection([('linear', 'Linear'), ('degressive', 'Degressive')], string='Computation Method', required=True, readonly=True, states={'draft': [('readonly', False)]}, default='linear', help="Choose the method to use to compute the amount of depreciation lines.\n  * Linear: Calculated on basis of: Gross Value / Number of Depreciations\n"
+        "  * Degressive: Calculated on basis of: Residual Value * Degressive Factor")
+    method_number = fields.Integer(string='Number of Depreciations', readonly=True, states={'draft': [('readonly', False)]}, default=5, help="The number of depreciations needed to depreciate your asset")
+    method_period = fields.Integer(string='Number of Months in a Period', required=True, readonly=True, default=12, states={'draft': [('readonly', False)]}, help="The amount of time between two depreciations, in months")
+    method_end = fields.Date(string='Ending Date', readonly=True, states={'draft': [('readonly', False)]})
+    method_progress_factor = fields.Float(string='Degressive Factor', readonly=True, default=0.3, states={'draft': [('readonly', False)]})
+    value_residual = fields.Float(compute='_amount_residual', method=True, digits=dp.get_precision('Account'), string='Residual Value')
+    method_time = fields.Selection([('number', 'Number of Depreciations'), ('end', 'Ending Date')], string='Time Method', required=True, readonly=True, default='number', states={'draft': [('readonly', False)]},
+        help="Choose the method to use to compute the dates and number of depreciation lines.\n"
+             "  * Number of Depreciations: Fix the number of depreciation lines and the time between 2 depreciations.\n"
+             "  * Ending Date: Choose the time between 2 depreciations and the date the depreciations won't go beyond.")
+    prorata = fields.Boolean(string='Prorata Temporis', readonly=True, states={'draft': [('readonly', False)]}, help='Indicates that the first depreciation entry for this asset have to be done from the purchase date instead of the first January / Start date of fiscal year')
+    history_ids = fields.One2many('account.asset.history', 'asset_id', string='History', readonly=True)
+    depreciation_line_ids = fields.One2many('account.asset.depreciation.line', 'asset_id', string='Depreciation Lines', readonly=True, states={'draft': [('readonly', False)], 'open': [('readonly', False)]})
+    salvage_value = fields.Float(string='Salvage Value', digits=dp.get_precision('Account'), help="It is the amount you plan to have that you cannot depreciate.", readonly=True, states={'draft': [('readonly', False)]})
+    invoice_id = fields.Many2one('account.invoice', string='Invoice', states={'draft': [('readonly', False)]}, copy=False)
+    type = fields.Selection(related="category_id.type", string='Type', required=True, default='purchase')
 
     @api.multi
     def unlink(self):
@@ -85,7 +119,6 @@ class account_asset_asset(models.Model):
 
     @api.multi
     def _compute_board_amount(self, sequence, residual_amount, amount_to_depr, undone_dotation_number, posted_depreciation_line_ids, total_days, depreciation_date):
-        #by default amount = 0
         amount = 0
         if sequence == undone_dotation_number:
             amount = residual_amount
@@ -124,9 +157,8 @@ class account_asset_asset(models.Model):
 
     @api.multi
     def compute_depreciation_board(self):
-        depreciation_line_obj = self.env['account.asset.depreciation.line']
-        posted_depreciation_line_ids = depreciation_line_obj.search([('asset_id', '=', self.id), ('move_check', '=', True)], order='depreciation_date desc')
-        depreciation_line_obj.search([('asset_id', '=', self.id), ('move_id', '=', False)]).unlink()
+        posted_depreciation_line_ids = self.env['account.asset.depreciation.line'].search([('asset_id', '=', self.id), ('move_check', '=', True)], order='depreciation_date desc')
+        self.env['account.asset.depreciation.line'].search([('asset_id', '=', self.id), ('move_id', '=', False)]).unlink()
         if self.value != 0.0:
             amount_to_depr = residual_amount = self.value_residual
             if self.prorata:
@@ -134,7 +166,7 @@ class account_asset_asset(models.Model):
             else:
                 # depreciation_date = 1st January of purchase year
                 asset_date = datetime.strptime(self.date, '%Y-%m-%d')
-                #if we already have some previous validated entries, starting date isn't 1st January but last entry + method period
+                # if we already have some previous validated entries, starting date isn't 1st January but last entry + method period
                 if (len(posted_depreciation_line_ids) > 0):
                     last_depreciation_date = datetime.strptime(posted_depreciation_line_ids[0].depreciation_date, '%Y-%m-%d')
                     depreciation_date = (last_depreciation_date+relativedelta(months=+self.method_period))
@@ -151,7 +183,7 @@ class account_asset_asset(models.Model):
                 amount = self._compute_board_amount(sequence, residual_amount, amount_to_depr, undone_dotation_number, posted_depreciation_line_ids, total_days, depreciation_date)
                 amount = self.currency_id.round(amount)
                 residual_amount -= amount
-                vals = {
+                self.env['account.asset.depreciation.line'].create({
                     'amount': amount,
                     'asset_id': self.id,
                     'sequence': sequence,
@@ -159,8 +191,7 @@ class account_asset_asset(models.Model):
                     'remaining_value': residual_amount,
                     'depreciated_value': (self.value - self.salvage_value) - (residual_amount + amount),
                     'depreciation_date': depreciation_date.strftime('%Y-%m-%d'),
-                }
-                depreciation_line_obj.create(vals)
+                })
                 # Considering Depr. Period as months
                 depreciation_date = (datetime(year, month, day) + relativedelta(months=+self.method_period))
                 day = depreciation_date.day
@@ -174,9 +205,8 @@ class account_asset_asset(models.Model):
 
     @api.multi
     def set_to_close(self):
-        dep_line_obj = self.env['account.asset.depreciation.line']
-        unposted_dep_line = dep_line_obj.search_count([('asset_id', 'in', self.ids),
-                                                       ('move_check', '=', False)])
+        unposted_dep_line = self.env['account.asset.depreciation.line'].search_count(
+            [('asset_id', 'in', self.ids), ('move_check', '=', False)])
         if unposted_dep_line:
             raise UserError(_('You cannot close a document which has unposted lines.'))
         self.message_post(body=_("Document closed."))
@@ -205,46 +235,12 @@ class account_asset_asset(models.Model):
     @api.onchange('value')
     def onchange_purchase_salvage_value(self):
         self.value_residual = self.value - self.salvage_value
-        self.value_residual = self.value - self.salvage_value
+        # self.value_residual = self.value - self.salvage_value
 
     @api.one
     @api.depends('account_move_line_ids')
     def _entry_count(self):
         self.entry_count = self.env['account.move.line'].search_count([('asset_id', 'in', self.ids)])
-
-    account_move_line_ids = fields.One2many('account.move.line', 'asset_id', string='Entries', readonly=True, states={'draft': [('readonly', False)]})
-    entry_count = fields.Integer(compute='_entry_count', string='# Asset Entries')
-    name = fields.Char(string='Asset Name', required=True, readonly=True, states={'draft': [('readonly', False)]})
-    code = fields.Char(string='Reference', size=32, readonly=True, states={'draft': [('readonly', False)]}, default=lambda self: self.env['ir.sequence'].next_by_code('account.asset.code'))
-    value = fields.Float(string='Gross Value', required=True, readonly=True, digits=dp.get_precision('Account'), states={'draft': [('readonly', False)]})
-    currency_id = fields.Many2one('res.currency', string='Currency', required=True, readonly=True, states={'draft': [('readonly', False)]}, default=lambda self: self.env['res.users'].browse(self._uid).company_id.currency_id.id)
-    company_id = fields.Many2one('res.company', string='Company', required=True, readonly=True, states={'draft': [('readonly', False)]}, default=lambda self: self.env['res.company']._company_default_get('account.asset.asset'))
-    note = fields.Text(string='Note')
-    category_id = fields.Many2one('account.asset.category', string='Category', required=True, change_default=True, readonly=True, states={'draft': [('readonly', False)]})
-    date = fields.Date(string='Date', required=True, readonly=True, states={'draft': [('readonly', False)]}, default=fields.Date.context_today)
-    state = fields.Selection([('draft', 'Draft'), ('open', 'Running'), ('close', 'Close')], 'Status', required=True, copy=False, default='draft',
-        help="When an asset is created, the status is 'Draft'.\n"
-             "If the asset is confirmed, the status goes in 'Running' and the depreciation lines can be posted in the accounting.\n"
-             "You can manually close an asset when the depreciation is over. If the last line of depreciation is posted, the asset automatically goes in that status.")
-    active = fields.Boolean(string='Active', default=True)
-    partner_id = fields.Many2one('res.partner', string='Partner', readonly=True, states={'draft': [('readonly', False)]})
-    method = fields.Selection([('linear', 'Linear'), ('degressive', 'Degressive')], string='Computation Method', required=True, readonly=True, states={'draft': [('readonly', False)]}, default='linear', help="Choose the method to use to compute the amount of depreciation lines.\n  * Linear: Calculated on basis of: Gross Value / Number of Depreciations\n"
-        "  * Degressive: Calculated on basis of: Residual Value * Degressive Factor")
-    method_number = fields.Integer(string='Number of Depreciations', readonly=True, states={'draft': [('readonly', False)]}, default=5, help="The number of depreciations needed to depreciate your asset")
-    method_period = fields.Integer(string='Number of Months in a Period', required=True, readonly=True, default=12, states={'draft': [('readonly', False)]}, help="The amount of time between two depreciations, in months")
-    method_end = fields.Date(string='Ending Date', readonly=True, states={'draft': [('readonly', False)]})
-    method_progress_factor = fields.Float(string='Degressive Factor', readonly=True, default=0.3, states={'draft': [('readonly', False)]})
-    value_residual = fields.Float(compute='_amount_residual', method=True, digits=dp.get_precision('Account'), string='Residual Value')
-    method_time = fields.Selection([('number', 'Number of Depreciations'), ('end', 'Ending Date')], string='Time Method', required=True, readonly=True, default='number', states={'draft': [('readonly', False)]},
-        help="Choose the method to use to compute the dates and number of depreciation lines.\n"
-             "  * Number of Depreciations: Fix the number of depreciation lines and the time between 2 depreciations.\n"
-             "  * Ending Date: Choose the time between 2 depreciations and the date the depreciations won't go beyond.")
-    prorata = fields.Boolean(string='Prorata Temporis', readonly=True, states={'draft': [('readonly', False)]}, help='Indicates that the first depreciation entry for this asset have to be done from the purchase date instead of the first January / Start date of fiscal year')
-    history_ids = fields.One2many('account.asset.history', 'asset_id', string='History', readonly=True)
-    depreciation_line_ids = fields.One2many('account.asset.depreciation.line', 'asset_id', string='Depreciation Lines', readonly=True, states={'draft': [('readonly', False)], 'open': [('readonly', False)]})
-    salvage_value = fields.Float(string='Salvage Value', digits=dp.get_precision('Account'), help="It is the amount you plan to have that you cannot depreciate.", readonly=True, states={'draft': [('readonly', False)]})
-    invoice_id = fields.Many2one('account.invoice', string='Invoice', states={'draft': [('readonly', False)]}, copy=False)
-    type = fields.Selection(related="category_id.type", string='Type', required=True, default='purchase')
 
     @api.one
     @api.constrains('prorata', 'method_time')
@@ -283,7 +279,9 @@ class account_asset_asset(models.Model):
     @api.multi
     def _compute_entries(self, period_id):
         period = self.env['account.period'].browse(period_id)
-        depreciation_ids = self.env['account.asset.depreciation.line'].search([('asset_id', 'in', self.ids), ('depreciation_date', '<=', period.date_stop), ('depreciation_date', '>=', period.date_start), ('move_check', '=', False)])
+        depreciation_ids = self.env['account.asset.depreciation.line'].search([
+            ('asset_id', 'in', self.ids), ('depreciation_date', '<=', period.date_stop),
+            ('depreciation_date', '>=', period.date_start), ('move_check', '=', False)])
         self = self.with_context(depreciation_date=period.date_stop)
         return depreciation_ids.create_move()
 
@@ -298,7 +296,7 @@ class account_asset_asset(models.Model):
     def write(self, vals):
         res = super(account_asset_asset, self).write(vals)
         # We need to compute the depreciation line if any changes is there in asset
-        if not 'depreciation_line_ids' in vals:
+        if 'depreciation_line_ids' not in vals:
             self.compute_depreciation_board()
         return res
 
@@ -320,25 +318,24 @@ class account_asset_depreciation_line(models.Model):
     _name = 'account.asset.depreciation.line'
     _description = 'Asset depreciation line'
 
-    @api.one
-    @api.depends('move_id')
-    def _get_move_check(self):
-        self.move_check = bool(self.move_id)
-
-    name = fields.Char(string='Depreciation Name', required=True, select=1)
+    name = fields.Char(string='Depreciation Name', required=True, index=True)
     sequence = fields.Integer(required=True)
     asset_id = fields.Many2one('account.asset.asset', string='Asset', required=True, ondelete='cascade')
     parent_state = fields.Selection(related='asset_id.state', string='State of Asset')
     amount = fields.Float(string='Current Depreciation', digits=dp.get_precision('Account'), required=True)
     remaining_value = fields.Float(string='Next Period Depreciation', digits=dp.get_precision('Account'), required=True)
     depreciated_value = fields.Float(string='Amount Already Depreciated', required=True)
-    depreciation_date = fields.Date('Depreciation Date', select=1)
+    depreciation_date = fields.Date('Depreciation Date', index=True)
     move_id = fields.Many2one('account.move', string='Depreciation Entry')
     move_check = fields.Boolean(compute='_get_move_check', string='Posted', track_visibility='always', store=True)
 
+    @api.one
+    @api.depends('move_id')
+    def _get_move_check(self):
+        self.move_check = bool(self.move_id)
+
     @api.multi
     def create_move(self):
-        move_line_obj = self.env['account.move.line']
         created_move_ids = []
         asset_ids = []
         for line in self:
@@ -364,7 +361,7 @@ class account_asset_depreciation_line(models.Model):
             categ_type = line.asset_id.category_id.type
             debit_account = line.asset_id.category_id.account_asset_id.id
             credit_account = line.asset_id.category_id.account_depreciation_id.id
-            move_line_obj.create({
+            self.env['account.move.line'].create({
                 'name': asset_name or reference,
                 'ref': reference,
                 'move_id': move.id,
@@ -380,7 +377,7 @@ class account_asset_depreciation_line(models.Model):
                 'date': depreciation_date,
                 'asset_id': line.asset_id.id if categ_type == 'sale' else False,
             })
-            move_line_obj.create({
+            self.env['account.move.line'].create({
                 'name': asset_name or reference,
                 'ref': reference,
                 'move_id': move.id,

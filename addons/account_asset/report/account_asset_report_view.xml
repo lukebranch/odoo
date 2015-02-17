@@ -87,7 +87,7 @@
     </record>
     
     <!--
-        Asset Revenue Recognition Serach
+        Asset Revenue Recognition Search
     -->
     
      <record id="view_asset_revenue_report_search" model="ir.ui.view">

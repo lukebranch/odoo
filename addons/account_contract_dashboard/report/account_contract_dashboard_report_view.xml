@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+<data>
+
+    <record model="ir.ui.view" id="action_account_asset_report_pivot">
+        <field name="name">account.invoice.line.pivot</field>
+        <field name="model">account.invoice.line</field>
+        <field name="arch" type="xml">
+            <pivot string="Recurrent Revenue Analysis" disable_linking="True">
+                <field name="asset_category_id" type="row"/>
+                <field name="mrr" type="measure"/>
+                <field name="price_subtotal" type="measure"/>
+                <field name="partner_id" type="col"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record model="ir.actions.act_window" id="action_contract_dashboard_report">    
+        <field name="name">Recurrent Revenue Analysis</field>
+        <field name="res_model">account.invoice.line</field>
+        <field name="view_type">form</field>
+        <field name="view_mode">tree,form</field>
+        <field name="domain">[('asset_category_id', '=', 'True')]</field>
+        <field name="context">{}</field>
+        <field name="help" type="html">
+          <p>
+            From this report, you can have an overview of all your recurrent revenue;
+          </p>
+        </field>
+    </record>
+
+    <menuitem action="action_contract_dashboard_report"
+          id="menu_action_contract_dashboard_report"
+          parent="account.menu_finance_reporting" sequence="21"/>
+</data>
+</openerp>

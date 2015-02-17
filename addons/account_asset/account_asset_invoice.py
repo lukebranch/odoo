@@ -3,6 +3,7 @@
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from openerp import models, fields, api
+import openerp.addons.decimal_precision as dp
 
 
 class account_invoice(models.Model):
@@ -25,22 +26,34 @@ class account_invoice(models.Model):
 class account_invoice_line(models.Model):
     _inherit = 'account.invoice.line'
 
+    asset_category_id = fields.Many2one('account.asset.category', string='Asset Category')
+    asset_start_date = fields.Date(string='Asset End Date', compute='_get_asset_date', readonly=True, store=True)
+    asset_end_date = fields.Date(string='Asset Start Date', compute='_get_asset_date', readonly=True, store=True)
+    mrr = fields.Float(string='Monthly Recurring Revenue', compute='_get_mrr', store=True, readonly=True, digits=dp.get_precision('Account'))
+
+    @api.one
+    @api.depends('asset_category_id')
+    def _get_mrr(self):
+        if self.asset_category_id:
+            self.mrr = self.price_subtotal/(self.asset_category_id.method_period*self.asset_category_id.method_number)
+            # mrr negative if supplier invoice
+            if self.invoice_id.type in ['in_invoice', 'out_refund']:
+                self.mrr = -self.mrr
+        else:
+            self.mrr = 0.
+
     @api.one
     @api.depends('asset_category_id')
     def _get_asset_date(self):
-        if self.asset_category_id:
+        if not self.asset_category_id:
             self.asset_start_date = False
             self.asset_end_date = False
         else:
-            self.asset_start_date = self.invoice_id.date_invoice
+            self.asset_start_date = self.invoice_id.date_due
             months = self.asset_category_id.method_number * self.asset_category_id.method_period
-            start_date = datetime.strptime(self.invoice_id.date_invoice, '%Y-%m-%d')
+            start_date = datetime.strptime(self.invoice_id.date_due, '%Y-%m-%d')
             end_date = start_date + relativedelta(months=months)
             self.asset_end_date = end_date.strftime('%Y-%m-%d')
-
-    asset_category_id = fields.Many2one('account.asset.category', string='Asset Category')
-    asset_start_date = fields.Date(string='Asset End Date', compute='_get_asset_date', readonly=True)
-    asset_end_date = fields.Date(string='Asset Start Date', compute='_get_asset_date', readonly=True)
 
     @api.one
     def asset_create(self):

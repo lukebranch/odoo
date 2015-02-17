@@ -21,7 +21,7 @@ It keeps track of the installments occurred on those revenue recognition, and cr
     'website': 'https://www.odoo.com/page/accounting',
     'category': 'Accounting & Finance',
     'sequence': 32,
-    'demo': ['views/account_asset_demo.xml'],
+    'demo': ['account_asset_demo.xml'],
     'test': [
         'test/account_asset_demo.yml',
         'test/account_asset.yml',
