@@ -52,7 +52,7 @@
                         // bind event change status
                         odoo_support.im_livechat.support.on('im_odoo_support_status', this, function(is_online){
                             if(openerp.im_chat && openerp.im_chat.single){
-                                openerp.im_chat.single.support_user.$(".oe_im_user_online").toggle(is_online);
+                                openerp.im_chat.single.support_user.$(".o_im_chat_status").toggle(is_online);
                             }
                         });
                     }catch(e){
@@ -111,7 +111,7 @@
                     "image_url": "/im_odoo_support/static/img/odoo_o_small.png"
                 };
                 var widget = new openerp.im_chat.UserWidget(self, user);
-                widget.prependTo(self.$(".oe_im_users"));
+                widget.prependTo(self.$(".o_im_chat_users"));
                 widget.$el.addClass('odoo_support_contact');
                 this.support_user = widget;
 
@@ -120,7 +120,7 @@
             search_users_status: function(e){
                 var self = this;
                 this._super.apply(this, arguments).then(function(res){
-                    if(self.$('.oe_im_searchbox').val().length === 0 || _t("Odoo Support").toLowerCase().indexOf(self.$('.oe_im_searchbox').val().toLowerCase()) != -1){
+                    if(self.$('.o_im_chat_user_search_box').val().length === 0 || _t("Odoo Support").toLowerCase().indexOf(self.$('.o_im_chat_user_search_box').val().toLowerCase()) != -1){
                         self.support_user.$el.show();
                     }else{
                         self.support_user.$el.hide();

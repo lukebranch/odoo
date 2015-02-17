@@ -69,30 +69,34 @@
     </div>
 </t>
 
-<t t-name="im_chat.UserWidget">
-    <div class="oe_im_user ui-draggable">
-        <span class="oe_im_user_clip">
-            <img t-att-src="widget.get('image_url')" class="oe_im_user_avatar"/>
-        </span>
-        <span class="oe_im_user_name"><t t-esc="widget.get('name')"/></span>
-        <img t-att-src="'/im_chat/static/src/img/green.png'" t-att-data-im-user-id="widget.get('id')" class="oe_im_user_online"/>
-    </div>
-</t>
-<t t-name="im_chat.InstantMessaging">
-    <div class="oe_im">
-        <div class="oe_im_frame_header">
-            <i class="fa fa-search oe_im_search_icon"/>
-            <input class="oe_im_searchbox" t-att-placeholder="_t('Search users...')"/>
+    <t t-name="im_chat.UserWidget">
+        <div class="o_im_chat_user_card row ui-draggable" t-att-title="widget.get('name')">
+            <div class="col-md-2">
+                <img t-att-src="widget.get('image_url')" class="o_im_chat_avatar" t-att-alt="widget.get('name')"/>
+            </div>
+            <div class="col-md-10 o_im_chat_user_name">
+                <img t-att-src="'/im_chat/static/src/img/green.png'" t-att-data-im-user-id="widget.get('id')" class="pull-right o_im_chat_status"/>
+                <t t-esc="widget.get('name')"/>
+            </div>
         </div>
-        <div class="oe_im_users"></div>
-        <div class="oe_im_content"></div>
-    </div>
-</t>
-<t t-name="im_chat.ImTopButton">
-    <li t-att-title='_t("Display Instant Messaging")'>
-        <a href="#">
-              <i id="oe_topbar_imbutton_icon" class="fa fa-comments-o"/>
-        </a>
-    </li>
-</t>
+    </t>
+    <t t-name="im_chat.InstantMessaging">
+        <div class="o_im_chat_sidebar">
+            <div class="o_im_chat_search">
+                <div class="input-group">
+                    <input type="text" class="form-control o_im_chat_user_search_box" t-att-placeholder="_t('Search users')"/>
+                    <div class="input-group-addon oe_im_search_icon"><i class="fa fa-search"/></div>
+                </div>
+            </div>
+            <div class="oe_im_users o_im_chat_users"></div>
+            <div class="o_im_chat_conversations"></div>
+        </div>
+    </t>
+    <t t-name="im_chat.ImTopButton">
+        <li t-att-title='_t("Display Instant Messaging")'>
+            <a href="#">
+                  <i id="oe_topbar_imbutton_icon" class="fa fa-comments-o"/>
+            </a>
+        </li>
+    </t>
 </templates>
