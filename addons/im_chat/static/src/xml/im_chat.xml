@@ -1,85 +1,87 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <templates xml:space="preserve">
-<t t-name="im_chat.Conversation">
-    <div class="oe_im_chatview_header">
-        <span class="oe_im_chatview_header_name"></span>
-        <span class="oe_im_chatview_nbr_messages"/>
-        <span class="oe_im_chatview_right">
-            <div class="btn-group oe_im_chatview_option_group">
-              <span class="oe_im_chatview_options dropdown-toggle" data-toggle="dropdown">
-                <i class="fa fa-cogs"></i>
-              </span>
-              <ul class="dropdown-menu oe_im_chatview_option_list" role="menu">
+    <t t-name="im_chat.Conversation">
+        <!-- header -->
+        <div class="o_im_chatview_header">
+            <span class="header_name"></span>
+            <span class="nbr_messages"/>
+            <span class="right_buttons">
                 <!-- options -->
-              </ul>
-            </div>
-            <div class="oe_im_chatview_close">×</div>
-        </span>
-    </div>
-    <div class="oe_im_chatview_content">
-        <div class="oe_im_chatview_status"/>
-        <div class="oe_im_chatview_content_bubbles"></div>
-    </div>
-    <div class="oe_im_chatview_footer">
-        <input class="oe_im_chatview_input" t-att-placeholder="widget.inputPlaceholder" />
-    </div>
-</t>
-<t t-name="im_chat.Conversation_content">
-    <t t-foreach="_.keys(list)" t-as="date">
-        <div class="oe_im_chatview_date_separator">
-            <t t-esc="window.moment(date).format('LL')"/>
+                <div t-if="widget.actions.length !== 0" class="btn-group button_option_group">
+                    <span class="dropdown-toggle" data-toggle="dropdown">
+                        <i class="fa fa-cogs"></i>
+                    </span>
+                    <ul class="dropdown-menu" role="menu">
+                        <t t-foreach="widget.actions" t-as="action">
+                            <li t-att-class="action.class">
+                                <i t-att-class="action.icon_class"></i> <t t-esc="action.label"/>
+                            </li>
+                        </t>
+                    </ul>
+                </div>
+                <!-- close button -->
+                <div class="button_close"><i class="fa fa-close"/></div>
+            </span>
         </div>
-        <t t-foreach="list[date]" t-as="bubble">
-            <t t-if="bubble[0].type === 'message'">
-                <t t-call="im_chat.Conversation_message_bubble">
-                    <t t-set="messages" t-value="bubble"/>
-                </t>
-            </t>
-            <t t-if="bubble[0].type === 'meta'">
-                <t t-call="im_chat.Conversation_technical_bubble">
-                    <t t-set="messages" t-value="bubble"/>
-                </t>
-            </t>
-        </t>
+        <!-- content -->
+        <div class="o_im_chatview_content">
+            <!-- keep class 'oe_im_chatview_status' for retro compatibily -->
+            <div class="oe_im_chatview_status container_infos"></div>
+            <div class="container_messages"></div>
+        </div>
+        <!-- footer -->
+        <div class="o_im_chatview_footer">
+            <input class="o_im_chat_input" t-att-placeholder="widget.inputPlaceholder" />
+        </div>
     </t>
-</t>
-<t t-name="im_chat.Conversation_message_bubble">
-    <div class="oe_im_chatview_message_bubble">
-        <div class="oe_im_chatview_clip">
-            <img class="oe_im_chatview_avatar" t-att-src="_.last(messages).from_id[2]"/>
-        </div>
-        <div class="oe_im_chatview_from"><t t-esc="_.last(messages).from_id[1]"/></div>
-        <div class="oe_im_chatview_bubble_list">
-            <t t-foreach="messages" t-as="m">
-                <div class="oe_im_chatview_bubble_item"><t t-raw="m.message"/></div>
+
+    <t t-name="im_chat.Conversation_content">
+        <div class="o_im_chat_message_list_containerKK">
+            <t t-foreach="_.keys(messages_grouped)" t-as="date">
+                <div class="row">
+                    <div class="col-md-12 col-xs-12 text-center date_separator">
+                        <span class="label label-default"><t t-esc="date_labels[date]"/></span>
+                    </div>
+                </div>
+                <t t-foreach="_.keys(messages_grouped[date])" t-as="minute">
+                    <t t-foreach="messages_grouped[date][minute]" t-as="messages_user">
+                        <t t-set="first_message" t-value="_.first(messages_user)"/>
+                        <div t-att-class="'row message_container '+(first_message['class'] == 'right' ? 'base_sent' : 'base_receive')">
+                            <div t-if="first_message['class'] == 'left'" class="col-md-2 col-xs-2 avatar">
+                               <img class="img-responsive img-rounded" t-att-src="first_message.from_id[2]" t-att-title="first_message.from_id[1]" t-att-alt="first_message.from_id[1]"/>
+                            </div>
+                            <div class="col-md-10 col-xs-10">
+                                <div t-att-class="'message_content '+(first_message['class'] == 'right' ? 'msg_sent' : 'msg_receive')">
+                                    <t t-foreach="messages_user" t-as="msg">
+                                        <p><t t-raw="msg['message']"/></p>
+                                    </t>
+                                    <div class="message_infos">
+                                        <time t-att-datetime="first_message['create_date']" class="text-muted"><t t-esc="first_message.from_id[1]"/> • <t t-esc="first_message['hour']"/></time>
+                                    </div>
+                                </div>
+                            </div>
+                            <div t-if="first_message['class'] == 'right'" class="col-md-2 col-xs-2 avatar">
+                               <img class="img-responsive img-rounded" t-att-src="first_message.from_id[2]" t-att-title="first_message.from_id[1]" t-att-alt="first_message.from_id[1]"/>
+                            </div>
+                        </div>
+                    </t>
+                </t>
             </t>
         </div>
-        <div class="oe_im_chatview_time"><t t-esc="window.moment((_.last(messages).create_date)).format('LT')"/></div>
-    </div>
-</t>
-<t t-name="im_chat.Conversation_technical_bubble">
-    <div class="oe_im_chatview_technical_bubble">
-        <div class="oe_im_chatview_from"><t t-esc="_.last(messages).from_id[1]"/></div>
-        <div>
-            <t t-foreach="messages" t-as="m">
-                <div><t t-raw="m.message"/></div>
-            </t>
-        </div>
-        <div class="oe_im_chatview_time"><t t-esc="window.moment((_.last(messages).create_date)).format('LT')"/></div>
-    </div>
-</t>
+    </t>
 
     <t t-name="im_chat.UserWidget">
         <div class="o_im_chat_user_card row ui-draggable" t-att-title="widget.get('name')">
-            <div class="col-md-2">
+            <div class="col-md-3">
                 <img t-att-src="widget.get('image_url')" class="o_im_chat_avatar" t-att-alt="widget.get('name')"/>
             </div>
-            <div class="col-md-10 o_im_chat_user_name">
+            <div class="col-md-9 o_im_chat_user_name">
                 <img t-att-src="'/im_chat/static/src/img/green.png'" t-att-data-im-user-id="widget.get('id')" class="pull-right o_im_chat_status"/>
-                <t t-esc="widget.get('name')"/>
+                <span><t t-esc="widget.get('name')"/></span>
             </div>
         </div>
     </t>
+
     <t t-name="im_chat.InstantMessaging">
         <div class="o_im_chat_sidebar">
             <div class="o_im_chat_search">
@@ -92,6 +94,7 @@
             <div class="o_im_chat_conversations"></div>
         </div>
     </t>
+
     <t t-name="im_chat.ImTopButton">
         <li t-att-title='_t("Display Instant Messaging")'>
             <a href="#">

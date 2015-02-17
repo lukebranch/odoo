@@ -49,6 +49,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    padding-left: 0px;
 }
 
 .o_im_chat_sidebar .o_im_chat_user_card .o_im_chat_status{

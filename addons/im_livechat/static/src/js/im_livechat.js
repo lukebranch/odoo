@@ -18,9 +18,6 @@
             this.loading_history = true; // since the session is kept after a refresh, anonymous can reload their history
             this.feedback = false;
         },
-        define_options: function(){
-            // no options for anonymous user
-        },
         show: function(){
             this._super.apply(this, arguments);
             this.shown = true;
@@ -29,7 +26,7 @@
             this._super.apply(this, arguments);
             this.shown = false;
         },
-        update_fold_state: function(state){
+        session_update_state: function(state){
             if(state === 'closed'){
                 this.destroy();
             }else{
@@ -53,9 +50,9 @@
         click_close: function(event) {
             if(!this.feedback && (this.get('messages').length > 1)){
                 this.feedback = new im_livechat.Feedback(this);
-                this.$(".oe_im_chatview_content").empty();
-                this.$(".oe_im_chatview_input").prop('disabled', true);
-                this.feedback.appendTo( this.$(".oe_im_chatview_content"));
+                this.$(".o_im_chatview_content").empty();
+                this.$(".o_im_chat_input").prop('disabled', true);
+                this.feedback.appendTo( this.$(".o_im_chatview_content"));
                 // bind event to close conversation
                 this.feedback.on("feedback_sent", this, this.click_close);
             }else{
@@ -140,7 +137,7 @@
     });
 
     im_livechat.ChatButton = openerp.Widget.extend({
-        className: "openerp_style oe_chat_button",
+        className: "o_im_livechat_button",
         events: {
             "click": "click"
         },
@@ -157,7 +154,7 @@
             this.$().append(openerp.qweb.render("im_livechat.chatButton", {widget: this}));
             // set up the manager
             this.manager = new openerp.im_chat.ConversationManager(this, this.options);
-            this.manager.set("bottom_offset", $('.oe_chat_button').outerHeight());
+            this.manager.set("bottom_offset", $('.o_im_livechat_button').outerHeight());
             this.manager.notification = function(notif){ // override the notification default function
                 alert(notif);
             }
@@ -187,7 +184,7 @@
             if(session.state === 'closed'){
                 return;
             }
-            this.conv = this.manager.apply_session(session);
+            this.conv = this.manager.session_apply(session);
             this.conv.on("destroyed", this, function() {
                 openerp.bus.bus.stop_polling();
                 delete self.conv;
@@ -206,7 +203,7 @@
             if(this.session.users.length > 0){
                 if (self.options.defaultMessage) {
                     setTimeout(function(){
-                        self.conv.received_message({
+                        self.conv.message_receive({
                             id : 1,
                             type: "message",
                             message: self.options.defaultMessage,
@@ -232,21 +229,21 @@
         start: function(){
             this._super.apply(this.arguments);
             // bind events
-            this.$('.oe_livechat_rating_choices img').on('click', _.bind(this.click_smiley, this));
+            this.$('.o_livechat_rating_choices img').on('click', _.bind(this.click_smiley, this));
             this.$('#rating_submit').on('click', _.bind(this.click_send, this));
         },
         click_smiley: function(ev){
             var self = this;
             this.rating = parseInt($(ev.currentTarget).data('value'));
-            this.$('.oe_livechat_rating_choices img').removeClass('selected');
-            this.$('.oe_livechat_rating_choices img[data-value="'+this.rating+'"]').addClass('selected');
+            this.$('.o_livechat_rating_choices img').removeClass('selected');
+            this.$('.o_livechat_rating_choices img[data-value="'+this.rating+'"]').addClass('selected');
             // only display textearea if bad smiley selected
             var close_conv = false;
             if(this.rating == 0){
-                this.$('.oe_livechat_rating_reason').show();
+                this.$('.o_livechat_rating_reason').show();
 
             }else{
-                this.$('.oe_livechat_rating_reason').hide();
+                this.$('.o_livechat_rating_reason').hide();
                 close_conv = true;
             }
             this._send_feedback(close_conv).then(function(){

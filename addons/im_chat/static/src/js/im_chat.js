@@ -7,17 +7,16 @@
     var instance = openerp;
 
     // constants
-    var NBR_LIMIT_HISTORY = 20;
     var USERS_LIMIT = 20;
 
     // ########## CONVERSATION extentions ###############
 
     instance.im_chat.Conversation.include({
         // user actions
-        _start_action_menu: function(){
+        prepare_action_menu: function(){
+            this._super();
             this._add_action(_t('Shortcuts'), 'im_chat_option_shortcut', 'fa fa-info-circle', this.action_shorcode);
             this._add_action(_t('Quit discussion'), 'im_chat_option_quit', 'fa fa-minus-square', this.action_quit_session);
-            return this._super();
         },
         action_shorcode: function(e){
             return instance.client.action_manager.do_action({
@@ -39,9 +38,10 @@
             var self = this;
             var Session = new openerp.Model("im_chat.session");
             return Session.call("quit_user", [this.get("session").uuid]).then(function(res) {
-               if(! res){
-                    self.do_warn(_t("Warning"), _t("You are only 2 identified users. Just close the conversation to leave."));
-               }
+                if(! res){
+                    // causes crash, don"t know why :/
+                    //self.do_warn(_t("Warning"), _t("You are only 2 identified users. Just close the conversation to leave."));
+                }
             });
         },
         // window title
@@ -127,7 +127,7 @@
             $(window).resize(_.bind(this.position_compute, this));
             this.position_compute();
             this.$el.css("right", -this.$el.outerWidth());
-            // bind events
+            // business
             this.on("change:current_search", this, this.user_search);
 
             // TODO : remove this feature, and create group conversation !
@@ -145,7 +145,7 @@
             // fetch the unread message and the recent activity (e.i. to re-init in case of refreshing page)
             return openerp.session.rpc("/im_chat/init", {}).then(function(notifications){
                 _.each(notifications, function(notif){
-                    self.conv_manager.on_notification(notif);
+                    self.conv_manager.on_notification(notif, {'load_history': true});
                 });
                 // start polling
                 self.bus.start_polling();
@@ -221,7 +221,7 @@
             var self = this;
             var Sessions = new openerp.web.Model("im_chat.session");
             return Sessions.call("session_get", [user_id]).then(function(session) {
-                self.conv_manager.activate_session(session, true);
+                self.conv_manager.session_apply(session, {'focus': true, 'force_open': true});
             });
         },
         user_update_status: function(user_list){
