@@ -126,10 +126,9 @@ class stock_picking(osv.osv):
         delivery_invoices = {}
 
         for move in moves:
-            if move.procurement_id and move.procument_id.sale_id:
-                for invoice in move.procurement_id.sale_id.invoice_ids:
-                    if invoice.id in invoice_ids:
-                        delivery_invoices[invoice] = move.picking_id
+            for invoice in move.picking_id.sale_id.invoice_ids:
+                if invoice.id in invoice_ids:
+                    delivery_invoices[invoice] = move.picking_id
         if delivery_invoices:
             for invoice, picking in delivery_invoices.items():
                 invoice_line = self._prepare_shipping_invoice_line(cr, uid, picking, invoice, context=context)
