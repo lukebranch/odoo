@@ -1,0 +1,49 @@
+div.box {
+  padding: 10px;
+  padding: 2vw;
+  color: #676a6c;
+  background-color: #FFFFFF;
+  border-radius: 0px;
+  -webkit-box-shadow: 0 2px 0 rgba(0, 0, 0, 0.25);
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.25);
+  /*background-image: url(/account_contract_dashboard/static/src/img/profile_bg.png);*/
+  background-size: cover;
+  margin-bottom: 1em;
+  opacity: 0.8;
+}
+
+div.box:hover {
+  opacity: 1;
+  filter: alpha(opacity=1);
+}
+
+div.box h1, h2 {
+    margin-top: 0px;
+}
+
+.trend {
+position: absolute;
+z-index: 1;
+right: 25px;
+top: 30px;
+text-align: center;
+}
+
+a.fill-div {
+    display: block;
+    height: 100%;
+    width: 100%;
+    text-decoration: none;
+}
+
+.oGreen {
+    color: #26b548;
+}
+
+.oRed {
+    color: #df2e28;
+}
+
+.upper {
+    text-transform: uppercase;
+}

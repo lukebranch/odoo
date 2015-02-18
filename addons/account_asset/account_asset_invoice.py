@@ -34,6 +34,7 @@ class account_invoice_line(models.Model):
     @api.one
     @api.depends('asset_category_id')
     def _get_mrr(self):
+        # use MAT field to caculate MRR
         if self.asset_category_id:
             self.mrr = self.price_subtotal/(self.asset_category_id.method_period*self.asset_category_id.method_number)
             # mrr negative if supplier invoice
@@ -45,15 +46,15 @@ class account_invoice_line(models.Model):
     @api.one
     @api.depends('asset_category_id')
     def _get_asset_date(self):
-        if not self.asset_category_id:
-            self.asset_start_date = False
-            self.asset_end_date = False
-        else:
+        if self.asset_category_id:
             self.asset_start_date = self.invoice_id.date_due
             months = self.asset_category_id.method_number * self.asset_category_id.method_period
             start_date = datetime.strptime(self.invoice_id.date_due, '%Y-%m-%d')
             end_date = start_date + relativedelta(months=months)
             self.asset_end_date = end_date.strftime('%Y-%m-%d')
+        else:
+            self.asset_start_date = False
+            self.asset_end_date = False
 
     @api.one
     def asset_create(self):
