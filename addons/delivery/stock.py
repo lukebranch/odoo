@@ -134,7 +134,7 @@ class stock_picking(osv.osv):
                 invoice_line = self._prepare_shipping_invoice_line(cr, uid, picking, invoice, context=context)
                 if invoice_line:
                     invoice_line_obj.create(cr, uid, invoice_line)
-            invoice_obj.button_compute(cr, uid, [invoice.id for invoice in delivery_invoices.values()], context=context, set_total=(inv_type in ('in_invoice', 'in_refund')))
+            invoice_obj.button_compute(cr, uid, [invoice.id for invoice in delivery_invoices.values()], set_total=(inv_type in ('in_invoice', 'in_refund')), context=context)
         return invoice_ids
 
     def _get_default_uom(self, cr, uid, context=None):
