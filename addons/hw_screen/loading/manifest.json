@@ -1,0 +1,19 @@
+{
+  "manifest_version": 2,
+
+  "name": "Pos Screen AutoLoad",
+  "description": "This extension wait for local server and display / page after",
+  "version": "1.0",
+
+  "browser_action": {
+    "default_icon": "icon.png"
+  },
+  "permissions": [
+    "activeTab",
+    "https://ajax.googleapis.com/",
+    "http://localhost:8069/"
+  ],
+  "chrome_url_overrides" : {
+    "newtab": "loading.html"
+  }
+}
