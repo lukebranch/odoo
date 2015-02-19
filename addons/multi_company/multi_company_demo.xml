@@ -242,7 +242,7 @@
         </record>
 
 <!-- Journals for Odoo BE-->
-
+<!--
         <record id="sales_journal_multi_be" model="account.journal">
             <field name="name">Sales Journal - (Odoo BE)</field>
             <field name="code">SAJ-Odoo BE</field>
@@ -293,7 +293,7 @@
             <field name="default_credit_account_id" ref="account.cash"/>
             <field name="analytic_journal_id" ref="analytic.sit"/>
             <field name="company_id" ref="res_company_oerp_be"/>
-        </record>
+        </record>-->
 
 <!--        Project        -->
 
