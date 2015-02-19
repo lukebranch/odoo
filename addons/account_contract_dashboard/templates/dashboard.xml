@@ -22,69 +22,26 @@
                 <a href="#">All products</a>
               </div>
               <div class="col-sm-8 text-right">
-                <input type="date" name="date_from" t-att-value="default_date_from"/> to <input type="date" name="date_to" t-att-value="default_date_to"/> <button class="btn btn-primary">Update</button>
+                <input type="date" name="start_date" t-att-value="start_date"/> to <input type="date" name="end_date" t-att-value="end_date"/> <button class="btn btn-primary">Update</button>
               </div>
             </div>
           </div>
 
           <div class="row">
-            <div class="col-sm-12">
-
+            <t t-foreach="all_stats" t-as="stat">
               <div class="col-sm-4">
-
-                <a class="fill-div" href="account_contract_dashboard/detailed/mrr">
-                  <div class="box">
-                    <div>
-                      <h1 style="font-size: 42px; color: #2693d5;"><t t-esc="mrr"/><t t-esc="currency"/></h1>
-                      <div class="trend">
-                        <h2 class="oGreen mb0">+25%</h2>
-                        <span style="font-size: 10px;">30 Days Ago</span>
+                <a class="fill-div" t-att-href="'account_contract_dashboard/detailed/%s' % stat['code']">
+                  <div class="box stat-box" t-att-name="stat['name']" t-att-code="stat['code']">
+                    <div class="loading">
+                      <div id="big-circle">
+                        <div id="little-circle">
+                        </div>
                       </div>
-                    </div>
-                    <div>
-                      <h4 class="text-center mt32">Monthly Recurring Revenue</h4>
                     </div>
                   </div>
                 </a>
               </div>
-
-              <div class="col-sm-4">
-
-                <a class="fill-div" href="account_contract_dashboard/detailed/mrr">
-                  <div class="box">
-                    <div>
-                      <h1 style="font-size: 42px; color: #2693d5;"><t t-esc="938"/><t t-esc="currency"/></h1>
-                      <div class="trend">
-                        <h2 class="oRed mb0">+6.6%</h2>
-                        <span style="font-size: 10px;">30 Days Ago</span>
-                      </div>
-                    </div>
-                    <div>
-                      <h4 class="text-center mt32">Net Revenue</h4>
-                    </div>
-                  </div>
-                </a>
-              </div>
-
-              <div class="col-sm-4">
-
-                <a class="fill-div" href="account_contract_dashboard/detailed/mrr">
-                  <div class="box">
-                    <div>
-                      <h1 style="font-size: 42px; color: #2693d5;"><t t-esc="28.803"/><t t-esc="currency"/></h1>
-                      <div class="trend">
-                        <h2 class="oGreen mb0">+5.9%</h2>
-                        <span style="font-size: 10px;">30 Days Ago</span>
-                      </div>
-                    </div>
-                    <div>
-                      <h4 class="text-center mt32">Average Revenue per Contract</h4>
-                    </div>
-                  </div>
-                </a>
-              </div>
-
-            </div>
+            </t>
           </div>
 
       </div>
@@ -113,14 +70,14 @@
                 <a href="#">All products</a>
               </div>
               <div class="col-sm-8 text-right">
-                <input type="date" name="date_from" t-att-value="default_date_from"/> to <input type="date" name="date_to" t-att-value="default_date_to"/> <button class="btn btn-primary">Update</button>
+                <input type="date" name="start_date" t-att-value="start_date"/> to <input type="date" name="end_date" t-att-value="end_date"/> <button class="btn btn-primary">Update</button>
               </div>
             </div>
           </div>
 
           <div class="row">
             <div id="chart_div" class="box" style="height: 300px;">
-              <input type="hidden" name="stat_type" value="mrr"/>
+              <input type="hidden" name="stat_type" t-att-value="stat_type"/>
             </div>
           </div>
 
@@ -128,25 +85,25 @@
             <div class="box">
               <div class="col-md-3">
                 <h4 class="text-muted upper">Current</h4>
-                <h1>28.031€ <small class="oGreen">+7%</small></h1>
+                <h1><t t-esc="value_now"/><t t-esc="currency"/> <small class="oGreen">+7%</small></h1>
               </div>
 
 
               <div class="col-md-3">
                 <h4 class="text-muted">1 MONTH AGO</h4>
-                <h1>28.031€</h1>
+                <h1><t t-esc="value_1_month_ago"/><t t-esc="currency"/></h1>
               </div>
 
 
               <div class="col-md-3">
                 <h4 class="text-muted">3 MONTHS AGO</h4>
-                <h1>28.031€</h1>
+                <h1><t t-esc="value_3_month_ago"/><t t-esc="currency"/></h1>
               </div>
 
 
               <div class="col-md-3">
-                <h4 class="text-muted">12 MONTH AGO</h4>
-                <h1>28.031€</h1>
+                <h4 class="text-muted">12 MONTHS AGO</h4>
+                <h1><t t-esc="value_12_month_ago"/><t t-esc="currency"/></h1>
               </div>
               a
             </div>

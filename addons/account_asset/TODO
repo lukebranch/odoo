@@ -1,0 +1,21 @@
+- [revenue recognition] revenue recognition category should be selected somewhere (either on product template, either on customer invoice)
+	--> customer invoice line : "Revenue Recognition Category" and "Revenue Recognition Date" ?
+- [invoice creation] account linked to revenue recognition has to be different if asset or revenue recognition
+- ["Asset/Revenue recognition category" creation] wrong labels for accounts
+	- Account Fields for Revenue Recognition
+		- Revenue Recognition Account: account_asset_id
+		- Recongnition Income Account: account_income_recognition_id [NEW FIELD]
+	
+	- Account Fields for Asset
+		- Asset Account: account_asset_id
+		- Depreciation Account: account_depreciation_id 
+		- Depreciation Expenses Account: account_expense_depreciation_id
+- [Menu in Accounting] : wrong menus ?
+	- [ADD] Accounting/Assets/ Revenue Recognition --> deferred revenue ?
+	- [ADD] Accounting/Assets/ Revenue Recognition Hierarchy --> ueseless ?
+- View graph of Revenue Recognition/Asset --> does not exist (only list & form)
+- View form of Deferred Revenue
+	- "Asset Name" --> "Revenue Recognition Name" ?
+- Verify wizard in Accounting/Periodic Processing/Draft Entries/Generate Monthly ...
+- Accounting/Configuration/Assets/Asset Types : Should we split according to type ?
+- Salvage value ?

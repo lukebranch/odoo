@@ -1,30 +1,68 @@
 $(document).ready(function () {
 
-    if ($('#chart_div').length > 0){
+    if ($('.stat-box').length > 0){
+        start_date = $('input[type="date"][name="start_date"]').val();
+        end_date = $('input[type="date"][name="end_date"]').val();
 
-        start_date = $('input[type="date"][name="date_from"]').val()
-        end_date = $('input[type="date"][name="date_to"]').val()
-        stat_type = $('input[type="hidden"][name="stat_type"]').val()
+        openerp.jsonRpc('/account_contract_dashboard/calculate_stats_diff', 'call', {
+            'start_date': start_date,
+            'end_date': end_date,
+        }).done(function(result){
 
-        debugger;
+            for (i=0; i<$('.stat-box').length; i++) {
+                box = $('.stat-box')[i];
+                box_name = box.getAttribute("name");
+                box_code = box.getAttribute("code");
+                chart_div_id = 'chart_div_' + box_code;
 
-        // var loader = '<div class="loading"><div id="big-circle"><div id="little-circle"></div></div></div>';
-        // $('#chart_div').html("<div style='position: relative; text-align:center; width: 100%; height: 300px;'>" + loader + "</div>");
+                value_start = result[box_code]['value_start'];
+                value_end = result[box_code]['value_end'];
+                perc = result[box_code]['perc'];
+                color = result[box_code]['color'];
 
-        loadChart('chart_div', stat_type, start_date, end_date);
+                chart_div = 
+                    '<div style="position: absolute; top: 0; left: 0; opacity: 0.3;" id='+chart_div_id+'>'+
+                    '</div>';
+                graph = []
+                box.innerHTML = 
+                    '<div style="position: relative;">'+
+                        '<h1 style="font-size: 42px; color: #2693d5;">'+value_end+'</h1>'+
+                        '<div class="trend">'+
+                            '<h2 class="'+color+' mb0">'+perc+'%</h2>'+
+                            '<span style="font-size: 10px;">30 Days Ago</span>'+
+                        '</div>'+
+                    '</div>'+
+                    chart_div+
+                    '<div>'+
+                        '<h4 class="text-center mt32">'+box_name+'</h4>'+
+                    '</div>';
+
+                // loadChart(chart_div_id, box_code, start_date, end_date, true);
+            }
+        });
     }
 
-    function loadChart(div_to_display, stat_type, start_date, end_date){
+    if ($('#chart_div').length > 0){
+
+        start_date = $('input[type="date"][name="start_date"]').val();
+        end_date = $('input[type="date"][name="end_date"]').val();
+        stat_type = $('input[type="hidden"][name="stat_type"]').val();
+
+        var loader = '<div class="loading"><div id="big-circle"><div id="little-circle"></div></div></div>';
+        $('#chart_div').html("<div style='position: relative; text-align:center; width: 100%; height: 300px;'>" + loader + "</div>");
+
+        loadChart('chart_div', stat_type, start_date, end_date, false);
+    }
+
+    function loadChart(div_to_display, stat_type, start_date, end_date, hide_legend){
 
         // Load the Visualization API and the piechart package.
         google.load('visualization', '1', {'callback':function() {
-            openerp.jsonRpc('/account_contract_dashboard/calculate', 'call', {
+            openerp.jsonRpc('/account_contract_dashboard/calculate_graph', 'call', {
                 'stat_type': stat_type,
                 'start_date' : start_date,
                 'end_date': end_date,
             }).then(function(result){
-
-                console.log(result);
 
                 // ANIMATION WORKS ON THIS
                 var data = [];
@@ -32,68 +70,43 @@ $(document).ready(function () {
                 data.addColumn('string', 'Day');
                 data.addColumn('number', stat_type.toUpperCase());
                 data.addRows(result);
-
                 var options = {
-                  title: '',
-                  pointSize : 5,
-                //   focusTarget: 'category',
-                //   // allowContainerBoundaryTextCufoff: true,
+                    title: '',
+                    pointSize : 5,
+                    allowContainerBoundaryTextCufoff: true,
+                    // backgroundColor:"#FAFAFA",
 
-                //     chartArea: {
-                //         width: '90%', 
-                //         height: '50%',
+                    legend: {
+                        position: 'none'
+                    },
 
-                //     },
-                //     backgroundColor:"#FAFAFA",
+                    animation:{
+                        duration: 1000,
+                        easing: 'out',
+                    },
+                    hAxis: {
+                        title: '',
+                        textPosition:"out",
+                        showTextEvery: 2,
 
-                // animation:{
-                //     duration: 1000,
-                //     easing: 'out',
-                //   },
-                //   hAxis: {
-                //     title: '',
-                //     textPosition:"out",
-                //     //showTextEvery: result.length - 1,
-                //     showTextEvery: 2,
-
-                //     textStyle: {
-                //         color: '#333',
-                //         fontName: 'Lato',
-                //         fontSize: 12
-                //         }
-                //     },
-                //   vAxis: {0: {logScale: false},
-                //           1: {logScale: false, maxValue: 2}
-                //           },
-                //   series:{
-                //     0:{
-                //         type:'area',
-                //         targetAxisIndex:0,
-                //         color:"rgb(5, 141, 199)",
-                //         lineWidth:"3",
-                //         areaOpacity:0.1
-                //     },
-                //     1:{
-                //         type:'line',
-                //         targetAxisIndex:1,
-                //         lineWidth:"3",
-                //         color:'rgb(247, 153, 28)'
-
-                //     },
-                //   },
-      
-                //   annotations: {
-                //     textStyle: {
-                //       fontName: 'Lato',
-                //       fontSize: 18,
-                //       bold: true,
-                //       highContrast: false,
-                //       italic: false,
-                //       color: '#888888',
-                //       opacity: 0.8,
-                //     }
-                //   }
+                        textStyle: {
+                            color: '#333',
+                            fontName: 'Lato',
+                            fontSize: 12
+                        }
+                    },
                 };
+
+                if (hide_legend){
+                    options['legend'] = {position: 'none'};
+                    options['hAxis'] = {textPosition: 'none'};
+                    options['vAxis'] = {textPosition: 'none', gridlines: {color: 'transparent'}};
+                    options['curveType'] = 'function';
+                    options['focusTarget'] = 'none';
+                    options['tooltip'] = {trigger: 'none'};
+                    options['pointSize'] = 0;
+                    options['enableInteractivity'] = false;
+                }
 
                 var chart = new google.visualization.AreaChart(document.getElementById(div_to_display));
 
