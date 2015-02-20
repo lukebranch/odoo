@@ -58,7 +58,6 @@ class account_invoice_line(models.Model):
 
     @api.one
     def asset_create(self):
-        asset_obj = self.env['account.asset.asset']
         if self.asset_category_id and self.asset_category_id.method_number > 1:
             vals = {
                 'name': self.name,
@@ -71,9 +70,9 @@ class account_invoice_line(models.Model):
                 'date': self.asset_start_date or self.invoice_id.date_invoice,
                 'invoice_id': self.invoice_id.id,
             }
-            changed_vals = asset_obj.onchange_category_id(vals['category_id'])
+            changed_vals = self.env['account.asset.asset'].onchange_category_id_values(vals['category_id'])
             vals.update(changed_vals['value'])
-            asset = asset_obj.create(vals)
+            asset = self.env['account.asset.asset'].create(vals)
             if self.asset_category_id.open_asset:
                 asset.validate()
         return True

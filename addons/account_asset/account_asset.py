@@ -235,7 +235,6 @@ class account_asset_asset(models.Model):
     @api.onchange('value')
     def onchange_purchase_salvage_value(self):
         self.value_residual = self.value - self.salvage_value
-        # self.value_residual = self.value - self.salvage_value
 
     @api.one
     @api.depends('account_move_line_ids')
@@ -248,21 +247,25 @@ class account_asset_asset(models.Model):
         if self.prorata and self.method_time != 'number':
             raise ValidationError(_('Prorata temporis can be applied only for time method "number of depreciations".'))
 
-    @api.multi
-    def onchange_category_id(self, category_id):
-        res = {'value': {}}
+    @api.onchange('category_id')
+    def onchange_category_id(self):
+        vals = self.onchange_category_id_values(self.category_id)
+        self.write(vals['value'])
+
+    def onchange_category_id_values(self, category_id):
         if category_id:
             category = self.env['account.asset.category'].browse(category_id)
-            res['value'] = {
-                'method': category.method,
-                'method_number': category.method_number,
-                'method_time': category.method_time,
-                'method_period': category.method_period,
-                'method_progress_factor': category.method_progress_factor,
-                'method_end': category.method_end,
-                'prorata': category.prorata,
+            return {
+                'value': {
+                    'method': category.method,
+                    'method_number': category.method_number,
+                    'method_time': category.method_time,
+                    'method_period': category.method_period,
+                    'method_progress_factor': category.method_progress_factor,
+                    'method_end': category.method_end,
+                    'prorata': category.prorata,
+                }
             }
-        return res
 
     @api.onchange('method_time')
     def onchange_method_time(self):

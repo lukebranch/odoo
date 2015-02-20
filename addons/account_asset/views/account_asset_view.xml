@@ -76,8 +76,8 @@
         <field name="model">account.asset.category</field>
         <field name="arch" type="xml">
             <search string="Search Asset Category">
-                <filter icon="terp-check" string="Sales" domain="[('type','=', 'sale')]" help="Deferred Revenues"/>
-                <filter icon="terp-dialog-close" string="Purchase" domain="[('type','=', 'purchase')]" help="Assets"/>
+                <filter string="Sales" domain="[('type','=', 'sale')]" help="Deferred Revenues"/>
+                <filter string="Purchase" domain="[('type','=', 'purchase')]" help="Assets"/>
                 <field name="name" string="Category"/>
                 <field name="journal_id"/>
                 <group expand="0" string="Group By...">
@@ -159,7 +159,7 @@
                                     </group>
                                 </form>
                             </field>
-                            <button type="object" name="compute_depreciation_board" string="Compute" icon="terp-stock_format-scientific" colspan="2" attrs="{'invisible':[('state','=','close')]}"/>
+                            <button type="object" name="compute_depreciation_board" string="Compute" colspan="2" attrs="{'invisible':[('state','=','close')]}"/>
                         </page>
                         <page string="History">
                             <field name="history_ids" readonly="1"/>
@@ -217,13 +217,13 @@
             <search string="Account Asset">
                 <field name="name" string="Asset"/>
                 <field name="date"/>
-                <filter icon="terp-check" string="Current" domain="[('state','in', ('draft','open'))]" help="Assets in draft and open states"/>
-                <filter icon="terp-dialog-close" string="Closed" domain="[('state','=', 'close')]" help="Assets in closed state"/>
+                <filter string="Current" domain="[('state','in', ('draft','open'))]" help="Assets in draft and open states"/>
+                <filter string="Closed" domain="[('state','=', 'close')]" help="Assets in closed state"/>
                 <field name="category_id"/>
                 <field name="partner_id" filter_domain="[('partner_id','child_of',self)]"/>
                 <group expand="0" string="Group By...">
-                        <filter string="Month" icon="terp-personal" domain="[]" context="{'group_by':'date'}"/>
-                        <filter string="Category" icon="terp-personal" domain="[]" context="{'group_by':'category_id'}"/>
+                        <filter string="Month" domain="[]" context="{'group_by':'date'}"/>
+                        <filter string="Category" domain="[]" context="{'group_by':'category_id'}"/>
                 </group>
             </search>
         </field>

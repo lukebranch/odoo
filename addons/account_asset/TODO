@@ -1,21 +1,36 @@
-- [revenue recognition] revenue recognition category should be selected somewhere (either on product template, either on customer invoice)
+F- [revenue recognition] revenue recognition category should be selected somewhere (either on product template, either on customer invoice)
 	--> customer invoice line : "Revenue Recognition Category" and "Revenue Recognition Date" ?
-- [invoice creation] account linked to revenue recognition has to be different if asset or revenue recognition
-- ["Asset/Revenue recognition category" creation] wrong labels for accounts
-	- Account Fields for Revenue Recognition
-		- Revenue Recognition Account: account_asset_id
-		- Recongnition Income Account: account_income_recognition_id [NEW FIELD]
-	
-	- Account Fields for Asset
-		- Asset Account: account_asset_id
-		- Depreciation Account: account_depreciation_id 
-		- Depreciation Expenses Account: account_expense_depreciation_id
-- [Menu in Accounting] : wrong menus ?
+F- [invoice creation] account linked to revenue recognition has to be different if asset or revenue recognition
+F- ["Asset/Revenue recognition category" creation]
+	- wrong labels for accounts
+		- Account Fields for Revenue Recognition
+			- Revenue Recognition Account: account_asset_id
+			- Recongnition Income Account: account_income_recognition_id [NEW FIELD]
+		- Account Fields for Asset
+			- Asset Account: account_asset_id
+			- Depreciation Account: account_depreciation_id
+			- Depreciation Expenses Account: account_expense_depreciation_id
+	- depreciation method disappear ? (no prorata, no computation method)
+F- [Menu in Accounting] : wrong menus ?
 	- [ADD] Accounting/Assets/ Revenue Recognition --> deferred revenue ?
 	- [ADD] Accounting/Assets/ Revenue Recognition Hierarchy --> ueseless ?
-- View graph of Revenue Recognition/Asset --> does not exist (only list & form)
-- View form of Deferred Revenue
+F- View graph of Revenue Recognition/Asset --> does not exist (only list & form)
+F- View form of Deferred Revenue
 	- "Asset Name" --> "Revenue Recognition Name" ?
-- Verify wizard in Accounting/Periodic Processing/Draft Entries/Generate Monthly ...
-- Accounting/Configuration/Assets/Asset Types : Should we split according to type ?
-- Salvage value ?
+F- Accounting/Configuration/Assets/Asset Types : Should we split according to type ?
+F- Salvage value ?
+F- if self.prorata and self.category_id.type == 'purchase': usefull ? prorata only on purchase
+F- @api.onchange('type') --> self.prorata = False ?
+def onchange_type(self):
+    if self.type == 'sale':
+        self.prorata = True
+        self.method_period = 1
+    else:
+        self.method_period = 12
+
+OK def onchange_category_id(self, category_id): old API ?
+OK icon terp to remove ?
+T- Verify wizard in Accounting/Periodic Processing/Draft Entries/Generate Monthly ...
+OK [account.asset.category] : field named "type" ?
+OK JS template (circle red/green on posted lines in asset) --> use an existing one (button_toggle) and maybe extend it ?
+T- fields_view_get in wizard ?
