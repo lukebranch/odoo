@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+<data>
+
+    <record model="ir.ui.view" id="action_account_asset_report_pivot">
+        <field name="name">account.invoice.line.pivot</field>
+        <field name="model">account.invoice.line</field>
+        <field name="arch" type="xml">
+            <pivot string="Recurrent Revenue Analysis" disable_linking="True">
+                <field name="asset_category_id" type="row"/>
+                <field name="mrr" type="measure"/>
+                <field name="price_subtotal" type="measure"/>
+                <field name="partner_id" type="col"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="action_contract_dashboard_report" model="ir.actions.act_url">
+            <field name="name">MRR Analysis</field>
+            <field name="url">/account_contract_dashboard</field>
+            <field name="target">self</field>
+        </record>
+
+    <menuitem action="action_contract_dashboard_report" id="menu_action_contract_dashboard_report"
+          parent="account.menu_finance_reporting" name="MRR Analysis"/>
+</data>
+</openerp>

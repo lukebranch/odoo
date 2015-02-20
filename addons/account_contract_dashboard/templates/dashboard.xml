@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+  <data>
+
+  <template id="dashboard" name="Recurrent Revenue Dashboard" page="True">
+    <t t-name="account_contract_dashboard.dashboard"/>
+    <t t-call="website.layout">
+    <div id="wrap" class="oe_structure oe_empty mb64" style="background-color: #EAEAEA;">
+      <div class="container">
+          
+          <div class="row">              
+            <div class="col-sm-12 text-center">
+              <h1 class="text-muted ">Recurrent Revenue Dashboard</h1>
+            </div>
+          </div>
+
+          <hr/>
+
+          <div class="row mb32">
+            <div class="col-sm-12">
+              <div class="col-sm-4 text-left">
+                <a href="#">All products</a>
+              </div>
+              <div class="col-sm-8 text-right">
+                <input type="date" name="start_date" t-att-value="start_date"/> to <input type="date" name="end_date" t-att-value="end_date"/> <button class="btn btn-primary">Update</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <t t-foreach="all_stats" t-as="stat">
+              <div class="col-sm-4">
+                <a class="fill-div" t-att-href="'account_contract_dashboard/detailed/%s' % stat['code']">
+                  <div class="box stat-box" t-att-name="stat['name']" t-att-code="stat['code']">
+                    <div class="loading">
+                      <div id="big-circle">
+                        <div id="little-circle">
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </a>
+              </div>
+            </t>
+          </div>
+
+      </div>
+
+    </div>
+    </t>
+  </template>
+
+  <template id="detailed_dashboard" name="Detailed Dashboard" page="True">
+    <t t-name="account_contract_dashboard.detailed_dashboard"/>
+    <t t-call="website.layout">
+    <div id="wrap" class="oe_structure oe_empty" style="background-color: #EAEAEA;">
+      <div class="container">
+          
+          <div class="row">              
+            <div class="col-sm-12 text-center">
+              <h1 class="text-muted "><t t-esc="report_name"/></h1>
+            </div>
+          </div>
+
+          <hr/>
+
+          <div class="row mb32">
+            <div class="col-sm-12">
+              <div class="col-sm-4 text-left">
+                <a href="#">All products</a>
+              </div>
+              <div class="col-sm-8 text-right">
+                <input type="date" name="start_date" t-att-value="start_date"/> to <input type="date" name="end_date" t-att-value="end_date"/> <button class="btn btn-primary">Update</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div id="chart_div" class="box" style="height: 300px;">
+              <input type="hidden" name="stat_type" t-att-value="stat_type"/>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="box">
+              <div class="col-md-3">
+                <h4 class="text-muted upper">Current</h4>
+                <h1><t t-esc="value_now"/><t t-esc="currency"/> <small class="oGreen">+7%</small></h1>
+              </div>
+
+
+              <div class="col-md-3">
+                <h4 class="text-muted">1 MONTH AGO</h4>
+                <h1><t t-esc="value_1_month_ago"/><t t-esc="currency"/></h1>
+              </div>
+
+
+              <div class="col-md-3">
+                <h4 class="text-muted">3 MONTHS AGO</h4>
+                <h1><t t-esc="value_3_month_ago"/><t t-esc="currency"/></h1>
+              </div>
+
+
+              <div class="col-md-3">
+                <h4 class="text-muted">12 MONTHS AGO</h4>
+                <h1><t t-esc="value_12_month_ago"/><t t-esc="currency"/></h1>
+              </div>
+              a
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="box" style="height: 300px;">
+              Another graph
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="box" style="height: 300px;">
+              Table
+            </div>
+          </div>
+
+      </div>
+
+    </div>
+    </t>
+  </template>
+   
+  </data>
+</openerp>
