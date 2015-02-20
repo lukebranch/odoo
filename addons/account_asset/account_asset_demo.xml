@@ -13,7 +13,7 @@
         </record>
 
         <record id="expenses_journal" model="account.journal">
-            <field name="name">Expenses Journal - (test)</field>
+            <field name="name">Asset Expenses Journal - (test)</field>
             <field name="code">TEXJ</field>
             <field name="type">purchase</field>
             <field name="refund_sequence" eval="True"/>
@@ -21,13 +21,13 @@
 
         <record id="a_expense" model="account.account">
             <field name="code">X2110</field>
-            <field name="name">Expenses - (test)</field>
+            <field name="name">Asset Expenses - (test)</field>
             <field name="user_type" ref="account.data_account_type_expenses"/>
         </record>
 
         <record id="a_sale" model="account.account">
             <field name="code">X2020</field>
-            <field name="name">Product Sales - (test)</field>
+            <field name="name">Asset Product Sales - (test)</field>
             <field name="user_type" ref="account.data_account_type_sales"/>
         </record>
 
