@@ -167,7 +167,7 @@ class account_asset_asset(models.Model):
                 # depreciation_date = 1st January of purchase year
                 asset_date = datetime.strptime(self.date, '%Y-%m-%d')
                 # if we already have some previous validated entries, starting date isn't 1st January but last entry + method period
-                if (len(posted_depreciation_line_ids) > 0):
+                if posted_depreciation_line_ids:
                     last_depreciation_date = datetime.strptime(posted_depreciation_line_ids[0].depreciation_date, '%Y-%m-%d')
                     depreciation_date = (last_depreciation_date+relativedelta(months=+self.method_period))
                 else:
@@ -249,8 +249,10 @@ class account_asset_asset(models.Model):
 
     @api.onchange('category_id')
     def onchange_category_id(self):
-        vals = self.onchange_category_id_values(self.category_id)
-        self.write(vals['value'])
+        vals = self.onchange_category_id_values(self.category_id.id)
+        # We cannot use 'write' on an object that doesn't exist yet
+        for k, v in vals['value'].iteritems():
+            setattr(self, k, v)
 
     def onchange_category_id_values(self, category_id):
         if category_id:

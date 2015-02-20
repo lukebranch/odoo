@@ -112,7 +112,7 @@
                     </div>
                     <group>
                         <group>
-                            <field name="category_id" on_change="onchange_category_id(category_id)" context="{'default_type':'purchase','default_method_period':12,'from_asset':True}" help="Category of asset"/>
+                            <field name="category_id" help="Category of asset"/>
                             <field name="code"/>
                             <field name="date" help="Date of asset"/>
                             <field name="type" invisible="1"/>

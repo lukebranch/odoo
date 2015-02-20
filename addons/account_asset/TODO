@@ -1,8 +1,8 @@
-F- [revenue recognition] revenue recognition category should be selected somewhere (either on product template, either on customer invoice)
+F- [revenue recognition] revenue recognition category should be selected somewhere (either on product template, either on customer invoice) --> on product template in accounting
 	--> customer invoice line : "Revenue Recognition Category" and "Revenue Recognition Date" ?
 F- [invoice creation] account linked to revenue recognition has to be different if asset or revenue recognition
 F- ["Asset/Revenue recognition category" creation]
-	- wrong labels for accounts
+	- wrong labels for accounts --> a inverser
 		- Account Fields for Revenue Recognition
 			- Revenue Recognition Account: account_asset_id
 			- Recongnition Income Account: account_income_recognition_id [NEW FIELD]
@@ -17,7 +17,7 @@ F- [Menu in Accounting] : wrong menus ?
 F- View graph of Revenue Recognition/Asset --> does not exist (only list & form)
 F- View form of Deferred Revenue
 	- "Asset Name" --> "Revenue Recognition Name" ?
-F- Accounting/Configuration/Assets/Asset Types : Should we split according to type ?
+F- Accounting/Configuration/Assets/Asset Types : Should we split according to type ? --> Name : Assets/Revenue + Types
 F- Salvage value ?
 F- if self.prorata and self.category_id.type == 'purchase': usefull ? prorata only on purchase
 F- @api.onchange('type') --> self.prorata = False ?
@@ -34,3 +34,6 @@ T- Verify wizard in Accounting/Periodic Processing/Draft Entries/Generate Monthl
 OK [account.asset.category] : field named "type" ?
 OK JS template (circle red/green on posted lines in asset) --> use an existing one (button_toggle) and maybe extend it ?
 T- fields_view_get in wizard ?
+
+- ERROR : when recompute depreciation board after changing asset category : error
+	-->  looks like it keeps old depreciation.line somewhere after unlink them in compute_depreciation_board and modify them after ...
