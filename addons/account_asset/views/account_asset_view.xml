@@ -229,6 +229,21 @@
         </field>
     </record>
 
+    <!-- Product Template -->
+    <record id="view_product_template_form_inherit" model="ir.ui.view">
+        <field name="name">Product Template (form)</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//group[@name='properties']" position="before">
+                <group name="asset types">
+                    <field name="asset_category_id" domain="[('type','=','purchase')]"/>
+                    <field name="deferred_revenue_category_id" domain="[('type','=','sale')]"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+
     <!--
         Asset History
      -->
@@ -318,14 +333,28 @@
 
     <menuitem parent="menu_finance_assets" id="menu_action_account_asset_asset_form" action="action_account_asset_asset_form" sequence="104"/>
 
-    <menuitem id="menu_finance_config_assets" name="Assets" parent="account.menu_finance_configuration" sequence="25"/>
-    <record model="ir.actions.act_window" id="action_account_asset_asset_list_normal">
+
+    <!-- Configuration -->
+
+    <menuitem id="menu_finance_config_assets" name="Assets and Revenues" parent="account.menu_finance_configuration" sequence="25"/>
+
+    <record model="ir.actions.act_window" id="action_account_asset_asset_list_normal_sale">
         <field name="name">Asset Types</field>
         <field name="res_model">account.asset.category</field>
+        <field name="domain">[('type', '=', 'purchase')]</field>
+        <field name="view_type">form</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+    <record model="ir.actions.act_window" id="action_account_asset_asset_list_normal_purchase">
+        <field name="name">Deferred Revenues Types</field>
+        <field name="res_model">account.asset.category</field>
+        <field name="domain">[('type', '=', 'sale')]</field>
         <field name="view_type">form</field>
         <field name="view_mode">tree,form</field>
     </record>
 
-    <menuitem parent="menu_finance_config_assets" id="menu_action_account_asset_asset_list_normal" action="action_account_asset_asset_list_normal" sequence="1"/>
+    <menuitem parent="menu_finance_config_assets" id="menu_action_account_asset_asset_list_normal_sale" action="action_account_asset_asset_list_normal_sale" sequence="1"/>
+    <menuitem parent="menu_finance_config_assets" id="menu_action_account_asset_asset_list_normal_purchase" action="action_account_asset_asset_list_normal_purchase" sequence="2"/>
+
 </data>
 </openerp>

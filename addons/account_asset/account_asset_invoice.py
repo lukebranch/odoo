@@ -26,7 +26,7 @@ class account_invoice(models.Model):
 class account_invoice_line(models.Model):
     _inherit = 'account.invoice.line'
 
-    asset_category_id = fields.Many2one('account.asset.category', string='Asset Category')
+    asset_category_id = fields.Many2one('account.asset.category', string='Asset Category', compute="_get_asset_category_id")
     asset_start_date = fields.Date(string='Asset End Date', compute='_get_asset_date', readonly=True, store=True)
     asset_end_date = fields.Date(string='Asset Start Date', compute='_get_asset_date', readonly=True, store=True)
     mrr = fields.Float(string='Monthly Recurring Revenue', compute='_get_mrr', store=True, readonly=True, digits=dp.get_precision('Account'))
@@ -42,6 +42,15 @@ class account_invoice_line(models.Model):
                 self.mrr = -self.mrr
         else:
             self.mrr = 0.
+
+    @api.one
+    @api.depends('product_id')
+    def _get_asset_category_id(self):
+        if self.product_id:
+            if self.invoice_id.type == 'out_invoice':
+                self.asset_category_id = self.product_id.product_tmpl_id.deferred_revenue_category_id
+            elif self.invoice_id.type == 'in_invoice':
+                self.asset_category_id = self.product_id.product_tmpl_id.asset_category_id
 
     @api.one
     @api.depends('asset_category_id')

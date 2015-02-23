@@ -12,6 +12,7 @@ class account_asset_category(models.Model):
     _name = 'account.asset.category'
     _description = 'Asset category'
 
+    active = fields.Boolean(string='Active', default=True)
     name = fields.Char(required=True, index=True)
     note = fields.Text()
     account_analytic_id = fields.Many2one('account.analytic.account', string='Analytic Account')
@@ -55,7 +56,7 @@ class account_asset_asset(models.Model):
 
     account_move_line_ids = fields.One2many('account.move.line', 'asset_id', string='Entries', readonly=True, states={'draft': [('readonly', False)]})
     entry_count = fields.Integer(compute='_entry_count', string='# Asset Entries')
-    name = fields.Char(string='Asset Name', required=True, readonly=True, states={'draft': [('readonly', False)]})
+    name = fields.Char(string='Asset/Deferred Revenue Name', required=True, readonly=True, states={'draft': [('readonly', False)]})
     code = fields.Char(string='Reference', size=32, readonly=True, states={'draft': [('readonly', False)]}, default=lambda self: self.env['ir.sequence'].next_by_code('account.asset.code'))
     value = fields.Float(string='Gross Value', required=True, readonly=True, digits=dp.get_precision('Account'), states={'draft': [('readonly', False)]})
     currency_id = fields.Many2one('res.currency', string='Currency', required=True, readonly=True, states={'draft': [('readonly', False)]}, default=lambda self: self.env['res.users'].browse(self._uid).company_id.currency_id.id)
@@ -157,8 +158,13 @@ class account_asset_asset(models.Model):
 
     @api.multi
     def compute_depreciation_board(self):
+
         posted_depreciation_line_ids = self.env['account.asset.depreciation.line'].search([('asset_id', '=', self.id), ('move_check', '=', True)], order='depreciation_date desc')
-        self.env['account.asset.depreciation.line'].search([('asset_id', '=', self.id), ('move_id', '=', False)]).unlink()
+
+        unposted_depreciation_line_ids = self.env['account.asset.depreciation.line'].search([('asset_id', '=', self.id), ('move_check', '=', False)])
+        # Remove old unposted depreciation lines. We cannot use unlink() with One2many field
+        commands = [(2, line_id.id, False) for line_id in unposted_depreciation_line_ids]
+
         if self.value != 0.0:
             amount_to_depr = residual_amount = self.value_residual
             if self.prorata:
@@ -183,7 +189,7 @@ class account_asset_asset(models.Model):
                 amount = self._compute_board_amount(sequence, residual_amount, amount_to_depr, undone_dotation_number, posted_depreciation_line_ids, total_days, depreciation_date)
                 amount = self.currency_id.round(amount)
                 residual_amount -= amount
-                self.env['account.asset.depreciation.line'].create({
+                vals = {
                     'amount': amount,
                     'asset_id': self.id,
                     'sequence': sequence,
@@ -191,12 +197,16 @@ class account_asset_asset(models.Model):
                     'remaining_value': residual_amount,
                     'depreciated_value': (self.value - self.salvage_value) - (residual_amount + amount),
                     'depreciation_date': depreciation_date.strftime('%Y-%m-%d'),
-                })
+                }
+                commands.append((0, False, vals))
                 # Considering Depr. Period as months
                 depreciation_date = (datetime(year, month, day) + relativedelta(months=+self.method_period))
                 day = depreciation_date.day
                 month = depreciation_date.month
                 year = depreciation_date.year
+
+        self.write({'depreciation_line_ids': commands})
+
         return True
 
     @api.multi
@@ -251,8 +261,9 @@ class account_asset_asset(models.Model):
     def onchange_category_id(self):
         vals = self.onchange_category_id_values(self.category_id.id)
         # We cannot use 'write' on an object that doesn't exist yet
-        for k, v in vals['value'].iteritems():
-            setattr(self, k, v)
+        if vals:
+            for k, v in vals['value'].iteritems():
+                setattr(self, k, v)
 
     def onchange_category_id_values(self, category_id):
         if category_id:
@@ -301,8 +312,9 @@ class account_asset_asset(models.Model):
     def write(self, vals):
         res = super(account_asset_asset, self).write(vals)
         # We need to compute the depreciation line if any changes is there in asset
-        if 'depreciation_line_ids' not in vals:
-            self.compute_depreciation_board()
+        # THIS CAUSES ERROR : it tries to rewrite values on deleted records
+        # if 'depreciation_line_ids' not in vals:
+        #     self.compute_depreciation_board()
         return res
 
     @api.multi
@@ -435,6 +447,12 @@ class account_asset_depreciation_line(models.Model):
 class account_move_line(models.Model):
     _inherit = 'account.move.line'
     asset_id = fields.Many2one('account.asset.asset', string='Asset', ondelete="restrict")
+
+
+class product_template(models.Model):
+    _inherit = 'product.template'
+    asset_category_id = fields.Many2one('account.asset.category', string='Asset Type', ondelete="restrict")
+    deferred_revenue_category_id = fields.Many2one('account.asset.category', string='Deferred Revenue Type', ondelete="restrict")
 
 
 class account_asset_history(models.Model):
