@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 ##############################################################################
 #
-#    OpenERP, Open Source Management Solution
-#    Copyright (C) 2004-2010 Tiny SPRL (<http://tiny.be>).
+#    Odoo, Open Source Management Solution
+#    Copyright (C) 2004-2015 OpenErp S.A. (<http://odoo.com>).
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
@@ -19,8 +19,10 @@
 #
 ##############################################################################
 
-import account_followup
-import account_followup_report
-import wizard
-import report
-import controllers
+from openerp import models, fields, api, tools
+
+
+class account_report_context_followup(models.TransientModel):
+    _inherit = "account.report.context.followup"
+
+    level = fields.Many2one('account_followup.followup.line')

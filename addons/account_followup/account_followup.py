@@ -22,6 +22,8 @@
 from openerp import api, fields, models, _
 from openerp.exceptions import Warning
 from lxml import etree
+import datetime
+import time
 
 
 class followup(models.Model):
@@ -398,47 +400,106 @@ class res_partner(models.Model):
             return [('id', '=', '0')]
         return [('id', 'in', [x[0] for x in res])]
 
-    def max_followup_id(self):
-        for partner in self.search([]):
-            domain = [('partner_id', '=', partner.id), ('reconciled', '=', False), ('account_id.deprecated', '=', False), ('account_id.internal_type', '=', 'receivable'), ('blocked', '=', False)]
-            for aml in self.env['account.move.line'].search(domain):
-                if aml.date_maturity < today:
-                    result = result | partner
-                    break
+    def get_partners_in_need_of_action(self):
+        company_id = self.env.user.company_id
+        context = self.env.context
+        cr = self.env.cr
+
+        cr.execute(
+            "SELECT l.partner_id, l.followup_line_id, l.date_maturity, l.date, l.id, fl.delay "\
+            "FROM account_move_line AS l "\
+                "LEFT JOIN account_account AS a "\
+                "ON (l.account_id=a.id) "\
+                "LEFT JOIN account_account_type AS act "\
+                "ON (a.user_type=act.id) "\
+                "LEFT JOIN account_followup_followup_line AS fl "\
+                "ON (l.followup_line_id=fl.id) "\
+            "WHERE (l.reconciled IS FALSE) "\
+                "AND (act.type='receivable') "\
+                "AND (l.partner_id is NOT NULL) "\
+                "AND (a.deprecated='f') "\
+                "AND (l.debit > 0) "\
+                "AND (l.company_id = %s) " \
+                "AND (l.blocked IS FALSE) " \
+            "ORDER BY l.date", (company_id.id,))  #l.blocked added to take litigation into account and it is not necessary to change follow-up level of account move lines without debit
+        move_lines = cr.fetchall()
+        old = None
+        fups = {}
+        fup_id = 'followup_id' in context and context['followup_id'] or self.env['account_followup.followup'].search([('company_id', '=', company_id.id)]).id
+        date = 'date' in context and context['date'] or time.strftime('%Y-%m-%d')
+
+        current_date = datetime.date(*time.strptime(date, '%Y-%m-%d')[:3])
+        cr.execute(
+            "SELECT * "\
+            "FROM account_followup_followup_line "\
+            "WHERE followup_id=%s "\
+            "ORDER BY delay", (fup_id,))
+
+        #Create dictionary of tuples where first element is the date to compare with the due date and second element is the id of the next level
+        for result in cr.dictfetchall():
+            delay = datetime.timedelta(days=result['delay'])
+            fups[old] = (current_date - delay, result['id'])
+            old = result['id']
+
+        result = {}
+
+        #Fill dictionary of accountmovelines to_update with the partners that need to be updated
+        for partner_id, followup_line_id, date_maturity, date, id, delay in move_lines:
+            if not partner_id:
+                continue
+            if followup_line_id not in fups:
+                continue
+            if date_maturity:
+                if date_maturity <= fups[followup_line_id][0].strftime('%Y-%m-%d'):
+                    if partner_id not in result.keys():
+                        result.update({partner_id: (fups[followup_line_id][1], delay)})
+                    elif result[partner_id][1] < delay:
+                        result[partner_id] = (fups[followup_line_id][1], delay)
+            elif date and date <= fups[followup_line_id][0].strftime('%Y-%m-%d'):
+                if partner_id not in result.keys():
+                    result.update({partner_id: (fups[followup_line_id][1], delay)})
+                elif result[partner_id][1] < delay:
+                    result[partner_id] = (fups[followup_line_id][1], delay)
         return result
 
     payment_responsible_id = fields.Many2one('res.users', ondelete='set null', string='Follow-up Responsible',
                                              help="Optionally you can assign a user to this field, which will make him responsible for the action.",
-                                             track_visibility="onchange", copy=False)
-    payment_note = fields.Text('Customer Payment Promise', help="Payment Note", track_visibility="onchange", copy=False)
-    payment_next_action = fields.Text('Next Action', copy=False, track_visibility="onchange",
+                                             track_visibility="onchange", copy=False, company_dependent=True)
+    payment_note = fields.Text('Customer Payment Promise', help="Payment Note", track_visibility="onchange", copy=False, company_dependent=True)
+    payment_next_action = fields.Text('Next Action', copy=False, track_visibility="onchange", company_dependent=True,
                                       help="This is the next action to be taken.  It will automatically be set when the partner gets a follow-up level that requires a manual action. ")
-    payment_next_action_date = fields.Date('Next Action Date', copy=False,
+    payment_next_action_date = fields.Date('Next Action Date', copy=False, company_dependent=True,
                                            help="This is when the manual follow-up is needed. "
                                                 "The date will be set to the current date when the partner "
                                                 "gets a follow-up level that requires a manual action. "
                                                 "Can be practical to set manually e.g. to see if he keeps "
                                                 "his promises.")
-    unreconciled_aml_ids = fields.One2many('account.move.line', 'partner_id', domain=['&', ('reconciled', '=', False), '&',
+    unreconciled_aml_ids = fields.One2many('account.move.line', 'partner_id', company_dependent=True, domain=['&', ('reconciled', '=', False), '&',
                                            ('account_id.deprecated', '=', False), '&', ('account_id.internal_type', '=', 'receivable')])
     latest_followup_date = fields.Date(compute='_get_latest', string="Latest Follow-up Date",
                                        help="Latest date that the follow-up level of the partner was changed",
-                                       store=False)
+                                       store=False, company_dependent=True)
     latest_followup_level_id = fields.Many2one('account_followup.followup.line', compute='_get_latest',
                                                help="The maximum follow-up level", string="Latest Follow-up Level",
-                                               store=True)
+                                               store=True, company_dependent=True)
     latest_followup_level_id_without_lit = fields.Many2one('account_followup.followup.line', compute='_get_latest',
         string="Latest Follow-up Level without litigation",
         help="The maximum follow-up level without taking into account the account move lines with litigation",
-        store=True)
+        store=True, company_dependent=True)
     payment_amount_due = fields.Float(compute='_get_amounts_and_date', string="Amount Due",
-                                      store=False, search='_payment_due_search')
+                                      store=False, search='_payment_due_search', company_dependent=True)
     payment_amount_overdue = fields.Float(compute='_get_amounts_and_date', string="Amount Overdue",
-                                          store=False, search='_payment_overdue_search')
+                                          store=False, search='_payment_overdue_search', company_dependent=True)
     payment_earliest_due_date = fields.Date(compute='_get_amounts_and_date', string="Worst Due Date", store=False,
-                                            search='_payment_earliest_date_search')
+                                            search='_payment_earliest_date_search', company_dependent=True)
     depends_field = fields.Integer(default=0)
-    trust = fields.Selection([('good', 'Good Debtor'), ('normal', 'Normal Debtor'), ('bad', 'Bad Debtor')], string='Degree of trust you have in this debtor', default='normal')
+    trust = fields.Selection([('good', 'Good Debtor'), ('normal', 'Normal Debtor'), ('bad', 'Bad Debtor')], string='Degree of trust you have in this debtor', default='normal', company_dependent=True)
+    # next_followup_level_id = fields.Many2one('account_followup.followup.line', compute='_get_next_level_and_date',
+    #                                          help="The next follow-up level", string="Next Follow-up Level",
+    #                                          store=True, company_dependent=True)
+    # next_followup_date = fields.Date(compute='_get_next_level_and_date', string="Next Follow-up Date",
+    #                                  help="Date of the next follow-up",
+    #                                  store=False, company_dependent=True)
 
 
 class account_config_settings(models.TransientModel):
