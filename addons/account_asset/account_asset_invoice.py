@@ -26,7 +26,7 @@ class account_invoice(models.Model):
 class account_invoice_line(models.Model):
     _inherit = 'account.invoice.line'
 
-    asset_category_id = fields.Many2one('account.asset.category', string='Asset Category', compute="_get_asset_category_id")
+    asset_category_id = fields.Many2one('account.asset.category', string='Asset/Deferred Revenue Category')
     asset_start_date = fields.Date(string='Asset End Date', compute='_get_asset_date', readonly=True, store=True)
     asset_end_date = fields.Date(string='Asset Start Date', compute='_get_asset_date', readonly=True, store=True)
     mrr = fields.Float(string='Monthly Recurring Revenue', compute='_get_mrr', store=True, readonly=True, digits=dp.get_precision('Account'))
@@ -43,14 +43,24 @@ class account_invoice_line(models.Model):
         else:
             self.mrr = 0.
 
-    @api.one
-    @api.depends('product_id')
-    def _get_asset_category_id(self):
-        if self.product_id:
-            if self.invoice_id.type == 'out_invoice':
-                self.asset_category_id = self.product_id.product_tmpl_id.deferred_revenue_category_id
-            elif self.invoice_id.type == 'in_invoice':
-                self.asset_category_id = self.product_id.product_tmpl_id.asset_category_id
+    @api.multi
+    def product_id_change(self, product, uom_id, qty=0, name='', type='out_invoice',
+                          partner_id=False, fposition_id=False, price_unit=False, currency_id=False,
+                          company_id=None):
+        # TODO: onchange product id in old API in account, overwrite it when it has changed
+        res = super(account_invoice_line, self).product_id_change(
+            product, uom_id, qty=qty, name=name, type=type, partner_id=partner_id,
+            fposition_id=fposition_id, price_unit=price_unit, currency_id=currency_id,
+            company_id=company_id
+        )
+        if product and res['value']:
+            product_obj = self.env['product.product'].browse(product)
+            if type == 'out_invoice':
+                res['value']['asset_category_id'] = product_obj.product_tmpl_id.deferred_revenue_category_id
+            elif type == 'in_invoice':
+                res['value']['asset_category_id'] = product_obj.product_tmpl_id.asset_category_id
+
+        return res
 
     @api.one
     @api.depends('asset_category_id')

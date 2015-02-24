@@ -1,11 +1,9 @@
-F- [revenue recognition] revenue recognition category should be selected somewhere (either on product template, either on customer invoice) --> on product template in accounting
-	--> customer invoice line : "Revenue Recognition Category" and "Revenue Recognition Date" ?
+
+
 
 ###########################
-
-
 ACCOUNTS
-- ["Asset/Revenue recognition category" creation]
+?- ["Asset/Revenue recognition category" creation]
 	- wrong labels for accounts --> a inverser
 		- Account Fields for Revenue Recognition
 			- Revenue Recognition Account: account_asset_id
@@ -14,20 +12,27 @@ ACCOUNTS
 			- Asset Account: account_asset_id
 			- Depreciation Account: account_depreciation_id
 			- Depreciation Expenses Account: account_expense_depreciation_id
+--> ask CHE
+- Journal Asset (ODV) + Journal Revenue Recognition (AMO) type = general
+- Accounts have to be filled manually (ex : if car, use 241000 and 241900)
+- switch first label
 
-- Account invoice ; "finalize_invoice_move_lines" --> modify account if asset_id in invoice_line
+? Account invoice ; "finalize_invoice_move_lines" --> modify account if asset_id in invoice_line
 
 ###########################
 
-
-T- Verify wizard in Accounting/Periodic Processing/Draft Entries/Generate Monthly ...
-T- fields_view_get in wizard ?
-T- [Asset/Deferred Revenue form] : remove Depreciation Information --> keep it only in category
-T- Compute button : link ? --> see 
+?- [Asset/Deferred Revenue form] : remove Depreciation Information --> keep it only in category
+?- Compute button : link ? --> see 
     <button name="%(action_asset_modify)d" states="open" string="(update)" type="action" class="oe_inline oe_link" colspan="1"/>
-T- [History] verify that it works --> in asset, only if open, a link "update" at the bottom
-T- remove (or related) same field in category and asset
-- in invoice_line : compute or onchange ?
+V- [History] verify that it works --> in asset, only if open, a link "update" at the bottom
+?- remove (or related) same field in category and asset
+?- in invoice_line : compute or onchange ?
+- in invoice_line : name : Asset/Deferred Revenue Category ?
+- automatically create moves in depreciation board ? --> if 02/15/2015 and february is here, create move for this one
+	--> CHE does not want to go in every invoice and create moves
+	--> carefull for new period ?
+- check in new journal "auto post their moves"
+- 
 
 - ERROR : when recompute depreciation board after changing asset category : error
 	-->  looks like it keeps old depreciation.line somewhere after unlink them in compute_depreciation_board and modify them after ...
