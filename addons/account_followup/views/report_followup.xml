@@ -46,7 +46,7 @@
 </template>
 <template id='report_followup_body' inherit_id='account.report_followup_body'>
     <xpath expr="//h2/t" position='before'>
-        <span class="dropdown" t-att-partner='context.partner_id.id'>
+        <span t-if="not context.env.context.get('public')" class="dropdown" t-att-partner='context.partner_id.id'>
             <span data-toggle="dropdown">
                 <i t-if="context.partner_id.trust == 'good'" class="fa fa-circle" style="color: green;"></i>
                 <i t-if="context.partner_id.trust == 'normal'" class="fa fa-circle" style="color: grey;"></i>

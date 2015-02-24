@@ -145,8 +145,7 @@
 </template>
 <template id="report_followup_public_body" inherit_id="account.report_followup_body" primary="True">
     <xpath expr="//span[@id='public-link']" position="replace"></xpath>
-    <xpath expr="//a[@type='button']" position="replace"></xpath>
-    <xpath expr="//a[@type='button']" position="replace"></xpath>
+    <xpath expr="//div[@id='action-buttons']" position='replace'></xpath>
     <xpath expr="//div[@class='summary']" position="replace"></xpath>
     <xpath expr="//div[@class='summary']" position="replace"></xpath>
     <xpath expr="//div[@class='savedSummary']" position="attributes">
