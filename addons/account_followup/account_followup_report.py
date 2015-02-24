@@ -20,9 +20,24 @@
 ##############################################################################
 
 from openerp import models, fields, api, tools
+import time
 
 
 class account_report_context_followup(models.TransientModel):
     _inherit = "account.report.context.followup"
 
     level = fields.Many2one('account_followup.followup.line')
+    summary = fields.Char(default=lambda s: s.level and s.level.description.replace('\n', '<br />') or s.env['res.company'].default_get(['overdue_msg'])['overdue_msg'])
+
+    def create(self, vals):
+        if 'level' in vals:
+            summary = self.env['account_followup.followup.line'].browse(vals['level']).description.replace('\n', '<br />')
+            vals.update({
+                'summary': summary % {
+                    'partner_name': self.env['res.partner'].browse(vals['partner_id']).name,
+                    'date': time.strftime('%Y-%m-%d'),
+                    'user_signature': self.env.user.signature or '',
+                    'company_name': self.env['res.partner'].browse(vals['partner_id']).parent_id.name,
+                }
+            })
+        return super(account_report_context_followup, self).create(vals)

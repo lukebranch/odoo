@@ -1,6 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <openerp>
 <data>
+<template id='report_followup_all' inherit_id='account.report_followup_all'>
+    <xpath expr="//div[@id='oe-account-final-summary']" position='after'>
+        <t t-foreach='action_contexts' t-as='context'>
+            <div class="alert alert-info" role="alert">
+                <p><strong><t t-esc='context.partner_id.name' /></strong></p>
+                <p><t t-esc="context.level.manual_action_responsible_id.name and context.level.manual_action_responsible_id.name + '+' or ''" /> <t t-esc='context.level.manual_action_note' /></p>
+            </div>
+        </t>
+    </xpath>
+</template>
 <template id='report_followup' inherit_id='account.report_followup'>
     <xpath expr="//script" position='after'>
         <script type="text/javascript" src="/account_followup/static/src/js/account_report_widgets.js"></script>
@@ -18,6 +28,20 @@
                 });
             })();
         </script>
+    </xpath>
+    <xpath expr="//div[@id='paymentDateModal']" position="after">
+        <div t-if="mode != 'print'" class="modal fade" id="manualActionModal" tabindex="-1" role="dialog" aria-labelledby="manualActionLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&amp;times;</span><span class="sr-only">Close</span></button>
+                        <h4 class="modal-title" id="manualActionLabel"></h4>
+                    </div>
+                    <div class="modal-body">
+                    </div>
+                </div>
+            </div>
+        </div>
     </xpath>
 </template>
 <template id='report_followup_body' inherit_id='account.report_followup_body'>
@@ -42,8 +66,8 @@
             <a t-if='not context.level.send_letter' type="button" class="btn btn-default followup-letter" t-att-target="'/account/followup_report/' + str(context.partner_id.id) + '/?pdf'">Print Letter</a>
             <a t-if='context.level.send_email' type="button" class="btn btn-primary followup-email">Send by email</a>
             <a t-if='not context.level.send_email' type="button" class="btn btn-default followup-email">Send by email</a>
-            <a t-if='context.level.manual_action' type="button" class="btn btn-primary followup-action" t-att-level='context.level.id'>Manual Action</a>
-            <a t-if='not context.level.manual_action' type="button" class="btn btn-default followup-action" t-att-level='context.level.id'>Manual Action</a>
+            <a t-if='context.level.manual_action' type="button" class="btn btn-primary followup-action" t-att-level='context.level.id' t-att-partner="str(context.partner_id.id)">Manual Action</a>
+            <a t-if='not context.level.manual_action' type="button" class="btn btn-default followup-action" t-att-level='context.level.id' t-att-partner="str(context.partner_id.id)">Manual Action</a>
         </div>
     </xpath>
 </template>

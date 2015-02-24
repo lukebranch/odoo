@@ -462,6 +462,38 @@ class res_partner(models.Model):
                     result[partner_id] = (fups[followup_line_id][1], delay)
         return result
 
+    @api.multi
+    def update_next_action(self):
+        company_id = self.env.user.company_id
+        context = self.env.context
+        cr = self.env.cr
+        old = None
+        fups = {}
+        fup_id = 'followup_id' in context and context['followup_id'] or self.env['account_followup.followup'].search([('company_id', '=', company_id.id)]).id
+        date = 'date' in context and context['date'] or time.strftime('%Y-%m-%d')
+
+        current_date = datetime.date(*time.strptime(date, '%Y-%m-%d')[:3])
+        cr.execute(
+            "SELECT * "\
+            "FROM account_followup_followup_line "\
+            "WHERE followup_id=%s "\
+            "ORDER BY delay", (fup_id,))
+
+        #Create dictionary of tuples where first element is the date to compare with the due date and second element is the id of the next level
+        for result in cr.dictfetchall():
+            delay = datetime.timedelta(days=result['delay'])
+            fups[old] = (current_date - delay, result['id'])
+            old = result['id']
+
+        for partner in self:
+            for aml in partner.unreconciled_aml_ids:
+                followup_line_id = aml.followup_line_id.id or None
+                if aml.date_maturity:
+                    if aml.date_maturity <= fups[followup_line_id][0].strftime('%Y-%m-%d'):
+                        aml.write({'followup_line_id': fups[followup_line_id][1], 'followup_date': date})
+                elif aml.date and aml.date <= fups[followup_line_id.id][0].strftime('%Y-%m-%d'):
+                    aml.write({'followup_line_id': fups[followup_line_id][1], 'followup_date': date})
+
     payment_responsible_id = fields.Many2one('res.users', ondelete='set null', string='Follow-up Responsible',
                                              help="Optionally you can assign a user to this field, which will make him responsible for the action.",
                                              track_visibility="onchange", copy=False, company_dependent=True)
@@ -474,7 +506,7 @@ class res_partner(models.Model):
                                                 "gets a follow-up level that requires a manual action. "
                                                 "Can be practical to set manually e.g. to see if he keeps "
                                                 "his promises.")
-    unreconciled_aml_ids = fields.One2many('account.move.line', 'partner_id', company_dependent=True, domain=['&', ('reconciled', '=', False), '&',
+    unreconciled_aml_ids = fields.One2many('account.move.line', 'partner_id', domain=['&', ('reconciled', '=', False), '&',
                                            ('account_id.deprecated', '=', False), '&', ('account_id.internal_type', '=', 'receivable')])
     latest_followup_date = fields.Date(compute='_get_latest', string="Latest Follow-up Date",
                                        help="Latest date that the follow-up level of the partner was changed",

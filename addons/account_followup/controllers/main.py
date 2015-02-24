@@ -21,6 +21,7 @@
 
 from openerp import http, addons
 from openerp.http import request
+from openerp.tools.safe_eval import safe_eval
 
 
 class FollowupReportController(addons.account.controllers.main.FinancialReportController):
@@ -35,6 +36,7 @@ class FollowupReportController(addons.account.controllers.main.FinancialReportCo
         context_all_id = context_all_obj.sudo(uid).search([('create_uid', '=', uid)], limit=1)
         partners_data = request.env['res.partner'].get_partners_in_need_of_action()
         partners = request.env['res.partner'].browse(partners_data.keys())
+        action_contexts = []
         if not context_all_id:
             context_all_id = context_all_obj.sudo(uid).create({'valuemax': len(partners)})
         if 'partner_filter' in kw:
@@ -46,14 +48,20 @@ class FollowupReportController(addons.account.controllers.main.FinancialReportCo
                     partners.update_next_action()
                     context_all_id.write({'valuenow': context_all_id.valuemax})
                     partners = partners - partners
+                    if 'action_partner_list' in kw:
+                        action_partner_list = safe_eval('[' + kw['action_partner_list'] + ']')
+                        action_contexts = request.env['account.report.context.followup'].search([('partner_id', 'in', action_partner_list)])
         if context_all_id.valuemax != context_all_id.valuenow + len(partners):
             context_all_id.write({'valuemax': context_all_id.valuenow + len(partners)})
         if context_all_id.partner_filter == 'all':
             partners = request.env['res.partner'].get_partners_with_overdue()
         for partner in partners[((page - 1) * 15):(page * 15)]:
             context_id = context_obj.sudo(uid).search([('partner_id', '=', partner.id)], limit=1)
-            if not context_id:
-                context_id = context_obj.with_context(lang=partner.lang).create({'partner_id': partner.id, 'level': partners_data[partner.id][0]})
+            context_id = context_obj.with_context(lang=partner.lang).create({'partner_id': partner.id, 'level': partners_data[partner.id][0]})
+            # if not context_id:
+            #     context_id = context_obj.with_context(lang=partner.lang).create({'partner_id': partner.id, 'level': partners_data[partner.id][0]})
+            # else:
+            #     context_id.write({'level': partners_data[partner.id][0]})
             lines = report_obj.with_context(lang=partner.lang).get_lines(context_id)
             reports.append({
                 'context': context_id.with_context(lang=partner.lang),
@@ -66,5 +74,6 @@ class FollowupReportController(addons.account.controllers.main.FinancialReportCo
             'page': page,
             'context_all': context_all_id,
             'just_arrived': 'partner_done' not in kw,
+            'action_contexts': action_contexts,
         }
         return request.render('account.report_followup_all', rcontext)

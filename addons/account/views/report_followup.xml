@@ -207,7 +207,7 @@
             </div>
             <div class="container" t-if="not just_arrived">
                 <div class="row mt32">
-                    <div class="alert alert-success" role="alert">
+                    <div class="alert alert-success" role="alert" id='oe-account-final-summary'>
                         <p><strong>Good job!</strong> All followup letters and emails have been sent.</p>
                         <p>You have sent <t t-esc="context_all.valuemax" /> reports in <t t-esc="context_all.get_total_time()" />s<br />
                         That means you have spent on average <t t-esc="context_all.get_time_per_report()" />s per report.</p>
