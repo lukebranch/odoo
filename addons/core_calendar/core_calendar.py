@@ -75,7 +75,10 @@ class CoreCalendarTimeline(osv.TransientModel):
 
     def _get_resource_timeline(self, cr, uid, ids, layers=None, date_from=None, date_to=None, context=None):
         if not ids:
-            return False
+            if isinstance(ids, (int, long)):
+                return False
+            else:
+                return {}
         record_ids = ids
         if isinstance(ids, (int, long)):
             record_ids = [ids]
@@ -1107,7 +1110,7 @@ class CoreCalendarEvent(osv.Model):
         date_fields_requested = any(f in fields_pre for f in ['date_start', 'date_end', 'duration'])
 
         result = []
-        record_defaults = self.default_get(cr, user, fields_to_read, context=context)
+        record_defaults = self.default_get(cr, user, fields_pre, context=context)
 
         for calendar_id, event_ids in self._group_ids_by_calendar(cr, user, ids, context=context).iteritems():
             calendar_info = Calendar._get_calendar_info(cr, user, calendar_id, context.get('lang'))
