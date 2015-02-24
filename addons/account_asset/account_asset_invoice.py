@@ -34,7 +34,7 @@ class account_invoice_line(models.Model):
     @api.one
     @api.depends('asset_category_id')
     def _get_mrr(self):
-        # use MAT field to caculate MRR
+        # use @MAT field to caculate MRR
         if self.asset_category_id:
             self.mrr = self.price_subtotal/(self.asset_category_id.method_period*self.asset_category_id.method_number)
             # mrr negative if supplier invoice

@@ -12,6 +12,11 @@ div.box {
   opacity: 0.8;
 }
 
+div.col-sm-4 {
+  padding-right: 8px;
+  padding-left: 8px;
+}
+
 div.box:hover {
   opacity: 1;
   filter: alpha(opacity=1);
@@ -43,6 +48,10 @@ a.fill-div {
 
 .oRed {
     color: #df2e28;
+}
+
+.oBlack {
+    color: #000000;
 }
 
 .upper {

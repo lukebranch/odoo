@@ -18,19 +18,21 @@
 
           <div class="row mb32">
             <div class="col-sm-12">
-              <div class="col-sm-4 text-left">
-                <a href="#">All products</a>
-              </div>
-              <div class="col-sm-8 text-right">
-                <input type="date" name="start_date" t-att-value="start_date"/> to <input type="date" name="end_date" t-att-value="end_date"/> <button class="btn btn-primary">Update</button>
-              </div>
+              <form action="/account_contract_dashboard">
+                <div class="col-sm-4 text-left">
+                  <a href="#">All products</a>
+                </div>
+                <div class="col-sm-8 text-right">
+                  <input type="date" name="start_date" t-att-value="start_date"/> to <input type="date" name="end_date" t-att-value="end_date"/> <button class="btn btn-primary" type="submit">Update</button>
+                </div>
+              </form>
             </div>
           </div>
 
           <div class="row">
             <t t-foreach="all_stats" t-as="stat">
               <div class="col-sm-4">
-                <a class="fill-div" t-att-href="'account_contract_dashboard/detailed/%s' % stat['code']">
+                <a class="fill-div" t-att-href="'account_contract_dashboard/detailed/%s?start_date=%s&amp;end_date=%s' % (stat['code'], start_date, end_date)">
                   <div class="box stat-box" t-att-name="stat['name']" t-att-code="stat['code']">
                     <div class="loading">
                       <div id="big-circle">
@@ -66,12 +68,19 @@
 
           <div class="row mb32">
             <div class="col-sm-12">
-              <div class="col-sm-4 text-left">
-                <a href="#">All products</a>
-              </div>
-              <div class="col-sm-8 text-right">
-                <input type="date" name="start_date" t-att-value="start_date"/> to <input type="date" name="end_date" t-att-value="end_date"/> <button class="btn btn-primary">Update</button>
-              </div>
+              <form t-att-action="'/account_contract_dashboard/detailed/%s' % stat_type">
+                <div class="col-sm-4 text-left">
+                  <div>
+                    <a t-att-href="'/account_contract_dashboard?start_date=%s&amp;end_date=%s' % (start_date, end_date)">Dashboard</a>
+                  </div>
+                  <div>
+                    <a href="#">All products</a>
+                  </div>
+                </div>
+                <div class="col-sm-8 text-right">
+                  <input type="date" name="start_date" t-att-value="start_date"/> to <input type="date" name="end_date" t-att-value="end_date"/> <button class="btn btn-primary" type="submit">Update</button>
+                </div>
+              </form>
             </div>
           </div>
 
