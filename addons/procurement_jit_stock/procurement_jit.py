@@ -19,19 +19,20 @@
 #
 ##############################################################################
 
-
 from openerp.osv import osv
 
 class procurement_order(osv.osv):
-    _inherit = "procurement.order"
+    _inherit = 'procurement.order'
 
-    def create(self, cr, uid, vals, context=None):
-        procurement_id = super(procurement_order, self).create(cr, uid, vals, context=context)
+    def run(self, cr, uid, ids, context=None):
         context = context or {}
+        context['no_run_at_create'] = True
 
-        if not context.get("no_run_at_create", False):
-            self.run(cr, uid, [procurement_id], context=context)
-            self.check(cr, uid, [procurement_id], context=context)
-        return procurement_id
+        res = super(procurement_order, self).run(cr, uid, ids, context=context)
 
-# vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:
+        move_ids = self.pool.get('stock.move').search(cr, uid, [('procurement_id', 'in', ids)], context=context)
+        procurement_ids = self.search(cr, uid, [('move_dest_id', 'in', move_ids)], context=context)
+
+        if procurement_ids:
+            return self.run(cr, uid, procurement_ids, context=context)
+        return res
