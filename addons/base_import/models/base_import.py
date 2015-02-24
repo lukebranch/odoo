@@ -1,36 +1,35 @@
+# -*- coding: utf-8 -*-
 import csv
 import itertools
 import logging
 import operator
+import psycopg2
 
 try:
     from cStringIO import StringIO
 except ImportError:
     from StringIO import StringIO
 
-import psycopg2
-
-from openerp.osv import orm, fields
-from openerp.tools.translate import _
+from openerp import api, fields, models, _
+from openerp.exceptions import UserError
 
 FIELDS_RECURSION_LIMIT = 2
 ERROR_PREVIEW_BYTES = 200
 _logger = logging.getLogger(__name__)
-class ir_import(orm.TransientModel):
+
+
+class IrImport(models.TransientModel):
     _name = 'base_import.import'
     # allow imports to survive for 12h in case user is slow
     _transient_max_hours = 12.0
 
-    _columns = {
-        'res_model': fields.char('Model'),
-        'file': fields.binary(
-            'File', help="File to check and/or import, raw binary (not base64)"),
-        'file_name': fields.char('File Name'),
-        'file_type': fields.char('File Type'),
-    }
+    res_model = fields.Char(string='Model')
+    file = fields.Binary(
+        string='File', help="File to check and/or import, raw binary (not base64)")
+    file_name = fields.Char(string='File Name')
+    file_type = fields.Char(string='File Type')
 
-    def get_fields(self, cr, uid, model, context=None,
-                   depth=FIELDS_RECURSION_LIMIT):
+    def get_fields(self, model, depth=FIELDS_RECURSION_LIMIT):
         """ Recursively get fields for the provided model (through
         fields_get) and filter them according to importability
 
@@ -74,7 +73,7 @@ class ir_import(orm.TransientModel):
         :param str model: name of the model to get fields form
         :param int landing: depth of recursion into o2m fields
         """
-        model_obj = self.pool[model]
+        Model = self.env[model]
         fields = [{
             'id': 'id',
             'name': 'id',
@@ -82,8 +81,8 @@ class ir_import(orm.TransientModel):
             'required': False,
             'fields': [],
         }]
-        fields_got = model_obj.fields_get(cr, uid, context=context)
-        blacklist = orm.MAGIC_COLUMNS + [model_obj.CONCURRENCY_CHECK_FIELD]
+        fields_got = Model.fields_get()
+        blacklist = models.MAGIC_COLUMNS + [Model.CONCURRENCY_CHECK_FIELD]
         for name, field in fields_got.iteritems():
             if name in blacklist:
                 continue
@@ -97,8 +96,7 @@ class ir_import(orm.TransientModel):
                     continue
                 # states = {state: [(attr, value), (attr2, value2)], state2:...}
                 if not any(attr == 'readonly' and value is False
-                           for attr, value in itertools.chain.from_iterable(
-                                states.itervalues())):
+                           for attr, value in itertools.chain.from_iterable(states.itervalues())):
                     continue
 
             f = {
@@ -117,23 +115,23 @@ class ir_import(orm.TransientModel):
                 ]
             elif field['type'] == 'one2many' and depth:
                 f['fields'] = self.get_fields(
-                    cr, uid, field['relation'], context=context, depth=depth-1)
-                if self.pool['res.users'].has_group(cr, uid, 'base.group_no_one'):
-                    f['fields'].append({'id' : '.id', 'name': '.id', 'string': _("Database ID"), 'required': False, 'fields': []})
+                    field['relation'], depth=depth-1)
+                if self.env['res.users'].has_group('base.group_no_one'):
+                    f['fields'].append({'id': '.id', 'name': '.id', 'string': _("Database ID"), 'required': False, 'fields': []})
 
             fields.append(f)
 
         # TODO: cache on model?
         return fields
 
-    def _read_csv(self, record, options):
+    def _read_csv(self, options):
         """ Returns a CSV-parsed iterator of all empty lines in the file
 
         :throws csv.Error: if an error is detected during CSV parsing
         :throws UnicodeDecodeError: if ``options.encoding`` is incorrect
         """
         csv_iterator = csv.reader(
-            StringIO(record.file),
+            StringIO(self.file),
             quotechar=str(options['quoting']),
             delimiter=str(options['separator']))
         csv_nonempty = itertools.ifilter(None, csv_iterator)
@@ -157,8 +155,7 @@ class ir_import(orm.TransientModel):
         for field in fields:
             # FIXME: should match all translations & original
             # TODO: use string distance (levenshtein? hamming?)
-            if header.lower() == field['name'].lower() \
-              or header.lower() == field['string'].lower():
+            if header.lower() == field['name'].lower() or header.lower() == field['string'].lower():
                 return [field]
 
         if '/' not in header:
@@ -173,7 +170,8 @@ class ir_import(orm.TransientModel):
             # readability of paths
             match = self._match_header(section.strip(), subfields, options)
             # Any match failure, exit
-            if not match: return []
+            if not match:
+                return []
             # prep subfields for next iteration within match[0]
             field = match[0]
             subfields = field['fields']
@@ -205,7 +203,8 @@ class ir_import(orm.TransientModel):
             for index, header in enumerate(headers)
         )
 
-    def parse_preview(self, cr, uid, id, options, count=10, context=None):
+    @api.multi
+    def parse_preview(self, options, count=10):
         """ Generates a preview of the uploaded files, and performs
         fields-matching between the import's file data and the model's
         columns.
@@ -213,7 +212,6 @@ class ir_import(orm.TransientModel):
         If the headers are not requested (not options.headers),
         ``matches`` and ``headers`` are both ``False``.
 
-        :param id: identifier of the import
         :param int count: number of preview lines to generate
         :param options: format-specific options.
                         CSV: {encoding, quoting, separator, headers}
@@ -221,12 +219,10 @@ class ir_import(orm.TransientModel):
         :returns: {fields, matches, headers, preview} | {error, preview}
         :rtype: {dict(str: dict(...)), dict(int, list(str)), list(str), list(list(str))} | {str, str}
         """
-        (record,) = self.browse(cr, uid, [id], context=context)
-        fields = self.get_fields(cr, uid, record.res_model, context=context)
+        fields = self.get_fields(self.res_model)
 
         try:
-            rows = self._read_csv(record, options)
-
+            rows = self._read_csv(options)
             headers, matches = self._match_headers(rows, fields, options)
             # Match should have consumed the first row (iif headers), get
             # the ``count`` next rows for preview
@@ -249,34 +245,33 @@ class ir_import(orm.TransientModel):
                 # even if it yields non-printable characters. This is
                 # in case of UnicodeDecodeError (or csv.Error
                 # compounded with UnicodeDecodeError)
-                'preview': record.file[:ERROR_PREVIEW_BYTES]
-                                .decode( 'iso-8859-1'),
+                'preview': self.file[:ERROR_PREVIEW_BYTES].decode('iso-8859-1'),
             }
 
-    def _convert_import_data(self, record, fields, options, context=None):
+    def _convert_import_data(self, fields, options):
         """ Extracts the input browse_record and fields list (with
         ``False``-y placeholders for fields to *not* import) into a
         format Model.import_data can use: a fields list without holes
         and the precisely matching data matrix
 
-        :param browse_record record:
         :param list(str|bool): fields
         :returns: (data, fields)
         :rtype: (list(list(str)), list(str))
-        :raises ValueError: in case the import data could not be converted
+        :raises UserError: in case the import data could not be converted
         """
         # Get indices for non-empty fields
         indices = [index for index, field in enumerate(fields) if field]
         if not indices:
-            raise ValueError(_("You must configure at least one field to import"))
+            raise UserError(_("You must configure at least one field to import"))
         # If only one index, itemgetter will return an atom rather
         # than a 1-tuple
-        if len(indices) == 1: mapper = lambda row: [row[indices[0]]]
-        else: mapper = operator.itemgetter(*indices)
+        if len(indices) == 1:
+            mapper = lambda row: [row[indices[0]]]
+        else:
+            mapper = operator.itemgetter(*indices)
         # Get only list of actually imported fields
         import_fields = filter(None, fields)
-
-        rows_to_import = self._read_csv(record, options)
+        rows_to_import = self._read_csv(options)
         if options.get('headers'):
             rows_to_import = itertools.islice(
                 rows_to_import, 1, None)
@@ -289,7 +284,8 @@ class ir_import(orm.TransientModel):
 
         return data, import_fields
 
-    def do(self, cr, uid, id, fields, options, dryrun=False, context=None):
+    @api.multi
+    def do(self, fields, options, dryrun=False):
         """ Actual execution of the import
 
         :param fields: import mapping: maps each column to a field,
@@ -309,12 +305,11 @@ class ir_import(orm.TransientModel):
                   ``false`` if that data isn't available or provided)
         :rtype: list({type, message, record})
         """
-        cr.execute('SAVEPOINT import')
+        self.env.cr.execute('SAVEPOINT import')
 
-        (record,) = self.browse(cr, uid, [id], context=context)
         try:
             data, import_fields = self._convert_import_data(
-                record, fields, options, context=context)
+                fields, options)
         except ValueError, e:
             return [{
                 'type': 'error',
@@ -323,8 +318,8 @@ class ir_import(orm.TransientModel):
             }]
 
         _logger.info('importing %d rows...', len(data))
-        import_result = self.pool[record.res_model].load(
-            cr, uid, import_fields, data, context=context)
+        import_result = self.env[self.res_model].load(
+            import_fields, data)
         _logger.info('done')
 
         # If transaction aborted, RELEASE SAVEPOINT is going to raise
@@ -336,9 +331,9 @@ class ir_import(orm.TransientModel):
         #       error in the results.
         try:
             if dryrun:
-                cr.execute('ROLLBACK TO SAVEPOINT import')
+                self.env.cr.execute('ROLLBACK TO SAVEPOINT import')
             else:
-                cr.execute('RELEASE SAVEPOINT import')
+                self.env.cr.execute('RELEASE SAVEPOINT import')
         except psycopg2.InternalError:
             pass
 
