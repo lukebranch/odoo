@@ -23,6 +23,7 @@ from openerp.osv import osv, fields
 from openerp.tools.translate import _
 import openerp.addons.decimal_precision as dp
 from openerp.exceptions import UserError
+from openerp.tools.float_utils import float_compare, float_round
 
 class stock_return_picking_line(osv.osv_memory):
     _name = "stock.return.picking.line"
@@ -103,12 +104,14 @@ class stock_return_picking(osv.osv_memory):
 
         # Cancel assignment of existing chained assigned moves
         moves_to_unreserve = []
+        picking_to_reassign = []
         for move in pick.move_lines:
             to_check_moves = [move.move_dest_id] if move.move_dest_id.id else []
             while to_check_moves:
                 current_move = to_check_moves.pop()
                 if current_move.state not in ('done', 'cancel') and current_move.reserved_quant_ids:
                     moves_to_unreserve.append(current_move.id)
+                    picking_to_reassign.append(current_move.picking_id.id)
                 split_move_ids = move_obj.search(cr, uid, [('split_from', '=', current_move.id)], context=context)
                 if split_move_ids:
                     to_check_moves += move_obj.browse(cr, uid, split_move_ids, context=context)
@@ -117,7 +120,7 @@ class stock_return_picking(osv.osv_memory):
             move_obj.do_unreserve(cr, uid, moves_to_unreserve, context=context)
             #break the link between moves in order to be able to fix them later if needed
             move_obj.write(cr, uid, moves_to_unreserve, {'move_orig_ids': False}, context=context)
-
+            #move_obj.action_confirm(cr, uid, moves_to_unreserve, context=context)
         #Create new picking for returned products
         pick_type_id = pick.picking_type_id.return_picking_type_id and pick.picking_type_id.return_picking_type_id.id or pick.picking_type_id.id
         new_picking = pick_obj.copy(cr, uid, pick.id, {
@@ -149,10 +152,37 @@ class stock_return_picking(osv.osv_memory):
 
         if not returned_lines:
             raise UserError(_("Please specify at least one non-zero quantity."))
-
         pick_obj.action_confirm(cr, uid, [new_picking], context=context)
         pick_obj.action_assign(cr, uid, [new_picking], context)
+        pick_obj.recheck_availability(cr , uid, picking_to_reassign, context=context)
+        if picking_to_reassign:
+            self.split_by_available(cr, uid, picking_to_reassign, context=context)
+            pick_obj.action_assign(cr , uid, picking_to_reassign, context=context)
+            #self.cancel_unreserve_move(cr , uid, picking_to_reassign, context=context)
         return new_picking, pick_type_id
+
+    def cancel_unreserve_move(self, cr, uid, picking_ids, context=None):
+        pick_obj = self.pool.get('stock.picking')
+        move_obj = self.pool.get('stock.move')
+        for picking in pick_obj.browse(cr, uid, picking_ids, context=context):
+            for move in picking.move_lines:
+                if not move.reserved_quant_ids:
+                    move_obj.action_cancel(cr, uid, [move.id], context=context)
+        return True
+
+    def split_by_available(self, cr, uid, picking_ids, context=None):
+        pick_obj = self.pool.get('stock.picking')
+        move_obj = self.pool.get('stock.move')
+        for picking in pick_obj.browse(cr, uid, picking_ids, context=context):
+            for move in picking.move_lines:
+                total = 0.0
+                if move.reserved_quant_ids:
+                    for quant in move.reserved_quant_ids:
+                        total += quant.qty
+                    if move.product_qty > total:
+                        remaining_qty = move.product_qty - total
+                        new_move = move_obj.split(cr, uid, move, remaining_qty, context=context)
+        return True
 
     def create_returns(self, cr, uid, ids, context=None):
         """
