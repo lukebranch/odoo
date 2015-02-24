@@ -362,7 +362,12 @@ class Website(openerp.addons.web.controllers.main.Home):
         :param str model:
         :param str xpath: valid xpath to the tag to replace
         """
-
+        "website.submenu"
+        #recuperer id et model cf ligne 407 puis appeler la méthode save dessus directement
+        imd = request.registry['ir.model.data']
+        view_model, id = imd.get_object_reference(request.cr, request.uid, 'website', 'submenu')
+        import pudb
+        pudb.set_trace()
         print("SAVE MENU")
 
     #------------------------------------------------------

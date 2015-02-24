@@ -31,7 +31,7 @@
             $(".s_menu_parent:not(:has(ul))").children('a').append('<span class="caret"></span>');
             $(".s_menu_parent:not(:has(ul))").children('a').after('<ul class="dropdown-menu o_editable_menu" role="menu"></ul>');
             $(".s_menu_parent").children('a').removeAttr('data-toggle class');
-            $(".s_menu_parent").addClass('open');
+            $(".s_menu_parent").addClass('open o_editable');
             $(".s_menu_parent").children('ul').css('visibility', 'hidden');
             $(".s_menu_parent").droppable({
                 over:function(){self.open_dropdown_hover($(this));}
@@ -42,33 +42,85 @@
         },
     });
 
-    website.snippet.SaveMenu = website.EditorBar.include({
+
+    website.EditorBar.include({
         saveElement: function($el){
             if($el.hasClass('s_menu_parent')){
-                //a mettre dans clean_for_save
-                $el.children('ul').css('visibility', '');
-                $el.off('mouseenter');
-                $el.removeClass('open');
-                if($el.find('ul').length === 0){
-                    $el.children('a').children('.caret').remove();
-                    $el.children('.dropdown-menu').remove();
-                }else{
-                    $el.children('a').attr('data-toggle', 'dropdown');
-                    $el.children('a').addClass('dropdown-toggle');
-                }
                 var markup = $el.prop('outerHTML');
                 console.log(markup);
-                result = openerp.jsonRpc('/website/save_menu', 'save_menu', {
+                return openerp.jsonRpc('/website/save_menu', 'save_menu', {
                     value: markup,
                     xpath: $el.data('oe-xpath') || null,
                     context: website.get_context(),
                 });
             }else{
-                var result = this._super($el);
+                return this._super($el);
             }
-
-            return result;
         }
+    });
+
+    website.snippet.options.menu_link = website.snippet.Option.extend({
+        start: function(){
+            this._super();
+            var link = this.$target.children('a');
+            var new_range = $.summernote.core.range.createFromNode(link[0]);
+            new_range.select();
+            var linkInfo = {range: new_range};
+            var editor = new website.editor.LinkDialog(link, linkInfo);
+            editor.appendTo(document.body);
+
+            editor.on("save", this, function (linkInfo) {
+                var link = this.$target.children('a');
+                link.addClass(linkInfo.className);
+                link.removeClass('o_default_snippet_text');
+                link.text(linkInfo.text);
+                link.attr('href',linkInfo.url);
+                if(linkInfo.newWindow){
+                    link.attr('target', '_blank');
+                }
+            });
+        },
+    });
+
+    website.snippet.options.menu_parent = website.snippet.Option.extend({
+        //TODO exactly same function as menu_link start, put the same code in an external function
+        start: function(){
+            this._super();
+            var link = this.$target.children('a');
+            this.$target.addClass('o_dirty o_editable');
+            var new_range = $.summernote.core.range.createFromNode(link[0]);
+            new_range.select();
+            var linkInfo = {range: new_range};
+            var editor = new website.editor.LinkDialog(link, linkInfo);
+            editor.appendTo(document.body);
+            var self = this;
+            editor.on("save", this, function (linkInfo) {
+                var link = this.$target.children('a');
+                link.addClass(linkInfo.className);
+                link.removeClass('o_default_snippet_text');
+                link.text(linkInfo.text);
+                link.attr('href',linkInfo.url);
+                if(linkInfo.newWindow){
+                    link.attr('target', '_blank');
+                }
+                self.BuildingBlock.init_edit_menu();
+            });
+        },
+
+        clean_for_save: function(){
+            this.$target.children('ul').css('visibility', '');
+            this.$target.off('mouseenter');
+            this.$target.removeClass('open');
+            if(this.$target.children('ul').children().length === 0){
+                this.$target.children('a').children('.caret').remove();
+                this.$target.children('ul').remove();
+                this.$target.children('.dropdown-menu').remove();
+            }else{
+                this.$target.children('a').attr('data-toggle', 'dropdown');
+                this.$target.children('a').addClass('dropdown-toggle');
+            }
+            debugger;
+        },
     });
 
 })();
