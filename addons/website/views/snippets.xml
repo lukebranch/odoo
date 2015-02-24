@@ -720,6 +720,43 @@
     </section>
 </template>
 
+<template id="s_menu_column" name="Column">
+    <div class="s_menu_column">
+        <div class="container">
+                <div class="row">
+                    <div class="col-md-4">
+                        <ul class="o_column_list">
+                        </ul>
+                        <p>
+                            Adapt these three columns to fit you design need.
+                            To duplicate, delete or move columns, select the
+                            column and use the top icons to perform your action.
+                        </p>
+                    </div>
+                    <div class="col-md-4">
+                        <ul class="o_column_list">
+                        </ul>
+                        <p>
+                            To add a fourth column, reduce the size of these
+                            three columns using the right icon of each block.
+                            Then, duplicate one of the column to create a new
+                            one as a copy.
+                        </p>
+                    </div>
+                    <div class="col-md-4">
+                        <ul class="o_column_list">
+                        </ul>
+                    </div>
+                </div>
+            </div>
+    </div>
+</template>
+
+<template name="link" id="s_menu_link">
+    <li class="s_menu_link">
+        <a href="/page/homepage">Link</a>
+    </li>
+</template>
 
 <template id="snippets">
 <ul>
@@ -749,6 +786,14 @@
     </li>
     <li>
         <a href="#snippet_effect" class="scroll-link">
+            <span class="fa-stack fa-lg">
+                <i class="fa fa-square fa-stack-2x fa-inverse"></i>
+                <i class="fa fa-paper-plane fa-stack-1x"></i>
+            </span>
+        </a>
+    </li>
+    <li>
+        <a href="#snippet_menu" class="scroll-link">
             <span class="fa-stack fa-lg">
                 <i class="fa fa-square fa-stack-2x fa-inverse"></i>
                 <i class="fa fa-paper-plane fa-stack-1x"></i>
@@ -818,10 +863,23 @@
         </span> Effect
     </div>
     <div class="o_panel_body">
-        <t t-snippet="website.s_parallax" t-thumbnail="/website/static/src/img/blocks/block_parallax.png"/>
+        <t t-snippet="website.s_parallax" t-thumbnail="/website/static/src/img/blocks/block_three_columns.png"/>
         <t t-snippet="website.s_parallax_slider" t-thumbnail="/website/static/src/img/blocks/block_quotes_slider.png"/>
     </div>
 </div>
+
+<div id="snippet_menu" class="o_panel">
+    <div class="o_panel_header">
+        <span class="fa-stack">
+            <i class="fa fa-paper-plane fa-stack-1x"></i>
+        </span> Menu
+    </div>
+    <div class="o_panel_body">
+        <t t-snippet="website.s_menu_column" t-thumbnail="/website/static/src/img/blocks/block_three_columns.png"/>
+        <t t-snippet="website.s_menu_link" t-thumbnail="/website/static/src/img/blocks/block_quote.png"/>
+    </div>
+</div>
+
 </div>
 
 <div id="snippet_options" class="hidden">
@@ -1001,6 +1059,17 @@
     <div data-js='separator'
         data-selector="hr"
         data-drop-in=".oe_structure, [data-oe-type=html]">
+    </div>
+
+    <div data-selector=".s_menu_column"
+        data-drop-in=".o_editable_menu"
+        data-no-check="true">
+    </div>
+
+    <div data-js="menu_link" 
+        data-selector=".s_menu_link"
+        data-drop-in=".o_column_list"
+        data-no-check="true">
     </div>
 
     <div data-selector=".o_image_floating">
