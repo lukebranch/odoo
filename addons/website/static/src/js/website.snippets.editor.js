@@ -2119,6 +2119,32 @@
         },
     });
 
+    website.snippet.options.menu_parent = website.snippet.Option.extend({
+        //TODO exactly same function as menu_link start, put the same code in an external function
+        start: function(){
+            this._super();
+            var link = $(this.$target).children('a');
+            var new_range = $.summernote.core.range.createFromNode(link[0]);
+            new_range.select();
+            var linkInfo = {range: new_range};
+            var editor = new website.editor.LinkDialog(link, linkInfo);
+            editor.appendTo(document.body);
+            var self = this;
+            editor.on("save", this, function (linkInfo) {
+                var link = this.$target.children('a');
+                link.addClass(linkInfo.className);
+                link.removeClass('o_default_snippet_text');
+                link.text(linkInfo.text);
+                link.attr('href',linkInfo.url);
+                if(linkInfo.newWindow){
+                    link.attr('target', '_blank');
+                }
+                self.BuildingBlock.init_edit_menu();
+            });
+
+        },
+    });
+
     /* t-field options */
 
     website.snippet.options.many2one = website.snippet.Option.extend({

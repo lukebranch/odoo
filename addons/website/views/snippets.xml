@@ -758,6 +758,12 @@
     </li>
 </template>
 
+<template name="Menu" id="s_menu_parent">
+    <li class="s_menu_parent open">
+        <a href="/page/homepage">Home</a>
+    </li>
+</template>
+
 <template id="snippets">
 <ul>
     <li class="active">
@@ -877,6 +883,7 @@
     <div class="o_panel_body">
         <t t-snippet="website.s_menu_column" t-thumbnail="/website/static/src/img/blocks/block_three_columns.png"/>
         <t t-snippet="website.s_menu_link" t-thumbnail="/website/static/src/img/blocks/block_quote.png"/>
+        <t t-snippet="website.s_menu_parent" t-thumbnail="/website/static/src/img/blocks/block_references.png"/>
     </div>
 </div>
 
@@ -1069,6 +1076,12 @@
     <div data-js="menu_link" 
         data-selector=".s_menu_link"
         data-drop-in=".o_column_list"
+        data-no-check="true">
+    </div>
+
+    <div data-js="menu_parent" 
+        data-selector=".s_menu_parent"
+        data-drop-near=".s_menu_parent"
         data-no-check="true">
     </div>
 

@@ -356,7 +356,7 @@ class Website(openerp.addons.web.controllers.main.Home):
         xmlroot = ET.fromstring(request.read())
         return json.dumps([sugg[0].attrib['data'] for sugg in xmlroot if len(sugg) and sugg[0].attrib['data']])
 
-    @http.route('/website/save_menu')
+    @http.route(['/website/save_menu'], type='json', auth="public", website=True)
     def save_menu(self, value, xpath=None, context=None):
         """ Update the menu view.
         :param str model:
