@@ -41,12 +41,11 @@ class report_account_followup_report(models.AbstractModel):
         for aml in self.env['account.move.line'].search(domain):
             overdue = aml.date_maturity and datetime.today().strftime('%Y-%m-%d') > aml.date_maturity
             date_due = overdue and (aml.date_maturity, 'color: red;') or aml.date_maturity
-            amount = aml.debit - aml.credit
-            total += amount
+            total += aml.amount_residual
             if overdue:
-                total_issued += amount
+                total_issued += aml.amount_residual
             view_type = total >= 0 and 'invoice' or 'payment'
-            amount = formatLang(self.env, amount, currency_obj=currency_id)
+            amount = formatLang(self.env, aml.amount_residual, currency_obj=currency_id)
             lines.append({
                 'id': aml.id,
                 'name': aml.ref,
@@ -118,6 +117,11 @@ class account_report_context_followup_all(models.TransientModel):
     percentage = fields.Integer(compute='_compute_percentage')
     started = fields.Datetime('Starting time', default=lambda self: fields.datetime.now())
     partner_filter = fields.Selection([('all', 'All partners with overdue invoices'), ('action', 'All partners in need of action')], string='Partner Filter', default='action')
+    skipped_partners_ids = fields.Many2many('res.partner', 'account_fup_report_skipped_partners', string='Skipped partners')
+
+    def skip_partner(self, partner):
+        self.write({'skipped_partners_ids': [(4, partner.id)]})
+        self.write({'valuenow': self.valuenow + 1})
 
     def get_total_time(self):
         delta = fields.datetime.now() - datetime.strptime(self.started, tools.DEFAULT_SERVER_DATETIME_FORMAT)

@@ -1,6 +1,7 @@
 from openerp import http
 from openerp.http import request
 from hashlib import md5
+import time
 
 
 class FinancialReportController(http.Controller):
@@ -63,12 +64,19 @@ class FinancialReportController(http.Controller):
         context_all_obj = request.env['account.report.context.followup.all']
         reports = []
         context_all_id = context_all_obj.sudo(uid).search([('create_uid', '=', uid)], limit=1)
-        partners = request.env['res.partner'].get_partners_in_need_of_action()
+        if 'date' in kw and ('partner_skipped' in kw or 'partner_done' in kw):
+        if 'partner_skipped' in kw:
+            context_all_id.skip_partner(request.env['res.partner'].browse(int(kw['partner_skipped'])))
+        partners = request.env['res.partner'].get_partners_in_need_of_action() - context_all_id.skipped_partners_ids
         if not context_all_id:
             context_all_id = context_all_obj.sudo(uid).create({'valuemax': len(partners)})
         if 'partner_filter' in kw:
             context_all_id.write({'partner_filter': kw['partner_filter']})
         if 'partner_done' in kw and 'partner_filter' not in kw:
+            try:
+                context_all_id.write({'skipped_partners_ids': [(4, int(kw['partner_done']))]})
+            except ValueError:
+                pass
             if context_all_id.partner_filter == 'action':
                 context_all_id.write({'valuenow': context_all_id.valuenow + 1})
                 if kw['partner_done'] == 'all':
@@ -94,7 +102,8 @@ class FinancialReportController(http.Controller):
             'mode': 'display',
             'page': page,
             'context_all': context_all_id,
-            'just_arrived': 'partner_done' not in kw,
+            'just_arrived': 'partner_done' not in kw and 'partner_skipped' not in kw,
+            'time': time,
         }
         return request.render('account.report_followup_all', rcontext)
 
@@ -122,6 +131,7 @@ class FinancialReportController(http.Controller):
             'report': report_obj.with_context(lang=partner.lang),
             'lines': lines,
             'mode': 'display',
+            'time': time,
         }
         return request.render('account.report_followup', rcontext)
 

@@ -23,13 +23,6 @@ openerp.account_followup.FollowupReportWidgets = openerp.account.ReportWidgets.e
             window.open('?partner_done=all&action_partner_list=' + action_partner_list, '_self');
         }
     },
-    skipPartner: function(e) {
-        var partner_id = $(e.target).attr("partner");
-        var model = new openerp.Model('res.partner');
-        model.call('update_next_action', [[parseInt(partner_id)]]).then(function (result) {
-            window.open('?partner_done=' + partner_id, '_self');
-        });
-    },
     changeTrust: function(e) {
         e.stopPropagation();
         e.preventDefault();
@@ -58,6 +51,9 @@ openerp.account_followup.FollowupReportWidgets = openerp.account.ReportWidgets.e
         .filter([['id', '=', line_id]]).first().then(function (result) {
             $("#manualActionModal .modal-body").html(openerp.qweb.render("manualAction", {data: result}));
             $('#manualActionModal').modal('show');
+            var $skipButton = $(e.target).siblings('a.followup-skip');
+            $skipButton.attr('class', 'btn btn-primary followup-skip');
+            $skipButton.text('Done');
         });
     }
 });

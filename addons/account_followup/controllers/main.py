@@ -22,6 +22,7 @@
 from openerp import http, addons
 from openerp.http import request
 from openerp.tools.safe_eval import safe_eval
+import time
 
 
 class FollowupReportController(addons.account.controllers.main.FinancialReportController):
@@ -34,14 +35,20 @@ class FollowupReportController(addons.account.controllers.main.FinancialReportCo
         context_all_obj = request.env['account.report.context.followup.all']
         reports = []
         context_all_id = context_all_obj.sudo(uid).search([('create_uid', '=', uid)], limit=1)
+        if 'partner_skipped' in kw:
+            context_all_id.skip_partner(request.env['res.partner'].browse(int(kw['partner_skipped'])))
         partners_data = request.env['res.partner'].get_partners_in_need_of_action()
-        partners = request.env['res.partner'].browse(partners_data.keys())
+        partners = request.env['res.partner'].browse(partners_data.keys()) - context_all_id.skipped_partners_ids
         action_contexts = []
         if not context_all_id:
             context_all_id = context_all_obj.sudo(uid).create({'valuemax': len(partners)})
         if 'partner_filter' in kw:
             context_all_id.write({'partner_filter': kw['partner_filter']})
         if 'partner_done' in kw and 'partner_filter' not in kw:
+            try:
+                context_all_id.write({'skipped_partners_ids': [(4, int(kw['partner_done']))]})
+            except ValueError:
+                pass
             if context_all_id.partner_filter == 'action':
                 context_all_id.write({'valuenow': context_all_id.valuenow + 1})
                 if kw['partner_done'] == 'all':
@@ -72,6 +79,7 @@ class FollowupReportController(addons.account.controllers.main.FinancialReportCo
             'context_all': context_all_id,
             'just_arrived': 'partner_done' not in kw,
             'action_contexts': action_contexts,
+            'time': time,
         }
         return request.render('account.report_followup_all', rcontext)
 
@@ -100,5 +108,6 @@ class FollowupReportController(addons.account.controllers.main.FinancialReportCo
             'report': report_obj.with_context(lang=partner.lang),
             'lines': lines,
             'mode': 'display',
+            'time': time,
         }
         return request.render('account.report_followup', rcontext)

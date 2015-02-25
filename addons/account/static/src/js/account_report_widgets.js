@@ -58,9 +58,15 @@ openerp.account.ReportWidgets = openerp.Widget.extend({
     skipPartner: function(e) {
         var partner_id = $(e.target).attr("partner");
         var model = new openerp.Model('res.partner');
-        model.call('update_next_action', [[parseInt(partner_id)]]).then(function (result) {
-            window.open('?partner_done=' + partner_id, '_self');
-        });
+        var next_action_date = $(e.target).parents('div.page').find('input.next_action_date').val()
+        if ($(e.target).attr('class') == 'btn btn-primary followup-skip') {
+            model.call('update_next_action', [[parseInt(partner_id)]]).then(function (result) {
+                window.open('?partner_done=' + partner_id + '&date=' + next_action_date, '_self');
+            });
+        }
+        else {
+            window.open('?partner_skipped=' + partner_id + '&date=' + next_action_date, '_self');
+        }
     },
     printFollowupLetter: function(e) {
         e.stopPropagation();
@@ -68,8 +74,10 @@ openerp.account.ReportWidgets = openerp.Widget.extend({
         var url = $(e.target).attr("target");
         window.open(url, '_blank');
         if ($(e.target).attr("class").split(/\s+/)[1] == 'btn-primary') {
-            $(e.target).siblings('a.followup-skip').attr('class', 'btn btn-primary followup-skip')
-            $(e.target).attr('class', 'btn btn-default followup-letter')
+            var $skipButton = $(e.target).siblings('a.followup-skip');
+            $skipButton.attr('class', 'btn btn-primary followup-skip');
+            $skipButton.text('Done');
+            $(e.target).attr('class', 'btn btn-default followup-letter');
         }
     },
     sendFollowupEmail: function(e) {
@@ -80,7 +88,9 @@ openerp.account.ReportWidgets = openerp.Widget.extend({
         contextModel.call('send_email', [[parseInt(context_id)]]).then (function (result) {
             window.$("div.page:first").prepend(openerp.qweb.render("emailSent"));
             if ($(e.target).attr("class").split(/\s+/)[1] == 'btn-primary') {
-                $(e.target).siblings('a.followup-skip').attr('class', 'btn btn-primary followup-skip')
+                var $skipButton = $(e.target).siblings('a.followup-skip');
+                $skipButton.attr('class', 'btn btn-primary followup-skip');
+                $skipButton.text('Done');
                 $(e.target).attr('class', 'btn btn-default followup-email')
             }
         });
