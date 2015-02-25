@@ -19,7 +19,6 @@
 #
 ##############################################################################
 
-import res_company
-import ir_translation
+import models
 import wizard
 import controller
