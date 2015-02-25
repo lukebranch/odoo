@@ -39,18 +39,20 @@
             $("body").on("mouseenter", ".s_menu_parent", function () {
                 self.open_dropdown_hover($(this));
             });
+
+            $(".top_menu").addClass('o_dirty o_editable');
         },
     });
 
 
     website.EditorBar.include({
         saveElement: function($el){
-            if($el.hasClass('s_menu_parent')){
+            debugger;
+            if($el.hasClass('top_menu')){
                 var markup = $el.prop('outerHTML');
                 console.log(markup);
                 return openerp.jsonRpc('/website/save_menu', 'save_menu', {
                     value: markup,
-                    xpath: $el.data('oe-xpath') || null,
                     context: website.get_context(),
                 });
             }else{
@@ -87,7 +89,7 @@
         start: function(){
             this._super();
             var link = this.$target.children('a');
-            this.$target.addClass('o_dirty o_editable');
+            this.$target.addClass('o_editable');
             var new_range = $.summernote.core.range.createFromNode(link[0]);
             new_range.select();
             var linkInfo = {range: new_range};

@@ -30,7 +30,7 @@
 </template>
 
 <template id="website.submenu" name="Submenu">
-    <ul class="nav navbar-nav navbar-right" id="top_menu">
+    <ul class="nav navbar-nav navbar-right top_menu" id="top_menu">
         <t t-foreach="website.menu_id.child_id" t-as="submenu">
             <li t-if="not submenu.child_id" class="s_menu_parent" t-att-class="
                 ((submenu.url != '/' and request.httprequest.path.startswith(submenu.url)) or
