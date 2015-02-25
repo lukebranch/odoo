@@ -21,21 +21,18 @@
 
 from openerp.osv import osv
 
-class sale_order(osv.osv):
-    _inherit = "sale.order"
+class procurement_order(osv.osv):
+    _inherit = 'procurement.order'
 
-    def action_ship_create(self, cr, uid, ids, context=None):
+    def run(self, cr, uid, ids, context=None):
         context = context or {}
         context['no_run_at_create'] = True
 
-        res = super(sale_order, self).action_ship_create(cr, uid, ids, context=context)
+        res = super(procurement_order, self).run(cr, uid, ids, context=context)
 
-        procurement_obj = self.pool.get('procurement.order')
-        order = self.browse(cr, uid, ids, context=context)[0]
-
-        proc_ids = procurement_obj.search(cr, uid, [('origin', 'ilike', order.name)], context=context)
-        while (proc_ids):
-            procurement_obj.run(cr, uid, proc_ids, context=context)
-            procurement_obj.check(cr, uid, proc_ids, context=context)
-            proc_ids = procurement_obj.search(cr, uid, [('origin', 'ilike', order.name), ('state', '=', 'confirmed')], context=context)
+        move_ids = self.pool.get('stock.move').search(cr, uid, [('procurement_id', 'in', ids)], context=context)
+        procurement_ids = self.search(cr, uid, [('move_dest_id', 'in', move_ids)], context=context)
+        print "))", procurement_ids
+        if procurement_ids:
+            return self.run(cr, uid, procurement_ids, context=context)
         return res

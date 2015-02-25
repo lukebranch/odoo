@@ -29,11 +29,11 @@ This module allows Just In Time computation for Sale.
     """,
     'author': 'OpenERP SA',
     'website': '',
-    'depends': ['procurement_jit', 'sale'],
+    'depends': ['procurement_jit', 'stock'],
     'data': [],
     'demo': [],
     'test': [],
     'installable': True,
-    'auto_install': False,
+    'auto_install': True,
 }
 # vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:
