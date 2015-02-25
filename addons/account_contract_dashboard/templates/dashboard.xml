@@ -92,26 +92,26 @@
 
           <div class="row box">
             <div class="col-md-3">
-              <h4 class="text-muted upper">Current</h4>
-              <h1><t t-esc="value_now['value']"/><t t-esc="currency"/></h1>
+              <h4 class="text-muted smallCaps">Current</h4>
+              <h2><t t-esc="value_now['value']"/><t t-esc="currency"/></h2>
             </div>
 
 
             <div class="col-md-3">
-              <h4 class="text-muted">1 MONTH AGO</h4>
-              <h1><t t-esc="value_1_month_ago['value']"/><t t-esc="currency"/> <small t-if="not value_1_month_ago['value'] == 0" t-attf-class="#{rate(stat_type, value_1_month_ago['value'], value_now['value'])[1]}"><t t-esc="rate(stat_type, value_1_month_ago['value'], value_now['value'])[0]"/>%</small></h1>
+              <h4 class="text-muted smallCaps">1 month ago</h4>
+              <h2><t t-esc="value_1_month_ago['value']"/><t t-esc="currency"/> <small t-if="not value_1_month_ago['value'] == 0" t-attf-class="#{rate(stat_type, value_1_month_ago['value'], value_now['value'])[1]}"><t t-esc="rate(stat_type, value_1_month_ago['value'], value_now['value'])[0]"/>%</small></h2>
             </div>
 
 
             <div class="col-md-3">
-              <h4 class="text-muted">3 MONTHS AGO</h4>
-              <h1><t t-esc="value_3_months_ago['value']"/><t t-esc="currency"/> <small t-if="not value_3_months_ago['value'] == 0" t-attf-class="#{rate(stat_type, value_3_months_ago['value'], value_now['value'])[1]}"><t t-esc="rate(stat_type, value_3_months_ago['value'], value_now['value'])[0]"/>%</small></h1>
+              <h4 class="text-muted smallCaps">3 months ago</h4>
+              <h2><t t-esc="value_3_months_ago['value']"/><t t-esc="currency"/> <small t-if="not value_3_months_ago['value'] == 0" t-attf-class="#{rate(stat_type, value_3_months_ago['value'], value_now['value'])[1]}"><t t-esc="rate(stat_type, value_3_months_ago['value'], value_now['value'])[0]"/>%</small></h2>
             </div>
 
 
             <div class="col-md-3">
-              <h4 class="text-muted">12 MONTHS AGO</h4>
-              <h1><t t-esc="value_12_months_ago['value']"/><t t-esc="currency"/> <small t-if="not value_12_months_ago['value'] == 0" t-attf-class="#{rate(stat_type, value_12_months_ago['value'], value_now['value'])[1]}"><t t-esc="rate(stat_type, value_12_months_ago['value'], value_now['value'])[0]"/>%</small></h1>
+              <h4 class="text-muted smallCaps">12 months ago</h4>
+              <h2><t t-esc="value_12_months_ago['value']"/><t t-esc="currency"/> <small t-if="not value_12_months_ago['value'] == 0" t-attf-class="#{rate(stat_type, value_12_months_ago['value'], value_now['value'])[1]}"><t t-esc="rate(stat_type, value_12_months_ago['value'], value_now['value'])[0]"/>%</small></h2>
             </div>
           </div>
 

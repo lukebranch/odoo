@@ -22,8 +22,8 @@ div.box:hover {
   filter: alpha(opacity=1);
 }
 
-div.box h1, h2 {
-    margin-top: 0px;
+div.box h1, h2, h3, h4 {
+    margin-top: 5px;
     font-weight: 800;
 }
 
@@ -56,6 +56,10 @@ a.fill-div {
 
 .upper {
     text-transform: uppercase;
+}
+
+.smallCaps {
+    font-variant: small-caps;
 }
 
 .loading {

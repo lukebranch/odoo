@@ -26,9 +26,9 @@ $(document).ready(function () {
                 graph = []
                 box.innerHTML = 
                     '<div style="position: relative;">'+
-                        '<h1 style="font-size: 42px; color: #2693d5;">'+value+'</h1>'+
+                        '<h2 style="color: #2693d5;">'+value+'</h2>'+
                         '<div class="trend">'+
-                            '<h2 class="'+color+' mb0">'+perc+'%</h2>'+
+                            '<h4 class="'+color+' mb0">'+perc+'%</h4>'+
                             '<span style="font-size: 10px;">30 Days Ago</span>'+
                         '</div>'+
                     '</div>'+
