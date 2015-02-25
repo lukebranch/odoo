@@ -15,8 +15,8 @@ $(document).ready(function () {
                 box_code = box.getAttribute("code");
                 chart_div_id = 'chart_div_' + box_code;
 
-                value_start = result[box_code]['value_start'];
-                value_end = result[box_code]['value_end'];
+                // value_start = result[box_code]['value_start'];
+                value = result[box_code]['value'];
                 perc = result[box_code]['perc'];
                 color = result[box_code]['color'];
 
@@ -26,7 +26,7 @@ $(document).ready(function () {
                 graph = []
                 box.innerHTML = 
                     '<div style="position: relative;">'+
-                        '<h1 style="font-size: 42px; color: #2693d5;">'+value_end+'</h1>'+
+                        '<h1 style="font-size: 42px; color: #2693d5;">'+value+'</h1>'+
                         '<div class="trend">'+
                             '<h2 class="'+color+' mb0">'+perc+'%</h2>'+
                             '<span style="font-size: 10px;">30 Days Ago</span>'+
@@ -72,7 +72,7 @@ $(document).ready(function () {
                 data.addRows(result);
                 var options = {
                     title: '',
-                    pointSize : 5,
+                    pointSize : 3,
                     allowContainerBoundaryTextCufoff: true,
                     // backgroundColor:"#FAFAFA",
 

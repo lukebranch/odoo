@@ -5,7 +5,7 @@
   <template id="dashboard" name="Recurrent Revenue Dashboard" page="True">
     <t t-name="account_contract_dashboard.dashboard"/>
     <t t-call="website.layout">
-    <div id="wrap" class="oe_structure oe_empty mb64" style="background-color: #EAEAEA;">
+    <div id="wrap" class="oe_structure oe_empty" style="background-color: #ebf1f4;">
       <div class="container">
           
           <div class="row">              
@@ -55,7 +55,7 @@
   <template id="detailed_dashboard" name="Detailed Dashboard" page="True">
     <t t-name="account_contract_dashboard.detailed_dashboard"/>
     <t t-call="website.layout">
-    <div id="wrap" class="oe_structure oe_empty" style="background-color: #EAEAEA;">
+    <div id="wrap" class="oe_structure oe_empty" style="background-color: #ebf1f4;">
       <div class="container">
           
           <div class="row">              
@@ -90,43 +90,53 @@
             </div>
           </div>
 
+          <div class="row box">
+            <div class="col-md-3">
+              <h4 class="text-muted upper">Current</h4>
+              <h1><t t-esc="value_now['value']"/><t t-esc="currency"/></h1>
+            </div>
+
+
+            <div class="col-md-3">
+              <h4 class="text-muted">1 MONTH AGO</h4>
+              <h1><t t-esc="value_1_month_ago['value']"/><t t-esc="currency"/> <small t-if="not value_1_month_ago['value'] == 0" t-attf-class="#{rate(stat_type, value_1_month_ago['value'], value_now['value'])[1]}"><t t-esc="rate(stat_type, value_1_month_ago['value'], value_now['value'])[0]"/>%</small></h1>
+            </div>
+
+
+            <div class="col-md-3">
+              <h4 class="text-muted">3 MONTHS AGO</h4>
+              <h1><t t-esc="value_3_months_ago['value']"/><t t-esc="currency"/> <small t-if="not value_3_months_ago['value'] == 0" t-attf-class="#{rate(stat_type, value_3_months_ago['value'], value_now['value'])[1]}"><t t-esc="rate(stat_type, value_3_months_ago['value'], value_now['value'])[0]"/>%</small></h1>
+            </div>
+
+
+            <div class="col-md-3">
+              <h4 class="text-muted">12 MONTHS AGO</h4>
+              <h1><t t-esc="value_12_months_ago['value']"/><t t-esc="currency"/> <small t-if="not value_12_months_ago['value'] == 0" t-attf-class="#{rate(stat_type, value_12_months_ago['value'], value_now['value'])[1]}"><t t-esc="rate(stat_type, value_12_months_ago['value'], value_now['value'])[0]"/>%</small></h1>
+            </div>
+          </div>
+
           <div class="row">
+            <div t-if="stat_type == 'mrr'" class="box" style="height: 300px;">
+              <h3>Monthly Recurring Revenue Growth</h3>
+            </div>
+          </div>
+
+          <div t-if="stats_by_plan" class="row">
             <div class="box">
-              <div class="col-md-3">
-                <h4 class="text-muted upper">Current</h4>
-                <h1><t t-esc="value_now"/><t t-esc="currency"/> <small class="oGreen">+7%</small></h1>
-              </div>
-
-
-              <div class="col-md-3">
-                <h4 class="text-muted">1 MONTH AGO</h4>
-                <h1><t t-esc="value_1_month_ago"/><t t-esc="currency"/></h1>
-              </div>
-
-
-              <div class="col-md-3">
-                <h4 class="text-muted">3 MONTHS AGO</h4>
-                <h1><t t-esc="value_3_month_ago"/><t t-esc="currency"/></h1>
-              </div>
-
-
-              <div class="col-md-3">
-                <h4 class="text-muted">12 MONTHS AGO</h4>
-                <h1><t t-esc="value_12_month_ago"/><t t-esc="currency"/></h1>
-              </div>
-              a
-            </div>
-          </div>
-
-          <div class="row">
-            <div class="box" style="height: 300px;">
-              Another graph
-            </div>
-          </div>
-
-          <div class="row">
-            <div class="box" style="height: 300px;">
-              Table
+              <table class="table table-striped">
+                <tr>
+                  <th>Plan</th>
+                  <th>Customers</th>
+                  <th t-if="not stat_type == 'recurring_quant'"><t t-esc="report_name"/></th>
+                </tr>
+                <t t-foreach="stats_by_plan" t-as="plan">
+                  <tr>
+                    <td><t t-esc="plan['name']"/></td>
+                    <td t-att-class="'oGreen' if plan['nb_customers'] > 0 else 'grey'"><t t-esc="plan['nb_customers']"/></td>
+                    <td t-if="not stat_type == 'recurring_quant'" t-att-class="'oGreen' if plan['value'] > 0 else 'grey'"><t t-esc="plan['value']"/><t t-esc="currency"/></td>
+                  </tr>
+                </t>
+              </table>
             </div>
           </div>
 

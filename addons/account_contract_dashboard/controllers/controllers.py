@@ -23,6 +23,21 @@ stat_types = {
 }
 
 
+def compute_rate(stat_type, old, new):
+    direction = stat_types[stat_type]['dir']
+
+    try:
+        value = round(100.0 * (new-old) / old, 2)
+    except ZeroDivisionError:
+        value = 0
+    color = 'oBlack'
+    if value and direction == 'up':
+        color = (value > 0) and 'oGreen' or 'oRed'
+    if value and direction != 'up':
+        color = (value < 0) and 'oGreen' or 'oRed'
+    return int(value), color
+
+
 class AccountContractDashboard(http.Controller):
     @http.route('/account_contract_dashboard', auth='user', website=True)
     def account_contract_dashboard(self, **kw):
@@ -46,18 +61,18 @@ class AccountContractDashboard(http.Controller):
 
         start_date = datetime.strptime(kw.get('start_date'), '%Y-%m-%d') if kw.get('start_date') else default_start_date
         end_date = datetime.strptime(kw.get('end_date'), '%Y-%m-%d') if kw.get('end_date') else default_end_date
+        end_date_1_month_ago = end_date - relativedelta(months=+1)
+        end_date_3_months_ago = end_date - relativedelta(months=+3)
+        end_date_12_months_ago = end_date - relativedelta(months=+12)
 
         # print('Render stat : %s' % stat_type)
 
         report_name = stat_types[stat_type]['name']
 
-        value_now = self.calculate_stat(stat_type, end_date)
-        value_1_month_ago = self.calculate_stat(stat_type, end_date - relativedelta(months=+1))
-        value_3_month_ago = self.calculate_stat(stat_type, end_date - relativedelta(months=+3))
-        value_12_month_ago = self.calculate_stat(stat_type, end_date - relativedelta(months=+12))
-
-        # plans = A plan is defined by template lnked to the contract of a specific invoice line
-        # --> grouped by invoice_line.product_id.product_tmpl_id.name
+        value_now = self.calculate_stat_diff(stat_type, end_date - relativedelta(months=+1), end_date)
+        value_1_month_ago = self.calculate_stat_diff(stat_type, end_date_1_month_ago - relativedelta(months=+1), end_date_1_month_ago)
+        value_3_months_ago = self.calculate_stat_diff(stat_type, end_date_3_months_ago - relativedelta(months=+1), end_date_3_months_ago)
+        value_12_months_ago = self.calculate_stat_diff(stat_type, end_date_12_months_ago - relativedelta(months=+1), end_date_12_months_ago)
 
         return http.request.render('account_contract_dashboard.detailed_dashboard', {
             'stat_type': stat_type,
@@ -67,10 +82,35 @@ class AccountContractDashboard(http.Controller):
             'end_date': end_date.strftime('%Y-%m-%d'),
             'value_now': value_now,
             'value_1_month_ago': value_1_month_ago,
-            'value_3_month_ago': value_3_month_ago,
-            'value_12_month_ago': value_12_month_ago,
+            'value_3_months_ago': value_3_months_ago,
+            'value_12_months_ago': value_12_months_ago,
             'currency': '€',
+            'rate': compute_rate,
+            'stats_by_plan': [] if stat_type not in ['mrr', 'net_revenue', 'arr', 'ltv', 'logo_churn', 'revenue_churn', 'recurring_quant'] else sorted(self.get_stats_by_plan(stat_type, end_date), key=lambda k: k['value'], reverse=True),
         })
+
+    def get_stats_by_plan(self, stat_type, date):
+
+        results = []
+        recurring_invoice_line_ids = request.env['account.invoice.line'].search([
+            ('asset_start_date', '<=', date),
+            ('asset_end_date', '>=', date),
+            ('asset_category_id', '!=', None)
+        ])
+
+        plans = recurring_invoice_line_ids.mapped('product_id').mapped('product_tmpl_id')
+
+        for plan in plans:
+            # TODO: filter according to plan
+            invoice_line_ids_filter = lambda x: x.product_id.product_tmpl_id == plan
+            filtered_invoice_line_ids = recurring_invoice_line_ids.filtered(invoice_line_ids_filter)
+            results.append({
+                'name': plan.name,
+                'nb_customers': len(filtered_invoice_line_ids.mapped('account_analytic_id')),
+                'value': self.calculate_stat_diff(stat_type, date - relativedelta(months=+1), date, invoice_line_ids_filter=invoice_line_ids_filter)['value'],
+            })
+
+        return results
 
     @http.route('/account_contract_dashboard/calculate_graph', type="json", auth='user', website=True)
     def calculate_graph(self, stat_type, start_date, end_date):
@@ -93,35 +133,68 @@ class AccountContractDashboard(http.Controller):
 
     @http.route('/account_contract_dashboard/calculate_stats_diff', type="json", auth='user', website=True)
     def calculate_stats_diff(self, start_date, end_date):
+
+        # Used in global dashboard
+
         results = {}
 
-        # time.sleep(2)
-
-        # print('calculate_stats_diff between %s and %s' % (start_date, end_date))
-
         for stat_type in stat_types:
-            value_start = self.calculate_stat(stat_type, start_date)
-            value_end = self.calculate_stat(stat_type, end_date)
-            perc = 0 if value_start == 0 else round(100*(value_end - value_start)/float(value_start), 1)
-            if perc == 0:
-                color = 'oBlack'
-            elif stat_types[stat_type]['dir'] == 'up':
-                color = 'oGreen' if perc > 0 else 'oRed'
-            elif stat_types[stat_type]['dir'] == 'down':
-                color = 'oRed' if perc > 0 else 'oGreen'
-
-            results[stat_type] = {
-                'value_start': str(value_start) + stat_types[stat_type]['add_symbol'],
-                'value_end': str(value_end) + stat_types[stat_type]['add_symbol'],
-                'perc': perc,
-                'color': color,
-            }
-
-        print(results)
+            results[stat_type] = self.calculate_stat_diff(stat_type, start_date, end_date, add_symbol=True)
 
         return results
 
-    def calculate_stat(self, stat_type, date):
+    def calculate_stat_diff(self, stat_type, start_date, end_date, invoice_line_ids_filter=None, add_symbol=False):
+
+        if type(start_date) == datetime:
+            start_date = start_date.strftime('%Y-%m-%d')
+        if type(end_date) == datetime:
+            end_date = end_date.strftime('%Y-%m-%d')
+
+        start_date_30_days_ago = (datetime.strptime(start_date, '%Y-%m-%d') - relativedelta(months=+1)).strftime('%Y-%m-%d')
+        end_date_30_days_ago = (datetime.strptime(end_date, '%Y-%m-%d') - relativedelta(months=+1)).strftime('%Y-%m-%d')
+
+        if stat_types[stat_type]['type'] == 'last':
+                value_30_days_ago = self.calculate_stat(stat_type, end_date_30_days_ago, invoice_line_ids_filter=invoice_line_ids_filter)
+                value_end = self.calculate_stat(stat_type, end_date, invoice_line_ids_filter=invoice_line_ids_filter)
+        elif stat_types[stat_type]['type'] == 'sum':
+            # If sum, we aggregate all values between start_date and end_date
+            value_30_days_ago = self.calculate_stat_aggregate(stat_type, start_date_30_days_ago, end_date_30_days_ago, invoice_line_ids_filter=invoice_line_ids_filter)
+            value_end = self.calculate_stat_aggregate(stat_type, start_date, end_date, invoice_line_ids_filter=invoice_line_ids_filter)
+
+        perc = 0 if value_30_days_ago == 0 else round(100*(value_end - value_30_days_ago)/float(value_30_days_ago), 1)
+
+        if perc == 0:
+            color = 'oBlack'
+        elif stat_types[stat_type]['dir'] == 'up':
+            color = 'oGreen' if perc > 0 else 'oRed'
+        elif stat_types[stat_type]['dir'] == 'down':
+            color = 'oRed' if perc > 0 else 'oGreen'
+
+        result = {
+            'value_30_days_ago': str(value_30_days_ago) + stat_types[stat_type]['add_symbol'] if add_symbol else value_30_days_ago,
+            'value': str(value_end) + stat_types[stat_type]['add_symbol'] if add_symbol else value_end,
+            'perc': perc,
+            'color': color,
+        }
+        return result
+
+    def calculate_stat_aggregate(self, stat_type, start_date, end_date, invoice_line_ids_filter=None):
+
+        result = 0
+
+        start_date = datetime.strptime(start_date, '%Y-%m-%d')
+        end_date = datetime.strptime(end_date, '%Y-%m-%d')
+
+        delta = end_date - start_date
+
+        for i in range(delta.days):
+            date = start_date + timedelta(days=i)
+            value = self.calculate_stat(stat_type, date, invoice_line_ids_filter=invoice_line_ids_filter)
+            result += value
+
+        return result
+
+    def calculate_stat(self, stat_type, date, invoice_line_ids_filter=None):
 
         # print('calculate_stats_diff for %s' % (date))
         # if type(date) == datetime:
@@ -130,29 +203,33 @@ class AccountContractDashboard(http.Controller):
         if type(date) == str:
             date = datetime.strptime(date, '%Y-%m-%d')
 
-        result = 0
+        date_minus_1_days = (date - relativedelta(days=+1)).strftime(DEFAULT_SERVER_DATETIME_FORMAT)
+        # date_minus_1_months = (date - relativedelta(months=+1)).strftime(DEFAULT_SERVER_DATETIME_FORMAT)
+        date_plus_1_days = (date + relativedelta(days=+1)).strftime(DEFAULT_SERVER_DATETIME_FORMAT)
 
         # TODO: improve efficiency by calculate only once and give them in kw
-        # all_invoice_line_ids = request.env['account.invoice.line'].search([])
-
+        all_invoice_line_ids = non_recurring_invoice_line_ids = request.env['account.invoice.line'].search([
+            ('create_date', '<=', date_plus_1_days),
+            ('create_date', '>=', date_minus_1_days),
+        ])
         # grouped by account_id or account_analytic_id ?
         recurring_invoice_line_ids = request.env['account.invoice.line'].search([
             ('asset_start_date', '<=', date),
             ('asset_end_date', '>=', date),
             ('asset_category_id', '!=', None)
         ])
-
-        date_minus_1_days = (date - relativedelta(days=+1)).strftime(DEFAULT_SERVER_DATETIME_FORMAT)
-        # date_minus_1_months = (date - relativedelta(months=+1)).strftime(DEFAULT_SERVER_DATETIME_FORMAT)
-        date_plus_1_days = (date + relativedelta(days=+1)).strftime(DEFAULT_SERVER_DATETIME_FORMAT)
-
-        # import pudb; pudb.set_trace()
-
         non_recurring_invoice_line_ids = request.env['account.invoice.line'].search([
             ('create_date', '<=', date_plus_1_days),
             ('create_date', '>=', date_minus_1_days),
             ('asset_category_id', '=', None)
         ])
+
+        if invoice_line_ids_filter:
+            all_invoice_line_ids = all_invoice_line_ids.filtered(invoice_line_ids_filter)
+            recurring_invoice_line_ids = recurring_invoice_line_ids.filtered(invoice_line_ids_filter)
+            non_recurring_invoice_line_ids = non_recurring_invoice_line_ids.filtered(invoice_line_ids_filter)
+
+        # import pudb; pudb.set_trace()
 
         def _calculate_logo_churn():
             # [Baremetrics] (Cancelled Customers ÷ Previous Month's Active Customers) x 100
@@ -168,20 +245,23 @@ class AccountContractDashboard(http.Controller):
             ])
             active_customers_1_month_ago = recurring_invoice_line_ids_1_month_ago.mapped('account_analytic_id')
 
-            resigned_customers = [x for x in active_customers_1_month_ago if x not in active_customers_today]
+            # resigned_customers = [x for x in active_customers_1_month_ago if x not in active_customers_today]
+            resigned_customers = active_customers_1_month_ago.filtered(lambda x: x not in active_customers_today)
             nb_avg_customers = (len(active_customers_1_month_ago) - len(active_customers_1_month_ago))/2.
 
             print('%s resigned customers : %s' % (len(resigned_customers), resigned_customers))
             result = 0 if nb_avg_customers == 0 else len(resigned_customers)/float(nb_avg_customers)
             return result
 
+        result = 0
+
         if stat_type == 'mrr':
             result = sum(recurring_invoice_line_ids.mapped('mrr'))
             result = int(result)
 
         elif stat_type == 'net_revenue':
-            # TODO: fix formula with aggregate
-            result = sum(recurring_invoice_line_ids.mapped('mrr')) + sum(non_recurring_invoice_line_ids.mapped('price_subtotal'))
+            # TODO: use @MAT field instead of price_subtotal
+            result = sum(all_invoice_line_ids.mapped('price_subtotal'))
             result = int(result)
 
         elif stat_type == 'nrr':
@@ -211,6 +291,7 @@ class AccountContractDashboard(http.Controller):
             result = round(result, 1)
 
         elif stat_type == 'revenue_churn':
+            # TODO
             result = 0
             result = round(result, 1)
 
