@@ -21,11 +21,11 @@
 
 
 {
-    'name': 'Just In Time Scheduling for Sale',
+    'name': 'Just In Time Scheduling improvement for Stock',
     'version': '1.0',
     'category': 'Base',
     'description': """
-This module allows Just In Time computation for Sale.
+This module allows Just In Time computation for Stock.
     """,
     'author': 'OpenERP SA',
     'website': '',

@@ -32,7 +32,7 @@ class procurement_order(osv.osv):
 
         move_ids = self.pool.get('stock.move').search(cr, uid, [('procurement_id', 'in', ids)], context=context)
         procurement_ids = self.search(cr, uid, [('move_dest_id', 'in', move_ids)], context=context)
-        print "))", procurement_ids
+
         if procurement_ids:
             return self.run(cr, uid, procurement_ids, context=context)
         return res
