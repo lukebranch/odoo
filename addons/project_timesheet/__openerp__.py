@@ -38,6 +38,7 @@ with the effect of creating, editing and deleting either ways.
         'security/ir.model.access.csv',
         'security/project_timesheet_security.xml',
         'project_timesheet_view.xml',
+        'wizard/hr_timesheet_sign_in_out_view.xml'
     ],
     'demo': ['project_timesheet_demo.xml'],
     'test': [
