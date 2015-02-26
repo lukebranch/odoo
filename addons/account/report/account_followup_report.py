@@ -198,22 +198,26 @@ class account_report_context_followup(models.TransientModel):
         return ['Date', 'Due Date', 'Expected Date', 'Litigated', 'Total Due']
 
     def get_pdf(self):
-        report_obj = self.get_report_obj()
-        lines = report_obj.get_lines(self, public=True)
-        base_url = self.env['ir.config_parameter'].sudo().get_param('web.base.url')
-        rcontext = {
-            'context': self,
-            'report': report_obj,
-            'lines': lines,
-            'mode': 'print',
-            'base_url': base_url,
-            'css': '',
-            'o': self.env.user,
-            'today': datetime.today().strftime('%Y-%m-%d'),
-        }
-        html = self.pool['ir.ui.view'].render(self._cr, self._uid, report_obj.get_template() + '_letter', rcontext, context=self.env.context)
+        bodies = []
+        for context in self:
+            context = context.with_context(lang=context.partner_id.lang)
+            report_obj = context.get_report_obj()
+            lines = report_obj.get_lines(context, public=True)
+            base_url = self.env['ir.config_parameter'].sudo().get_param('web.base.url')
+            rcontext = {
+                'context': context,
+                'report': report_obj,
+                'lines': lines,
+                'mode': 'print',
+                'base_url': base_url,
+                'css': '',
+                'o': self.env.user,
+                'today': datetime.today().strftime('%Y-%m-%d'),
+            }
+            html = self.pool['ir.ui.view'].render(self._cr, self._uid, report_obj.get_template() + '_letter', rcontext, context=context.env.context)
+            bodies.append((0, html))
 
-        return self.env['report']._run_wkhtmltopdf([], [], [(0, html)], False, self.env.user.company_id.paperformat_id)
+        return self.env['report']._run_wkhtmltopdf([], [], bodies, False, self.env.user.company_id.paperformat_id)
 
     @api.multi
     def send_email(self):

@@ -16,11 +16,11 @@ openerp.account_followup.FollowupReportWidgets = openerp.account.ReportWidgets.e
         if ((e.which === 13 || e.which === 10) && (e.ctrlKey || e.metaKey) && report_name == 'followup_report') {
             $('a.btn-primary.followup-email').trigger('click');
             $('a.btn-primary.followup-letter').trigger('click');
-            var action_partner_list = [];
+            var action_context_list = [];
             $('a.btn-primary.followup-action').each(function() {
-                action_partner_list.push($(this).attr('partner'))
+                action_context_list.push($(this).attr('context'))
             });
-            window.open('?partner_done=all&action_partner_list=' + action_partner_list, '_self');
+            window.open('?partner_done=all&action_context_list=' + action_context_list, '_self');
         }
     },
     changeTrust: function(e) {

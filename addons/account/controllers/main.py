@@ -1,6 +1,7 @@
 from openerp import http
 from openerp.http import request
 from hashlib import md5
+from openerp.tools.safe_eval import safe_eval
 import time
 
 
@@ -64,6 +65,12 @@ class FinancialReportController(http.Controller):
         context_all_obj = request.env['account.report.context.followup.all']
         reports = []
         context_all_id = context_all_obj.sudo(uid).search([('create_uid', '=', uid)], limit=1)
+        if 'letter_context_list' in kw and 'pdf' in kw:
+            letter_context_list = safe_eval('[' + kw['letter_context_list'] + ']')
+            letter_contexts = request.env['account.report.context.followup'].browse(letter_context_list)
+            return request.make_response(letter_contexts.with_context(public=True).get_pdf(),
+                headers=[('Content-Type', 'application/pdf'),
+                         ('Content-Disposition', 'attachment; filename=followups.pdf;')])
         if 'partner_skipped' in kw:
             context_all_id.skip_partner(request.env['res.partner'].browse(int(kw['partner_skipped'])))
         partners = request.env['res.partner'].get_partners_in_need_of_action() - context_all_id.skipped_partners_ids

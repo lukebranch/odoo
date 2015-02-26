@@ -81,7 +81,7 @@
             <div class="col-sm-5">
                 <div id='action-buttons' style='text-align: right;'>
                     <a type="button" class="btn btn-default followup-skip" t-att-partner="str(context.partner_id.id)">Skip</a>
-                    <a type="button" class="btn btn-primary followup-letter" t-att-target="'/account/followup_report/' + str(context.partner_id.id) + '/?pdf'">Print Letter</a>
+                    <a type="button" class="btn btn-primary followup-letter" t-att-target="'/account/followup_report/' + str(context.partner_id.id) + '/?pdf'" t-att-context="str(context.id)">Print Letter</a>
                     <a type="button" class="btn btn-primary followup-email">Send by email</a>
                 </div>
             </div>
