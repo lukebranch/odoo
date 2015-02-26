@@ -37,6 +37,31 @@ openerp.account.ReportWidgets = openerp.Widget.extend({
         'click .followup-letter': 'printFollowupLetter',
         'click .followup-skip': 'skipPartner',
         "change *[name='blocked']": 'onChangeBlocked',
+        'click .oe-account-set-next-action': 'setNextAction',
+        'click #saveNextAction': 'saveNextAction',
+    },
+    saveNextAction: function(e) {
+        e.stopPropagation();
+        e.preventDefault();
+        var note = $("#nextActionNote").val().replace(/\r?\n/g, '<br />').replace(/\s+/g, ' ');
+        var target_id = $("#nextActionModal #target_id").val();
+        var date = $("#nextActionDate").val();
+        var contextModel = new openerp.Model('account.report.context.followup');
+        contextModel.call('change_next_action', [[parseInt(target_id)], date, note]).then(function (result) {
+            $('#nextActionModal').modal('hide');
+            date = new Date(date.substr(0, 4), date.substr(5, 2), date.substr(8, 2), 12, 0, 0, 0).toLocaleDateString();
+            $('div.page.' + target_id).find('.oe-account-next-action').html(openerp.qweb.render("nextActionDate", {'note': note, 'date': date}));
+        });
+    },
+    setNextAction: function(e) {
+        e.stopPropagation();
+        e.preventDefault();
+        var target_id = $(e.target).parents("div.page").attr("class").split(/\s+/)[3];
+        $("#nextActionModal #target_id").val(target_id);
+        $('#nextActionModal').on('hidden.bs.modal', function (e) {
+            $(this).find('form')[0].reset();
+        });
+        $('#nextActionModal').modal('show');
     },
     onChangeBlocked: function(e) {
         e.stopPropagation();
@@ -110,7 +135,7 @@ openerp.account.ReportWidgets = openerp.Widget.extend({
             var contextModel = new openerp.Model(result);
             contextModel.call('get_next_footnote_number', [[parseInt(context_id)]]).then(function (footNoteSeqNum) {
                 self.curFootNoteTarget.append(openerp.qweb.render("supFootNoteSeqNum", {footNoteSeqNum: footNoteSeqNum}));
-                contextModel.call('add_footnote', [[parseInt(context_id)], $("#type").val(), $("#target_id").val(), $("#column").val(), footNoteSeqNum, note]);
+                contextModel.call('add_footnote', [[parseInt(context_id)], $("#footnoteModal #type").val(), $("#footnoteModal #target_id").val(), $("#footnoteModal #column").val(), footNoteSeqNum, note]);
                 $('#footnoteModal').find('form')[0].reset();
                 $('#footnoteModal').modal('hide');
                 $("div.page").append(openerp.qweb.render("savedFootNote", {num: footNoteSeqNum, note: note}));
@@ -410,7 +435,10 @@ openerp.account.ReportWidgets = openerp.Widget.extend({
         e.stopPropagation();
         e.preventDefault();
         self = this;
-        if ($(e.target).parents("div.summary, p.footnote").length > 0) {
+        if ($(e.target).parent().is('.oe-account-next-action')) {
+            self.setNextAction(e);
+        }
+        else if ($(e.target).parents("div.summary, p.footnote").length > 0) {
             var num = 0;
             if ($(e.target).parent().parent().is("p.footnote")) {
                 var $el = $(e.target).parent().parent().find('span.text');

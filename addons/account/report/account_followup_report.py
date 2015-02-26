@@ -155,6 +155,12 @@ class account_report_context_followup(models.TransientModel):
     summary = fields.Char(default=lambda s: s.env.user.company_id.overdue_msg and s.env.user.company_id.overdue_msg.replace('\n', '<br />') or s.env['res.company'].default_get(['overdue_msg'])['overdue_msg'])
 
     @api.multi
+    def change_next_action(self, date, note):
+        self.partner_id.write({'payment_next_action': note, 'payment_next_action_date': date})
+        msg = 'Next action date : ' + date + '.\n' + note
+        self.partner_id.message_post(body=msg)
+
+    @api.multi
     def add_footnote(self, type, target_id, column, number, text):
         footnote = self.env['account.report.footnote'].create(
             {'type': type, 'target_id': target_id, 'column': column, 'number': number, 'text': text}

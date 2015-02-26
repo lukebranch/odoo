@@ -23,6 +23,9 @@
             <span style="position: absolute; margin-left: 3px;"><i class="fa fa-fw fa-pencil-square"></i><i class="fa fa-fw fa-trash-o"></i> </span>
         </p>
     </t>
+    <t t-name="nextActionDate">
+        <span data-toggle='tooltip' data-placement='bottom' t-att-title='note'><t t-esc='date'></t></span><i class="fa fa-fw fa-pencil-square"></i>
+    </t>
     <t t-name="foldable">
         <span style="position: absolute; margin-left: 3px;" t-att-class="'foldable '+lineId"><i class="fa fa-fw fa-caret-down"></i></span>
     </t>

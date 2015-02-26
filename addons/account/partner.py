@@ -293,6 +293,10 @@ class res_partner(models.Model):
                 if (aml.next_action_date and aml.next_action_date < today) or (not aml.next_action_date and aml.date_maturity < today):
                     aml.write(vals)
 
+    payment_next_action = fields.Text('Next Action', copy=False, track_visibility="onchange", company_dependent=True,
+                                      help="Note regarding the next action.")
+    payment_next_action_date = fields.Date('Next Action Date', copy=False, company_dependent=True,
+                                           help="The date before which no action should be taken.")
     vat_subjected = fields.Boolean('VAT Legal Statement', 
         help="Check this box if the partner is subjected to the VAT. It will be used for the VAT legal statement.")
     credit = fields.Float(compute='_credit_debit_get', search=_credit_search, 

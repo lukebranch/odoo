@@ -64,7 +64,6 @@ class FinancialReportController(http.Controller):
         context_all_obj = request.env['account.report.context.followup.all']
         reports = []
         context_all_id = context_all_obj.sudo(uid).search([('create_uid', '=', uid)], limit=1)
-        if 'date' in kw and ('partner_skipped' in kw or 'partner_done' in kw):
         if 'partner_skipped' in kw:
             context_all_id.skip_partner(request.env['res.partner'].browse(int(kw['partner_skipped'])))
         partners = request.env['res.partner'].get_partners_in_need_of_action() - context_all_id.skipped_partners_ids

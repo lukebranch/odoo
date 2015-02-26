@@ -498,14 +498,6 @@ class res_partner(models.Model):
                                              help="Optionally you can assign a user to this field, which will make him responsible for the action.",
                                              track_visibility="onchange", copy=False, company_dependent=True)
     payment_note = fields.Text('Customer Payment Promise', help="Payment Note", track_visibility="onchange", copy=False, company_dependent=True)
-    payment_next_action = fields.Text('Next Action', copy=False, track_visibility="onchange", company_dependent=True,
-                                      help="This is the next action to be taken.  It will automatically be set when the partner gets a follow-up level that requires a manual action. ")
-    payment_next_action_date = fields.Date('Next Action Date', copy=False, company_dependent=True,
-                                           help="This is when the manual follow-up is needed. "
-                                                "The date will be set to the current date when the partner "
-                                                "gets a follow-up level that requires a manual action. "
-                                                "Can be practical to set manually e.g. to see if he keeps "
-                                                "his promises.")
     unreconciled_aml_ids = fields.One2many('account.move.line', 'partner_id', domain=['&', ('reconciled', '=', False), '&',
                                            ('account_id.deprecated', '=', False), '&', ('account_id.internal_type', '=', 'receivable')])
     latest_followup_date = fields.Date(compute='_get_latest', string="Latest Follow-up Date",
