@@ -73,12 +73,12 @@
     </xpath>
     <xpath expr="//div[@class='summary']" position="before">
         <div class="row mt32" t-if="mode != 'print'">
-            <div class="col-sm-5">
+            <div class="col-sm-5 oe-account-manual-action">
             </div>
-            <div class='col-sm-3 oe-account-next-action'>
+            <div class='col-sm-2 oe-account-next-action' style='text-align: center;'>
                 <a class='oe-account-set-next-action'>Set next action date</a>
             </div>
-            <div class="col-sm-4">
+            <div class="col-sm-5">
                 <div id='action-buttons' style='text-align: right;'>
                     <a type="button" class="btn btn-default followup-skip" t-att-partner="str(context.partner_id.id)">Skip</a>
                     <a type="button" class="btn btn-primary followup-letter" t-att-target="'/account/followup_report/' + str(context.partner_id.id) + '/?pdf'">Print Letter</a>

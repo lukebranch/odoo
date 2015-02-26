@@ -3,7 +3,7 @@ openerp.account_followup = openerp.account_followup || {}
 openerp.account_followup.FollowupReportWidgets = openerp.account.ReportWidgets.extend({
     events: _.defaults({
         'click .changeTrust': 'changeTrust',
-        'click .followup-action': 'displayManualAction',
+        'click .followup-action': 'doManualAction',
     }, openerp.account.ReportWidgets.prototype.events),
     start: function() {
         openerp.qweb.add_template("/account_followup/static/src/xml/account_followup_report.xml");
@@ -42,18 +42,12 @@ openerp.account_followup.FollowupReportWidgets = openerp.account.ReportWidgets.e
             $(e.target).parents('span.dropdown').find('i.fa').attr('style', 'color: ' + color + ';')
         });
     },
-    displayManualAction: function(e) {
+    doManualAction: function(e) {
         e.stopPropagation();
         e.preventDefault();
-        var line_id = $(e.target).attr("level");
-        var followupObj = new openerp.Model('account_followup.followup.line');
-        followupObj.query(['manual_action_note', 'manual_action_responsible_id'])
-        .filter([['id', '=', line_id]]).first().then(function (result) {
-            $("#manualActionModal .modal-body").html(openerp.qweb.render("manualAction", {data: result}));
-            $('#manualActionModal').modal('show');
-            var $skipButton = $(e.target).siblings('a.followup-skip');
-            $skipButton.attr('class', 'btn btn-primary followup-skip');
-            $skipButton.text('Done');
-        });
+        var $skipButton = $(e.target).siblings('a.followup-skip');
+        $skipButton.attr('class', 'btn btn-primary followup-skip');
+        $skipButton.text('Done');
+        $(e.target).attr('class', 'btn btn-default followup-letter');
     }
 });
