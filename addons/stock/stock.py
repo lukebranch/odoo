@@ -2671,7 +2671,7 @@ class stock_inventory(osv.osv):
         #as they will be moved to inventory loss, and other quants will be created to the encoded quant location. This is a normal behavior
         #as quants cannot be reuse from inventory location (users can still manually move the products before/after the inventory if they want).
         move_obj = self.pool.get('stock.move')
-        move_obj.action_done(cr, uid, [x.id for x in inv.move_ids], context=context)
+        move_obj.action_done(cr, uid, [x.id for x in inv.move_ids if x.state != 'done'], context=context)
 
     def _create_stock_move(self, cr, uid, inventory, todo_line, context=None):
         stock_move_obj = self.pool.get('stock.move')
@@ -2713,7 +2713,7 @@ class stock_inventory(osv.osv):
             stock_move_obj.unlink(cr, uid, move_ids, context=context)
             for line in inventory.line_ids:
                 #compare the checked quantities on inventory lines to the theorical one
-                inventory_line_obj._resolve_inventory_line(cr, uid, line, context=context)
+                stock_move = inventory_line_obj._resolve_inventory_line(cr, uid, line, context=context)
 
     def action_cancel_draft(self, cr, uid, ids, context=None):
         """ Cancels the stock move and change inventory state to draft.
@@ -2869,6 +2869,7 @@ class stock_inventory_line(osv.osv):
 
     def _resolve_inventory_line(self, cr, uid, inventory_line, context=None):
         stock_move_obj = self.pool.get('stock.move')
+        quant_obj = self.pool.get('stock.quant')
         diff = inventory_line.theoretical_qty - inventory_line.product_qty
         if not diff:
             return
@@ -2895,7 +2896,18 @@ class stock_inventory_line(osv.osv):
             vals['location_id'] = inventory_line.location_id.id
             vals['location_dest_id'] = inventory_location_id
             vals['product_uom_qty'] = diff
-        return stock_move_obj.create(cr, uid, vals, context=context)
+        move_id = stock_move_obj.create(cr, uid, vals, context=context)
+        move = stock_move_obj.browse(cr, uid, move_id, context=context)
+        if diff > 0:
+            domain = [('qty', '>', 0.0), ('package_id', '=', inventory_line.package_id.id), ('lot_id', '=', inventory_line.prod_lot_id.id)]
+            preferred_domain_list = [[('reservation_id', '=', False)], [('reservation_id.inventory_id', '!=', inventory_line.inventory_id.id)]]
+            quants = quant_obj.quants_get_prefered_domain(cr, uid, move.location_id, move.product_id, move.product_qty, domain=domain, prefered_domain_list=preferred_domain_list, restrict_partner_id=move.restrict_partner_id.id, context=context)
+            quant_obj.quants_reserve(cr, uid, quants, move, context=context)
+        elif inventory_line.package_id:
+            stock_move_obj.action_done(cr, uid, move_id, context=context)
+            quants = [x.id for x in move.quant_ids]
+            quant_obj.write(cr, uid, quants, {'package_id': inventory_line.package_id.id}, context=context)
+        return move_id
 
     # Should be left out in next version
     def restrict_change(self, cr, uid, ids, theoretical_qty, context=None):
