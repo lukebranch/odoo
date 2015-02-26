@@ -455,14 +455,6 @@
                                 <ul class="oe_dropdown_menu">
                                     <t t-if="widget.view.is_action_enabled('edit')"><li><a type="edit">Edit Task</a></li></t>
                                     <t t-if="widget.view.is_action_enabled('delete')"><li><a type="delete">Delete</a></li></t>
-                                    <li>
-                                      <ul class="oe_kanban_project_times" groups="project.group_time_work_estimation_tasks">
-                                        <li><a name="set_remaining_time_1" type="object" class="oe_kanban_button">1</a></li>
-                                        <li><a name="set_remaining_time_2" type="object" class="oe_kanban_button">2</a></li>
-                                        <li><a name="set_remaining_time_5" type="object" class="oe_kanban_button">5</a></li>
-                                        <li><a name="set_remaining_time_10" type="object" class="oe_kanban_button">10</a></li>
-                                      </ul>
-                                    </li>
                                     <br/>
                                     <li><ul class="oe_kanban_colorpicker" data-field="color"/></li>
                                 </ul>

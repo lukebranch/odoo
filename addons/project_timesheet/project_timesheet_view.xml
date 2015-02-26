@@ -216,26 +216,6 @@
             </field>
         </record>
 
-        <!-- Project Task Kanban View -->
-        <record model="ir.ui.view" id="view_task_kanban_inherited">
-            <field name="name">project.task.kanban.inherited</field>
-            <field name="model">project.task</field>
-            <field name="inherit_id" ref="project.view_task_kanban" />
-            <field name="arch" type="xml">
-                <field name="kanban_state" position="after">
-                    <field name="remaining_hours" sum="Remaining Time" groups="project.group_time_work_estimation_tasks"/>
-                </field>
-                <xpath expr="//div[@class='oe_kanban_bottom_right']" position="before">
-                    <div class="oe_kanban_footer_left">
-                        <span groups="project.group_time_work_estimation_tasks" title="Remaining hours">
-                            <span class="oe_e">N</span>
-                            <t t-esc="Math.round(record.remaining_hours.raw_value)"/>
-                        </span>
-                    </div>
-                </xpath>
-            </field>
-         </record>
-
         <record id="view_task_tree2_inherited" model="ir.ui.view">
             <field name="name">project.task.tree.inherited</field>
             <field name="model">project.task</field>

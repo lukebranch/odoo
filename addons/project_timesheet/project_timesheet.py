@@ -166,7 +166,6 @@ class task(osv.osv):
     _description = 'project task'
 
     # Compute: effective_hours, total_hours, progress
-    #TODO Check method, it seems conceptually wrong. total hours seems useless : it is always equal to task.planned hours
     def _hours_get(self, cr, uid, ids, field_names, args, context=None):
         res = {}
         cr.execute("SELECT l.task_id, SUM(l.unit_amount) FROM account_analytic_line l \
