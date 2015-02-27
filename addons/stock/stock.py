@@ -679,6 +679,27 @@ class stock_picking(osv.osv):
             move_ids = [move.id for move in self.browse(cr, uid, id, context=context).move_lines]
             move_obj.write(cr, uid, move_ids, {'priority': value}, context=context)
 
+    def _set_location_id(self, cr, uid, id, field, value, arg, context=None):
+        move_obj = self.pool.get("stock.move")
+        if value:
+            move_ids = [move.id for move in self.browse(cr, uid, id, context=context).move_lines]
+            print "set loc", move_ids
+            move_obj.write(cr, uid, move_ids, {'location_id': value}, context=context)
+        cr.execute("""update stock_picking set location_id = %s where id = %s""", (value, id))
+
+    def _set_location_dest_id(self, cr, uid, id, field, value, arg, context=None):
+        move_obj = self.pool.get("stock.move")
+        if value:
+            move_ids = [move.id for move in self.browse(cr, uid, id, context=context).move_lines]
+            move_obj.write(cr, uid, move_ids, {'location_dest_id': value}, context=context)
+        cr.execute("""update stock_picking set location_dest_id = %s where id = %s""", (value, id))
+
+    def _get_location_id(self, cr, uid, ids, field_name, arg, context=None):
+        res = {}
+        for picking in self.browse(cr, uid, ids, context=context):
+            res[picking.id] = {'location_id': picking.move_lines and picking.move_lines[0].location_id.id or False,
+                               'location_dest_id': picking.move_lines and picking.move_lines[0].location_dest_id.id or False}
+
     def get_min_max_date(self, cr, uid, ids, field_name, arg, context=None):
         """ Finds minimum and maximum dates for picking.
         @return: Dictionary of values
@@ -840,18 +861,46 @@ class stock_picking(osv.osv):
         # Used to search on pickings
         'product_id': fields.related('move_lines', 'product_id', type='many2one', relation='product.product', string='Product'),
         'recompute_pack_op': fields.boolean('Recompute pack operation?', help='True if reserved quants changed, which mean we might need to recompute the package operations', copy=False),
-        'location_id': fields.related('move_lines', 'location_id', type='many2one', relation='stock.location', string='Location',
-                                      readonly=True, store={'stock.picking': (lambda self, cr, uid, ids, ctx: ids, ['move_lines'], 10),
-                                                            'stock.move': (_get_pickings, ['location_id', 'picking_id'], 10),}),
-        'location_dest_id': fields.related('move_lines', 'location_dest_id', type='many2one', relation='stock.location', string='Destination Location',
-                                           readonly=True, store={'stock.picking': (lambda self, cr, uid, ids, ctx: ids, ['move_lines'], 10),
-                                                                'stock.move': (_get_pickings, ['location_dest_id', 'picking_id'], 10),}),
+        'location_id': fields.many2one('stock.location', 'Source Location', required=True),
+        'location_dest_id': fields.many2one('stock.location', 'Source Location', required=True),
+
+        #     function(_get_location_id, fnct_inv=_set_location_id, type='many2one', relation='stock.location',
+        #                                readonly=True, multi='locations', string="Source Location",
+        #                                store={'stock.picking': (lambda self, cr, uid, ids, ctx: ids, ['move_lines'], 10),
+        #                                       'stock.move': (_get_pickings, ['location_id', 'picking_id'], 10),}),
+        # 'location_dest_id': fields.function(_get_location_id, fnct_inv=_set_location_dest_id, type='many2one', relation='stock.location',
+        #                                readonly=True, multi='locations', string="Destination Location",
+        #                                store={'stock.picking': (lambda self, cr, uid, ids, ctx: ids, ['move_lines'], 10),
+        #                                       'stock.move': (_get_pickings, ['location_dest_id', 'picking_id'], 10),}),
+
+
+
+        # 'location_id': fields.related('move_lines', 'location_id', type='many2one', relation='stock.location', string='Location',
+        #                               readonly=True, store={'stock.picking': (lambda self, cr, uid, ids, ctx: ids, ['move_lines'], 10),
+        #                                                     'stock.move': (_get_pickings, ['location_id', 'picking_id'], 10),}),
+        # 'location_dest_id': fields.related('move_lines', 'location_dest_id', type='many2one', relation='stock.location', string='Destination Location',
+        #                                    readonly=True, store={'stock.picking': (lambda self, cr, uid, ids, ctx: ids, ['move_lines'], 10),
+        #                                                         'stock.move': (_get_pickings, ['location_dest_id', 'picking_id'], 10),}),'
         'group_id': fields.related('move_lines', 'group_id', type='many2one', relation='procurement.group', string='Procurement Group', readonly=True,
               store={
                   'stock.picking': (lambda self, cr, uid, ids, ctx: ids, ['move_lines'], 10),
                   'stock.move': (_get_pickings, ['group_id', 'picking_id'], 10),
               }),
     }
+
+    def _default_location_destination(self, cr, uid, context=None):
+        context = context or {}
+        if context.get('default_picking_type_id', False):
+            pick_type = self.pool.get('stock.picking.type').browse(cr, uid, context['default_picking_type_id'], context=context)
+            return pick_type.default_location_dest_id and pick_type.default_location_dest_id.id or False
+        return False
+
+    def _default_location_source(self, cr, uid, context=None):
+        context = context or {}
+        if context.get('default_picking_type_id', False):
+            pick_type = self.pool.get('stock.picking.type').browse(cr, uid, context['default_picking_type_id'], context=context)
+            return pick_type.default_location_src_id and pick_type.default_location_src_id.id or False
+        return False
 
     _defaults = {
         'name': '/',
@@ -861,7 +910,10 @@ class stock_picking(osv.osv):
         'date': fields.datetime.now,
         'company_id': lambda self, cr, uid, c: self.pool.get('res.company')._company_default_get(cr, uid, 'stock.picking', context=c),
         'recompute_pack_op': True,
+        'location_id': _default_location_source,
+        'location_dest_id': _default_location_destination,
     }
+
     _sql_constraints = [
         ('name_uniq', 'unique(name, company_id)', 'Reference must be unique per company!'),
     ]
@@ -2117,6 +2169,8 @@ class stock_move(osv.osv):
                 'move_type': move.group_id and move.group_id.move_type or 'direct',
                 'partner_id': move.partner_id.id or False,
                 'picking_type_id': move.picking_type_id and move.picking_type_id.id or False,
+                'location_id': move.location_id.id,
+                'location_dest_id': move.location_dest_id.id,
             }
             pick = pick_obj.create(cr, uid, values, context=context)
         return self.write(cr, uid, move_ids, {'picking_id': pick}, context=context)
