@@ -1,0 +1,21 @@
+In https://docs.google.com/a/openerp.com/file/d/0B5BDHVRYo-q5TUN4OXYxY1NkaEE/edit?usp=drivesdk 
+	--> Unit if measure in "Customers" in plan table ?
+	--> Same filters : also on products ?
+
+- Filter : readgroup
+- Monthly Recurring Revenue Growth graph with mousemove event
+- calculate expansion mrr & churned mrr 
+- use @MAT field to caculate nrr
+- do not use negative mrr (asset, nothing to do with revenue recognition)
+- arpu --> a Monthly rpu ?
+- net revenue
+	--> either billing (all invoice)
+	--> either non-recurring + prorata of monthly recurrent*nb_months
+- filtered_product_template_ids should not be as a class variable
+
+
+# OPTIMIZATIONS
+
+- main dashboard : one by one in JS
+- revenue churn
+- optimize call to db --> filter after

@@ -17,16 +17,26 @@
           <hr/>
 
           <div class="row mb32">
-            <div class="col-sm-12">
-              <form action="/account_contract_dashboard">
-                <div class="col-sm-4 text-left">
-                  <a href="#">All products</a>
+            <form action="/account_contract_dashboard">
+              <div class="col-sm-4 text-left">
+                <a t-att-class="'' if filtered_product_template_ids else 'collapsed'" data-toggle="collapse" href="#collapse_filter_products">
+                  Filter on Products
+                </a>
+
+                <div role="tablist" aria-multiselectable="true">
+                  <div id="collapse_filter_products" t-att-class="'panel-collapse collapse in' if filtered_product_template_ids else 'panel-collapse collapsed'" role="tabpanel">
+                    <t t-foreach="product_templates" t-as="template">
+                      <div class="checkbox">
+                        <input type="checkbox" t-att-checked="'checked' if str(template.id) in filtered_product_template_ids else ''" name="product_template_filter" t-att-value="template.id"><t t-esc="template.name"/></input>
+                      </div>
+                    </t>
+                  </div>
                 </div>
-                <div class="col-sm-8 text-right">
-                  <input type="date" name="start_date" t-att-value="start_date"/> to <input type="date" name="end_date" t-att-value="end_date"/> <button class="btn btn-primary" type="submit">Update</button>
-                </div>
-              </form>
-            </div>
+              </div>
+              <div class="col-sm-8 text-right">
+                <input type="date" name="start_date" t-att-value="start_date"/> to <input type="date" name="end_date" t-att-value="end_date"/> <button class="btn btn-primary" type="submit">Update</button>
+              </div>
+            </form>
           </div>
 
           <div class="row">
@@ -67,57 +77,101 @@
           <hr/>
 
           <div class="row mb32">
-            <div class="col-sm-12">
-              <form t-att-action="'/account_contract_dashboard/detailed/%s' % stat_type">
-                <div class="col-sm-4 text-left">
-                  <div>
-                    <a t-att-href="'/account_contract_dashboard?start_date=%s&amp;end_date=%s' % (start_date, end_date)">Dashboard</a>
-                  </div>
-                  <div>
-                    <a href="#">All products</a>
+            <form t-att-action="'/account_contract_dashboard/detailed/%s' % stat_type">
+              <div class="col-sm-4 text-left">
+                <div>
+                  <a t-att-href="'/account_contract_dashboard?start_date=%s&amp;end_date=%s' % (start_date, end_date)">Dashboard</a>
+                </div>
+                <a class="collapsed" data-toggle="collapse" href="#collapse_filter_products">
+                  Filter on Products
+                </a>
+
+                <div role="tablist" aria-multiselectable="true">
+                  <div id="collapse_filter_products" class="panel-collapse collapse" role="tabpanel">
+                    <t t-foreach="product_templates" t-as="template">
+                      <div class="checkbox">
+                        <input type="checkbox" t-att-checked="'checked' if str(template.id) in filtered_product_template_ids else ''" name="product_template_filter" t-att-value="template.id"><t t-esc="template.name"/></input>
+                      </div>
+                    </t>
                   </div>
                 </div>
-                <div class="col-sm-8 text-right">
-                  <input type="date" name="start_date" t-att-value="start_date"/> to <input type="date" name="end_date" t-att-value="end_date"/> <button class="btn btn-primary" type="submit">Update</button>
-                </div>
-              </form>
-            </div>
+              </div>
+              <div class="col-sm-8 text-right">
+                <input type="date" name="start_date" t-att-value="start_date"/> to <input type="date" name="end_date" t-att-value="end_date"/> <button class="btn btn-primary" type="submit">Update</button>
+              </div>
+            </form>
           </div>
 
-          <div class="row">
-            <div id="chart_div" class="box" style="height: 300px;">
-              <input type="hidden" name="stat_type" t-att-value="stat_type"/>
+          <div class="row box">
+            <div class="col-sm-12">
+              <h1 class="metric_current oBlue mt32 mb32"><t t-esc="value_now['value']"/><t t-esc="currency"/></h1>
+            </div>
+            <input type="hidden" name="stat_type" t-att-value="stat_type"/>
+            <div id="stat_chart_div">
+              <!-- <svg style="height:20em;"></svg> -->
             </div>
           </div>
 
           <div class="row box">
-            <div class="col-md-3">
+            <div class="col-md-3 text-center">
               <h4 class="text-muted smallCaps">Current</h4>
               <h2><t t-esc="value_now['value']"/><t t-esc="currency"/></h2>
             </div>
 
 
-            <div class="col-md-3">
+            <div class="col-md-3 text-center">
               <h4 class="text-muted smallCaps">1 month ago</h4>
               <h2><t t-esc="value_1_month_ago['value']"/><t t-esc="currency"/> <small t-if="not value_1_month_ago['value'] == 0" t-attf-class="#{rate(stat_type, value_1_month_ago['value'], value_now['value'])[1]}"><t t-esc="rate(stat_type, value_1_month_ago['value'], value_now['value'])[0]"/>%</small></h2>
             </div>
 
 
-            <div class="col-md-3">
+            <div class="col-md-3 text-center">
               <h4 class="text-muted smallCaps">3 months ago</h4>
               <h2><t t-esc="value_3_months_ago['value']"/><t t-esc="currency"/> <small t-if="not value_3_months_ago['value'] == 0" t-attf-class="#{rate(stat_type, value_3_months_ago['value'], value_now['value'])[1]}"><t t-esc="rate(stat_type, value_3_months_ago['value'], value_now['value'])[0]"/>%</small></h2>
             </div>
 
 
-            <div class="col-md-3">
+            <div class="col-md-3 text-center">
               <h4 class="text-muted smallCaps">12 months ago</h4>
               <h2><t t-esc="value_12_months_ago['value']"/><t t-esc="currency"/> <small t-if="not value_12_months_ago['value'] == 0" t-attf-class="#{rate(stat_type, value_12_months_ago['value'], value_now['value'])[1]}"><t t-esc="rate(stat_type, value_12_months_ago['value'], value_now['value'])[0]"/>%</small></h2>
             </div>
           </div>
 
-          <div class="row">
-            <div t-if="stat_type == 'mrr'" class="box" style="height: 300px;">
+          <div class="row box">
+            <div t-if="stat_type == 'mrr'" class="col-sm-12 mrr_growth_chart">
               <h3>Monthly Recurring Revenue Growth</h3>
+              <div id="mrr_growth_chart_div">
+                <!-- <svg style="height:20em;"></svg> -->
+              </div>
+
+<!--               <hr/>
+
+              <div class="col-sm-2 text-center">
+                <h4>New MRR</h4>
+                <strong id="new_mrr_metric" class="oGreen">0</strong>
+              </div>
+              <div class="col-sm-1">
+                <i class="fa fa-plus-square-o"></i>
+              </div>
+              <div class="col-sm-2 text-center">
+                <h4>Expansion MRR</h4>
+                <strong id="new_mrr_metric" class="oYellow">0</strong>
+              </div>
+              <div class="col-sm-1">
+                <i class="fa fa-minus-square-o"></i>
+              </div>
+              <div class="col-sm-2 text-center">
+                <h4>Churned MRR</h4>
+                <strong id="new_mrr_metric" class="oRed">0</strong>
+              </div>
+              <div class="col-sm-1">
+                <i class="fa fa-minus-square-o"></i>
+                <i class="fa fa-minus-square-o"></i>
+              </div>
+              <div class="col-sm-2 text-center">
+                <h4>Net New MRR</h4>
+                <strong id="new_mrr_metric" class="oBlue">0</strong>
+              </div> -->
             </div>
           </div>
 
@@ -126,14 +180,22 @@
               <table class="table table-striped">
                 <tr>
                   <th>Plan</th>
-                  <th>Customers</th>
-                  <th t-if="not stat_type == 'recurring_quant'"><t t-esc="report_name"/></th>
+                  <th># of Contracts</th>
+                  <th t-if="not stat_type == 'nb_contracts'"><t t-esc="report_name"/></th>
+                  <th></th>
                 </tr>
                 <t t-foreach="stats_by_plan" t-as="plan">
                   <tr>
                     <td><t t-esc="plan['name']"/></td>
                     <td t-att-class="'oGreen' if plan['nb_customers'] > 0 else 'grey'"><t t-esc="plan['nb_customers']"/></td>
-                    <td t-if="not stat_type == 'recurring_quant'" t-att-class="'oGreen' if plan['value'] > 0 else 'grey'"><t t-esc="plan['value']"/><t t-esc="currency"/></td>
+                    <td t-if="not stat_type == 'nb_contracts'" t-att-class="'oGreen' if plan['value'] > 0 else 'grey'"><t t-esc="plan['value']"/><t t-esc="currency"/></td>
+                    <td>
+                      <div t-if="not value_now['value'] == 0" class="progress" style="width:80%; height:10px;">
+                        <div class="progress-bar" role="progressbar" t-att-aria-valuenow="'{0}'.format(100*(plan['value'])/float(value_now['value']))" aria-valuemin="0" aria-valuemax="100" t-att-style="'width: {0}%'.format(100*(plan['value'])/float(value_now['value']))">
+                          <span class="sr-only"><t t-esc="'{0}'.format(100*(plan['value'])/float(value_now['value']))"/>% Complete (success)</span>
+                        </div>
+                      </div>
+                    </td>
                   </tr>
                 </t>
               </table>
