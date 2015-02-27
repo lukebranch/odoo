@@ -1546,7 +1546,7 @@ class stock_production_lot(osv.osv):
     _description = 'Lot/Serial'
     _columns = {
         'name': fields.char('Serial Number', required=True, help="Unique Serial Number"),
-        'ref': fields.char('Internal Reference', help="Internal reference number in case it differs from the manufacturer's serial number"),
+        'ref': fields.char('Internal Reference', help="Internal reference number in case it differs from the manufacturer's serial number", required=True),
         'product_id': fields.many2one('product.product', 'Product', required=True, domain=[('type', '<>', 'service')]),
         'quant_ids': fields.one2many('stock.quant', 'lot_id', 'Quants', readonly=True),
         'create_date': fields.datetime('Creation Date'),
@@ -1554,9 +1554,10 @@ class stock_production_lot(osv.osv):
     _defaults = {
         'name': lambda x, y, z, c: x.pool.get('ir.sequence').get(y, z, 'stock.lot.serial'),
         'product_id': lambda x, y, z, c: c.get('product_id', False),
+        'ref': '',
     }
     _sql_constraints = [
-        ('name_ref_uniq', 'unique (name, coalesce(ref, -1), product_id)', 'The combination of serial number, internal reference and product must be unique !'),
+        ('name_ref_uniq', 'unique(name, ref, product_id)', 'The combination of serial number, internal reference and product must be unique !'),
     ]
 
     def action_traceability(self, cr, uid, ids, context=None):
