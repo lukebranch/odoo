@@ -19,7 +19,6 @@
 #
 ##############################################################################
 
-import crm_partner_assign
-import crm_lead
+import models
 import wizard
 import report
