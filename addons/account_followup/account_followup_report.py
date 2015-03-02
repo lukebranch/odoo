@@ -29,6 +29,12 @@ class account_report_context_followup(models.TransientModel):
     level = fields.Many2one('account_followup.followup.line')
     summary = fields.Char(default=lambda s: s.level and s.level.description.replace('\n', '<br />') or s.env['res.company'].default_get(['overdue_msg'])['overdue_msg'])
 
+    @api.multi
+    def do_manual_action(self):
+        for context in self:
+            msg = 'Manual action done :\n' + context.level.manual_action_note
+            context.partner_id.message_post(body=msg)
+
     def create(self, vals):
         if 'level' in vals:
             summary = self.env['account_followup.followup.line'].browse(vals['level']).description.replace('\n', '<br />')

@@ -7,6 +7,7 @@ from openerp.exceptions import UserError
 from openerp import api, fields, models, _
 from openerp.tools import DEFAULT_SERVER_DATETIME_FORMAT
 from datetime import datetime, timedelta
+from openerp.tools.misc import formatLang
 
 
 class account_fiscal_position(models.Model):
@@ -255,6 +256,17 @@ class res_partner(models.Model):
             partner.contracts_count = self.env['account.analytic.account'].search_count([('partner_id', '=', partner.id)])
 
     @api.multi
+    def _compute_issued_total(self):
+        for partner in self:
+            issued_total = 0
+            domain = [('partner_id', '=', partner.id), ('reconciled', '=', False), ('account_id.deprecated', '=', False), ('account_id.internal_type', '=', 'receivable')]
+            for aml in self.env['account.move.line'].search(domain):
+                overdue = aml.date_maturity and datetime.today().strftime('%Y-%m-%d') > aml.date_maturity
+                if overdue:
+                    issued_total += aml.amount_residual
+            partner.issued_total = formatLang(self.env, issued_total, currency_obj=self.env.user.company_id.currency_id)
+
+    @api.multi
     def mark_as_reconciled(self):
         return self.write({'last_time_entries_checked': time.strftime(DEFAULT_SERVER_DATETIME_FORMAT)})
 
@@ -262,6 +274,8 @@ class res_partner(models.Model):
         result = self.browse()
         today = fields.Date.context_today(self)
         for partner in self.search([]):
+            if partner.payment_next_action_date > today:
+                continue
             domain = [('partner_id', '=', partner.id), ('reconciled', '=', False), ('account_id.deprecated', '=', False), ('account_id.internal_type', '=', 'receivable'), ('blocked', '=', False)]
             for aml in self.env['account.move.line'].search(domain):
                 if (aml.next_action_date and aml.next_action_date < today) or (not aml.next_action_date and aml.date_maturity < today):
@@ -273,6 +287,8 @@ class res_partner(models.Model):
         result = self.browse()
         today = fields.Date.context_today(self)
         for partner in self.search([]):
+            if partner.payment_next_action_date > today:
+                continue
             domain = [('partner_id', '=', partner.id), ('reconciled', '=', False), ('account_id.deprecated', '=', False), ('account_id.internal_type', '=', 'receivable'), ('blocked', '=', False)]
             for aml in self.env['account.move.line'].search(domain):
                 if aml.date_maturity < today:
@@ -284,13 +300,13 @@ class res_partner(models.Model):
     def update_next_action(self):
         for partner in self:
             today = fields.datetime.now()
-            next_action_date = today + timedelta(days=7)
+            next_action_date = today + timedelta(days=self.env.user.company_id.days_between_two_followups)
             next_action_date = next_action_date.strftime('%Y-%m-%d')
             today = today.strftime('%Y-%m-%d')
             domain = [('partner_id', '=', partner.id), ('reconciled', '=', False), ('account_id.deprecated', '=', False), ('account_id.internal_type', '=', 'receivable')]
             vals = {'next_action_date': next_action_date}
             for aml in self.env['account.move.line'].search(domain):
-                if (aml.next_action_date and aml.next_action_date < today) or (not aml.next_action_date and aml.date_maturity < today):
+                if (aml.next_action_date and aml.next_action_date <= today) or (not aml.next_action_date and aml.date_maturity <= today):
                     aml.write(vals)
 
     payment_next_action = fields.Text('Next Action', copy=False, track_visibility="onchange", company_dependent=True,
@@ -309,6 +325,7 @@ class res_partner(models.Model):
 
     contracts_count = fields.Integer(compute='_journal_item_count', string="Contracts", type='integer')
     journal_item_count = fields.Integer(compute='_journal_item_count', string="Journal Items", type="integer")
+    issued_total = fields.Char(compute='_compute_issued_total', string="Journal Items")
     property_account_payable = fields.Many2one('account.account', company_dependent=True,
         string="Account Payable",
         domain="[('internal_type', '=', 'payable'), ('deprecated', '=', False)]",

@@ -404,6 +404,7 @@ class res_partner(models.Model):
         company_id = self.env.user.company_id
         context = self.env.context
         cr = self.env.cr
+        date = 'date' in context and context['date'] or time.strftime('%Y-%m-%d')
 
         cr.execute(
             "SELECT l.partner_id, l.followup_line_id, l.date_maturity, l.date, l.id, fl.delay "\
@@ -426,7 +427,6 @@ class res_partner(models.Model):
         old = None
         fups = {}
         fup_id = 'followup_id' in context and context['followup_id'] or self.env['account_followup.followup'].search([('company_id', '=', company_id.id)]).id
-        date = 'date' in context and context['date'] or time.strftime('%Y-%m-%d')
 
         current_date = datetime.date(*time.strptime(date, '%Y-%m-%d')[:3])
         cr.execute(
@@ -443,9 +443,11 @@ class res_partner(models.Model):
 
         result = {}
 
+        partners_to_skip = self.env['res.partner'].search([('payment_next_action_date', '>', date)])
+
         #Fill dictionary of accountmovelines to_update with the partners that need to be updated
         for partner_id, followup_line_id, date_maturity, date, id, delay in move_lines:
-            if not partner_id:
+            if not partner_id or partner_id in partners_to_skip.ids:
                 continue
             if followup_line_id not in fups:
                 continue
@@ -518,12 +520,6 @@ class res_partner(models.Model):
                                             search='_payment_earliest_date_search', company_dependent=True)
     depends_field = fields.Integer(default=0)
     trust = fields.Selection([('good', 'Good Debtor'), ('normal', 'Normal Debtor'), ('bad', 'Bad Debtor')], string='Degree of trust you have in this debtor', default='normal', company_dependent=True)
-    # next_followup_level_id = fields.Many2one('account_followup.followup.line', compute='_get_next_level_and_date',
-    #                                          help="The next follow-up level", string="Next Follow-up Level",
-    #                                          store=True, company_dependent=True)
-    # next_followup_date = fields.Date(compute='_get_next_level_and_date', string="Next Follow-up Date",
-    #                                  help="Date of the next follow-up",
-    #                                  store=False, company_dependent=True)
 
 
 class account_config_settings(models.TransientModel):

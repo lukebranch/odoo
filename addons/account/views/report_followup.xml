@@ -59,7 +59,7 @@
 <template id="report_followup_body" inherit_id="account.report_financial_body" primary="True">
     <xpath expr="//h2" position="after">
         <t t-if="mode != 'print'">
-            <span id='public-link'><a t-att-href="context.get_public_link()">(go to public link)</a></span>
+            <div id='public-link' style='text-align: right;'><button type="button" class="btn btn-info btn_share_url" t-att-data-clipboard-text='context.get_public_link()'>Share</button></div>
         </t>
     </xpath>
     <xpath expr="//h2" position="replace">
@@ -89,6 +89,24 @@
     </xpath>
 </template>
 <template id="report_followup" inherit_id="account.report_financial" primary="True">
+    <xpath expr="//script" position='after'>
+        <script type="text/javascript" src="/account/static/lib/zeroclipboard/ZeroClipboard.js"></script>
+        <script type="text/javascript" src="/account/static/src/js/account_followup_report_widgets.js"></script>
+    </xpath>
+    <xpath expr="//script[@id='oe-account-inline-script']" position='replace'>
+        <script type="text/javascript" id='oe-account-inline-script'>
+            (function () {
+                'use strict';
+
+                $(document).ready(function() {
+                    var _t = openerp._t;
+                    var reportWidgets = new openerp.account.FollowupReportWidgets();
+                    reportWidgets.setElement($('.oe_account_report_widgets'));
+                    reportWidgets.start();
+                });
+            })();
+        </script>
+    </xpath>
     <xpath expr="//div[@class='dropdown']" position="replace">
     </xpath>
     <xpath expr="//t[@t-call='account.report_financial_body']" position="replace">
@@ -174,7 +192,7 @@
     </xpath>
 </template>
 <template id="report_followup_public_body" inherit_id="account.report_followup_body" primary="True">
-    <xpath expr="//span[@id='public-link']" position="replace"></xpath>
+    <xpath expr="//div[@id='public-link']" position="replace"></xpath>
     <xpath expr="//div[@id='action-buttons']" position='replace'></xpath>
     <xpath expr="//div[@class='summary']" position="replace"></xpath>
     <xpath expr="//div[@class='summary']" position="replace"></xpath>

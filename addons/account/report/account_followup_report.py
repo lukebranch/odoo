@@ -197,7 +197,7 @@ class account_report_context_followup(models.TransientModel):
             return ['Date', 'Due Date', 'Total Due']
         return ['Date', 'Due Date', 'Expected Date', 'Litigated', 'Total Due']
 
-    def get_pdf(self):
+    def get_pdf(self, log=False):
         bodies = []
         for context in self:
             context = context.with_context(lang=context.partner_id.lang)
@@ -216,6 +216,9 @@ class account_report_context_followup(models.TransientModel):
             }
             html = self.pool['ir.ui.view'].render(self._cr, self._uid, report_obj.get_template() + '_letter', rcontext, context=context.env.context)
             bodies.append((0, html))
+            if log:
+                msg = 'Sent a followup letter'
+                context.partner_id.message_post(body=msg)
 
         return self.env['report']._run_wkhtmltopdf([], [], bodies, False, self.env.user.company_id.paperformat_id)
 
@@ -224,19 +227,25 @@ class account_report_context_followup(models.TransientModel):
         pdf = self.get_pdf().encode('base64')
         name = self.partner_id.name + '_followup.pdf'
         attachment = self.env['ir.attachment'].create({'name': name, 'datas_fname': name, 'datas': pdf, 'type': 'binary'})
-        email_template = self.env['mail.template'].create({
-            'name': 'Followup ' + self.partner_id.name,
-            'email_from': self.env.user.email or '',
-            'model_id': 1,
-            'subject':  '%s Payment Reminder' % self.env.user.company_id.name,
-            'email_to': self.partner_id.email or ', '.join(self.env['res.partner'].search([('parent_id', '=', self.partner_id.id)]).email),
-            'lang': self.partner_id.lang,
-            'auto_delete': True,
-            'body_html': self.summary,
-            'attachment_ids': [(6, 0, [attachment.id])],
-        })
-        email_template.send_mail(self.id)
-        return
+        partners_emails = [partner.email for partner in self.env['res.partner'].search([('parent_id', '=', self.partner_id.id), ('email', '!=', False)])]
+        email = self.partner_id.email or (partners_emails and ', '.join(partners_emails))
+        if email and email.strip():
+            email_template = self.env['mail.template'].create({
+                'name': 'Followup ' + self.partner_id.name,
+                'email_from': self.env.user.email or '',
+                'model_id': 1,
+                'subject':  '%s Payment Reminder' % self.env.user.company_id.name,
+                'email_to': email,
+                'lang': self.partner_id.lang,
+                'auto_delete': True,
+                'body_html': self.summary,
+                'attachment_ids': [(6, 0, [attachment.id])],
+            })
+            email_template.send_mail(self.id)
+            msg = 'Sent a followup email'
+            self.partner_id.message_post(body=msg)
+            return True
+        return False
 
     @api.multi
     def get_public_link(self):

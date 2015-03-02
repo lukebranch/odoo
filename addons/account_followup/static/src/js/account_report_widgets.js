@@ -1,6 +1,6 @@
 openerp.account_followup = openerp.account_followup || {}
 
-openerp.account_followup.FollowupReportWidgets = openerp.account.ReportWidgets.extend({
+openerp.account_followup.FollowupReportWidgets = openerp.account.FollowupReportWidgets.extend({
     events: _.defaults({
         'click .changeTrust': 'changeTrust',
         'click .followup-action': 'doManualAction',
@@ -45,9 +45,13 @@ openerp.account_followup.FollowupReportWidgets = openerp.account.ReportWidgets.e
     doManualAction: function(e) {
         e.stopPropagation();
         e.preventDefault();
-        var $skipButton = $(e.target).siblings('a.followup-skip');
-        $skipButton.attr('class', 'btn btn-primary followup-skip');
-        $skipButton.text('Done');
-        $(e.target).attr('class', 'btn btn-default followup-letter');
+        var context_id = $(e.target).parents("div.page").attr("class").split(/\s+/)[3];
+        var contextModel = new openerp.Model('account.report.context.followup');
+        contextModel.call('do_manual_action', [[parseInt(context_id)]]).then (function (result) {
+            var $skipButton = $(e.target).siblings('a.followup-skip');
+            $skipButton.attr('class', 'btn btn-primary followup-skip');
+            $skipButton.text('Done');
+            $(e.target).attr('class', 'btn btn-default followup-letter');
+        });
     }
 });

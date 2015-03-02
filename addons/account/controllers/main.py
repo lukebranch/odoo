@@ -68,7 +68,7 @@ class FinancialReportController(http.Controller):
         if 'letter_context_list' in kw and 'pdf' in kw:
             letter_context_list = safe_eval('[' + kw['letter_context_list'] + ']')
             letter_contexts = request.env['account.report.context.followup'].browse(letter_context_list)
-            return request.make_response(letter_contexts.with_context(public=True).get_pdf(),
+            return request.make_response(letter_contexts.with_context(public=True).get_pdf(log=True),
                 headers=[('Content-Type', 'application/pdf'),
                          ('Content-Disposition', 'attachment; filename=followups.pdf;')])
         if 'partner_skipped' in kw:
@@ -128,7 +128,7 @@ class FinancialReportController(http.Controller):
         if not context_id:
             context_id = context_obj.with_context(lang=partner.lang).create({'partner_id': partner.id})
         if 'pdf' in kw:
-            return request.make_response(context_id.with_context(lang=partner.lang, public=True).get_pdf(),
+            return request.make_response(context_id.with_context(lang=partner.lang, public=True).get_pdf(log=True),
                 headers=[('Content-Type', 'application/pdf'),
                          ('Content-Disposition', 'attachment; filename=' + partner.name + '.pdf;')])
         lines = report_obj.with_context(lang=partner.lang).get_lines(context_id)

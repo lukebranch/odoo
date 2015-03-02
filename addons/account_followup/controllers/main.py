@@ -35,6 +35,12 @@ class FollowupReportController(addons.account.controllers.main.FinancialReportCo
         context_all_obj = request.env['account.report.context.followup.all']
         reports = []
         context_all_id = context_all_obj.sudo(uid).search([('create_uid', '=', uid)], limit=1)
+        if 'letter_context_list' in kw and 'pdf' in kw:
+            letter_context_list = safe_eval('[' + kw['letter_context_list'] + ']')
+            letter_contexts = request.env['account.report.context.followup'].browse(letter_context_list)
+            return request.make_response(letter_contexts.with_context(public=True).get_pdf(log=True),
+                headers=[('Content-Type', 'application/pdf'),
+                         ('Content-Disposition', 'attachment; filename=followups.pdf;')])
         if 'partner_skipped' in kw:
             context_all_id.skip_partner(request.env['res.partner'].browse(int(kw['partner_skipped'])))
         partners_data = request.env['res.partner'].get_partners_in_need_of_action()
@@ -77,7 +83,7 @@ class FollowupReportController(addons.account.controllers.main.FinancialReportCo
             'mode': 'display',
             'page': page,
             'context_all': context_all_id,
-            'just_arrived': 'partner_done' not in kw,
+            'just_arrived': 'partner_done' not in kw and 'partner_skipped' not in kw,
             'action_contexts': action_contexts,
             'time': time,
         }
@@ -90,16 +96,19 @@ class FollowupReportController(addons.account.controllers.main.FinancialReportCo
         report_obj = request.env['account.followup.report']
         partners_data = request.env['res.partner'].get_partners_in_need_of_action()
         partner = request.env['res.partner'].browse(partner)
+        partners = partners_data.keys()
         if 'partner_done' in kw:
-            partners = partners_data.keys()
             if not partners:
                 return self.followup_all(partner_done=kw['partner_done'])
             partner = partners[0]
         context_id = context_obj.sudo(uid).search([('partner_id', '=', partner.id)], limit=1)
         if not context_id:
-            context_id = context_obj.with_context(lang=partner.lang).create({'partner_id': partner.id, 'level': partners_data[partner.id][0]})
+            vals = {'partner_id': partner.id}
+            if partner.id in partners:
+                vals.update({'level': partners_data[partner.id][0]})
+            context_id = context_obj.with_context(lang=partner.lang).create(vals)
         if 'pdf' in kw:
-            return request.make_response(context_id.with_context(lang=partner.lang, public=True).get_pdf(),
+            return request.make_response(context_id.with_context(lang=partner.lang, public=True).get_pdf(log=True),
                 headers=[('Content-Type', 'application/pdf'),
                          ('Content-Disposition', 'attachment; filename=' + partner.name + '.pdf;')])
         lines = report_obj.with_context(lang=partner.lang).get_lines(context_id)
