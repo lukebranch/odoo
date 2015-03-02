@@ -357,16 +357,14 @@ class Website(openerp.addons.web.controllers.main.Home):
         return json.dumps([sugg[0].attrib['data'] for sugg in xmlroot if len(sugg) and sugg[0].attrib['data']])
 
     @http.route(['/website/save_menu'], type='json', auth="public", website=True)
-    def save_menu(self, value, **kwargs):
+    def save_menu(self, view_id, value, xpath, **kwargs):
         """ Update the menu view.
         :param str model:
         :param str xpath: valid xpath to the tag to replace
         """
         "website.submenu"
-        imd = request.registry['ir.model.data']
         view = request.registry['ir.ui.view']
-        view_model, view_id = imd.get_object_reference(request.cr, request.uid, 'website', 'submenu')
-        view.write(request.cr, request.uid, view_id, {'arch': value}, context=request.context)
+        view.save(request.cr, request.uid, view_id, value, xpath, context=request.context)
 
 
     #------------------------------------------------------

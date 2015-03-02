@@ -760,7 +760,7 @@
 
 <template name="Menu" id="s_menu_parent">
     <li class="s_menu_parent open">
-        <a href="/page/homepage">Home</a>
+        <a href="/page/homepage"><span>Home</span></a>
     </li>
 </template>
 

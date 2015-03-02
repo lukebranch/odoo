@@ -2,7 +2,7 @@
     'use strict';
     var website = openerp.website;
 
-    website.snippet.MenuEditor = website.snippet.BuildingBlock.include({
+    website.snippet.BuildingBlock.include({
 
         start: function() {
             this._super();
@@ -47,12 +47,35 @@
 
     website.EditorBar.include({
         saveElement: function($el){
-            debugger;
             if($el.hasClass('top_menu')){
+                $el.find("[data-oe-field]").removeAttr("data-oe-type data-oe-expression data-oe-field data-oe-id data-oe-translate data-oe-model");
+                $el.find(".s_menu_parent").each(function(){
+                    var el = $(this);
+                    el.children('ul').css('visibility', '');
+                    el.off('mouseenter');
+                    el.removeClass('open');
+                    if(el.children('ul').children().length === 0){
+                        el.children('a').children('.caret').remove();
+                        el.children('ul').remove();
+                        el.children('.dropdown-menu').remove();
+                    }else{
+                        el.children('a').attr('data-toggle', 'dropdown');
+                        el.children('a').addClass('dropdown-toggle');
+                    }
+                });
+                $el.find(".o_editable").removeClass("o_editable");
+                $el.find(".ui-droppable").removeClass("ui-droppable");
+                $el.find(".o_is_inline_editable").removeClass("o_is_inline_editable");
+                $el.find(".oe_current_dropdown").removeClass("oe_current_dropdown");
+                $el.find(".note-air-editor").removeClass("note-air-editor");
+                $el.find(".note-editable").removeClass("note-editable");
                 var markup = $el.prop('outerHTML');
                 console.log(markup);
+
                 return openerp.jsonRpc('/website/save_menu', 'save_menu', {
+                    view_id: $el.data('oe-id'),
                     value: markup,
+                    xpath: $el.data('oe-xpath') || null,
                     context: website.get_context(),
                 });
             }else{
@@ -110,6 +133,7 @@
         },
 
         clean_for_save: function(){
+            debugger;
             this.$target.children('ul').css('visibility', '');
             this.$target.off('mouseenter');
             this.$target.removeClass('open');
@@ -121,7 +145,6 @@
                 this.$target.children('a').attr('data-toggle', 'dropdown');
                 this.$target.children('a').addClass('dropdown-toggle');
             }
-            debugger;
         },
     });
 

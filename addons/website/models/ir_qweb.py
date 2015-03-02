@@ -91,6 +91,20 @@ class QWeb(orm.AbstractModel):
             qwebcontext.context['url_for'] = request.website.get_cdn_url
         return super(QWeb, self).render_tag_call_assets(element, template_attributes, generated_attributes, qwebcontext)
 
+    def render_tag_branding(self, element, template_attributes, generated_attributes, qwebcontext):
+        context = qwebcontext.context
+        if context and context.get('inherit_branding'):
+            path = element.getroottree().getpath(element)
+            if path[1:10] == 'templates':
+                path = path[10:]
+            imd = request.registry['ir.model.data']
+            view_model, view_id = imd.get_object_reference(request.cr, request.uid, 'website', 'submenu')
+            generated_attributes += ' data-oe-id="'+str(view_id)+'"'
+            generated_attributes += ' data-oe-model="ir.ui.view"'
+            generated_attributes += ' data-oe-xpath="'+path+'"'
+            generated_attributes += ' data-oe-field="arch"'
+        return self.render_element(element, template_attributes, generated_attributes, qwebcontext)
+        
     def get_converter_for(self, field_type):
         return self.pool.get(
             'website.qweb.field.' + field_type,
