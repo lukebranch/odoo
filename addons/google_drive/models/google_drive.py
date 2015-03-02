@@ -1,27 +1,10 @@
-##############################################################################
-#
-#    OpenERP, Open Source Management Solution
-#    Copyright (C) 2004-2012 OpenERP SA (<http://www.openerp.com>).
-#
-#    This program is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU Affero General Public License as
-#    published by the Free Software Foundation, either version 3 of the
-#    License, or (at your option) any later version.
-#
-#    This program is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU Affero General Public License for more details.
-#
-#    You should have received a copy of the GNU Affero General Public License
-#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-##############################################################################
+# -*- coding: utf-8 -*-
 import logging
 
 from openerp import SUPERUSER_ID
-from openerp.osv import fields, osv
-from openerp.tools.translate import _
+# from openerp.osv import fields, osv
+from openerp import models, fields, api, _
+# from openerp.tools.translate import _
 from openerp.exceptions import UserError
 
 import werkzeug.urls
@@ -33,7 +16,7 @@ import openerp
 _logger = logging.getLogger(__name__)
 
 
-class config(osv.Model):
+class config(models.Model):
     _name = 'google.drive.config'
     _description = "Google Drive templates config"
 
@@ -140,34 +123,40 @@ class config(osv.Model):
                     urllib2.urlopen(req)
                 except urllib2.HTTPError:
                     pass
-        return res 
+        return res
 
-    def get_google_drive_config(self, cr, uid, res_model, res_id, context=None):
+    @api.one
+    def get_google_drive_config(self, res_model, res_id, context=None):
         '''
-        Function called by the js, when no google doc are yet associated with a record, with the aim to create one. It
-        will first seek for a google.docs.config associated with the model `res_model` to find out what's the template
-        of google doc to copy (this is usefull if you want to start with a non-empty document, a type or a name
-        different than the default values). If no config is associated with the `res_model`, then a blank text document
-        with a default name is created.
+        Function called by the js, when no google doc are yet associated with
+        a record, with the aim to create one. It will first seek for
+         a google.docs.config associated with the model `res_model` to find out
+        what's the template of google doc to copy (this is usefull if you want
+        to start with a non-empty document, a type or a name different than the
+        default values). If no config is associated with the `res_model`, then
+        a blank text document with a default name is created.
           :param res_model: the object for which the google doc is created
-          :param ids: the list of ids of the objects for which the google doc is created. This list is supposed to have
-            a length of 1 element only (batch processing is not supported in the code, though nothing really prevent it)
+          :param ids: the list of ids of the objects for which the google doc
+           is created. This list is supposed to have a length of 1 element only
+           (batch processing is not supported in the code, though nothing really
+            prevent it)
           :return: the config id and config name
         '''
         if not res_id:
             raise UserError(_("Creating google drive may only be done by one at a time."))
         # check if a model is configured with a template
-        config_ids = self.search(cr, uid, [('model_id', '=', res_model)], context=context)
+        config_ids = self.search([('model_id', '=', res_model)])
         configs = []
-        for config in self.browse(cr, uid, config_ids, context=context):
+        for config in self.browse(config_ids):
             if config.filter_id:
                 if (config.filter_id.user_id and config.filter_id.user_id.id != uid):
                     #Private
                     continue
-                domain = [('id', 'in', [res_id])] + eval(config.filter_id.domain)
+                domain = [('id', 'in', [res_id])] + eval
+                (config.filter_id.domain)
                 local_context = context and context.copy() or {}
                 local_context.update(eval(config.filter_id.context))
-                google_doc_configs = self.pool.get(config.filter_id.model_id).search(cr, uid, domain, context=local_context)
+                google_doc_configs = self.env[config.filter_id.model_id].search(domain, context=local_context)
                 if google_doc_configs:
                     configs.append({'id': config.id, 'name': config.name})
             else:
@@ -180,34 +169,30 @@ class config(osv.Model):
             return mo.group(2)
         return None
 
-    def _resource_get(self, cr, uid, ids, name, arg, context=None):
-        result = {}
-        for data in self.browse(cr, uid, ids, context):
+    @api.multi
+    def _resource_get(self):
+        for data in self:
             mo = self._get_key_from_url(data.google_drive_template_url)
             if mo:
-                result[data.id] = mo
+                data.google_drive_resource_id = mo
             else:
                 raise UserError(_("Please enter a valid Google Document URL."))
-        return result
 
-    def _client_id_get(self, cr, uid, ids, name, arg, context=None):
-        result = {}
-        client_id = self.pool['ir.config_parameter'].get_param(cr, SUPERUSER_ID, 'google_drive_client_id')
-        for config_id in ids:
-            result[config_id] = client_id
-        return result
+    @api.multi
+    def _client_id_get(self):
+        client_id = self.env['ir.config_parameter'].get_param(SUPERUSER_ID, 'google_drive_client_id')
+        for config_id in self:
+            config_id.google_drive_client_id = client_id
 
-    _columns = {
-        'name': fields.char('Template Name', required=True),
-        'model_id': fields.many2one('ir.model', 'Model', ondelete='set null', required=True),
-        'model': fields.related('model_id', 'model', type='char', string='Model', readonly=True),
-        'filter_id': fields.many2one('ir.filters', 'Filter', domain="[('model_id', '=', model)]"),
-        'google_drive_template_url': fields.char('Template URL', required=True, size=1024),
-        'google_drive_resource_id': fields.function(_resource_get, type="char", string='Resource Id'),
-        'google_drive_client_id': fields.function(_client_id_get, type="char", string='Google Client '),
-        'name_template': fields.char('Google Drive Name Pattern', help='Choose how the new google drive will be named, on google side. Eg. gdoc_%(field_name)s', required=True),
-        'active': fields.boolean('Active'),
-    }
+    name = fields.Char('Template Name', required=True)
+    model_id = fields.Many2one('ir.model', 'Model', ondelete='set null', required=True)
+    model = fields.Char(related='model_id.model', string='Model', readonly=True)
+    filter_id = fields.Many2one('ir.filters', 'Filter', domain="[('model_id', '=', model)]")
+    google_drive_template_url = fields.Char('Template URL', required=True, size=1024)
+    google_drive_resource_id = fields.Char(compute="_resource_get", string='Resource Id')
+    google_drive_client_id = fields.Char(compute="_client_id_get", string='Google Client ')
+    name_template = fields.Char('Google Drive Name Pattern', help='Choose how the new google drive will be named, on google side. Eg. gdoc_%(field_name)s', required=True, default='Document %(name)s')
+    active = fields.Boolean('Active', default=True)
 
     def onchange_model_id(self, cr, uid, ids, model_id, context=None):
         res = {}
@@ -217,11 +202,6 @@ class config(osv.Model):
         else:
             res['value'] = {'filter_id': False, 'model': False}
         return res
-
-    _defaults = {
-        'name_template': 'Document %(name)s',
-        'active': True,
-    }
 
     def _check_model_id(self, cr, uid, ids, context=None):
         config_id = self.browse(cr, uid, ids[0], context=context)
@@ -236,7 +216,7 @@ class config(osv.Model):
     def get_google_scope(self):
         return 'https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/drive.file'
 
-
+from openerp.osv import fields, osv
 class base_config_settings(osv.TransientModel):
     _inherit = "base.config.settings"
 
