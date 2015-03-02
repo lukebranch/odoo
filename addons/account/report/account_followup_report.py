@@ -227,8 +227,7 @@ class account_report_context_followup(models.TransientModel):
         pdf = self.get_pdf().encode('base64')
         name = self.partner_id.name + '_followup.pdf'
         attachment = self.env['ir.attachment'].create({'name': name, 'datas_fname': name, 'datas': pdf, 'type': 'binary'})
-        partners_emails = [partner.email for partner in self.env['res.partner'].search([('parent_id', '=', self.partner_id.id), ('email', '!=', False)])]
-        email = self.partner_id.email or (partners_emails and ', '.join(partners_emails))
+        email = self.env['res.partner'].browse(self.partner_id.address_get(['invoice'])['invoice']).email
         if email and email.strip():
             email_template = self.env['mail.template'].create({
                 'name': 'Followup ' + self.partner_id.name,

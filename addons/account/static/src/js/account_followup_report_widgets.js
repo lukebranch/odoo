@@ -57,14 +57,13 @@ openerp.account.FollowupReportWidgets = openerp.account.ReportWidgets.extend({
     skipPartner: function(e) {
         var partner_id = $(e.target).attr("partner");
         var model = new openerp.Model('res.partner');
-        var next_action_date = $(e.target).parents('div.page').find('input.next_action_date').val()
         if ($(e.target).attr('class') == 'btn btn-primary followup-skip') {
             model.call('update_next_action', [[parseInt(partner_id)]]).then(function (result) {
-                window.open('?partner_done=' + partner_id + '&date=' + next_action_date, '_self');
+                window.open('?partner_done=' + partner_id, '_self');
             });
         }
         else {
-            window.open('?partner_skipped=' + partner_id + '&date=' + next_action_date, '_self');
+            window.open('?partner_skipped=' + partner_id, '_self');
         }
     },
     printFollowupLetter: function(e) {

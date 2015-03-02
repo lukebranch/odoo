@@ -4,7 +4,7 @@ openerp.account_followup.FollowupReportWidgets = openerp.account.FollowupReportW
     events: _.defaults({
         'click .changeTrust': 'changeTrust',
         'click .followup-action': 'doManualAction',
-    }, openerp.account.ReportWidgets.prototype.events),
+    }, openerp.account.FollowupReportWidgets.prototype.events),
     start: function() {
         openerp.qweb.add_template("/account_followup/static/src/xml/account_followup_report.xml");
         return this._super();
@@ -24,8 +24,6 @@ openerp.account_followup.FollowupReportWidgets = openerp.account.FollowupReportW
         }
     },
     changeTrust: function(e) {
-        e.stopPropagation();
-        e.preventDefault();
         var partner_id = $(e.target).parents('span.dropdown').attr("partner");
         var newTrust = $(e.target).attr("new-trust");
         var color = 'grey';
@@ -39,7 +37,7 @@ openerp.account_followup.FollowupReportWidgets = openerp.account.FollowupReportW
         }
         var model = new openerp.Model('res.partner');
         model.call('write', [[parseInt(partner_id)], {'trust': newTrust}]).then(function (result) {
-            $(e.target).parents('span.dropdown').find('i.fa').attr('style', 'color: ' + color + ';')
+            $(e.target).parents('span.dropdown').find('i.oe-account_followup-trust').attr('style', 'color: ' + color + '; font-size: 0.8em;')
         });
     },
     doManualAction: function(e) {

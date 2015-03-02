@@ -100,7 +100,7 @@ class FollowupReportController(addons.account.controllers.main.FinancialReportCo
         if 'partner_done' in kw:
             if not partners:
                 return self.followup_all(partner_done=kw['partner_done'])
-            partner = partners[0]
+            partner = request.env['res.partner'].browse(partners[0])
         context_id = context_obj.sudo(uid).search([('partner_id', '=', partner.id)], limit=1)
         if not context_id:
             vals = {'partner_id': partner.id}

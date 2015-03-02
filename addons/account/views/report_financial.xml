@@ -120,6 +120,23 @@
         </t>
     </tr>
 </template>
+<template id="report_financial_table">
+    <table class="table table-condensed">
+        <thead>
+            <tr>
+                <th></th>
+                <t t-foreach="context.get_columns_names()" t-as="column_name">
+                    <th class="text-center" t-raw="column_name" />
+                </t>
+            </tr>
+        </thead>
+        <tbody>
+            <t t-foreach="lines" t-as="a">
+                <t t-call="account.report_financial_line" />
+            </t>
+        </tbody>
+    </table>
+</template>
 <template id="report_financial_body">
     <div t-att-class="' '.join(['page', 'oe_account_report_widgets', str(report.get_name()), str(context.id)])">
         <h2 t-esc="report.get_title()"/>
@@ -137,21 +154,7 @@
         <div t-if="mode == 'print' and context.summary != ''" class="savedSummary" role="alert">
             <span><t t-raw="context.summary" /></span>
         </div>
-        <table class="table table-condensed">
-            <thead>
-                <tr>
-                    <th></th>
-                    <t t-foreach="context.get_columns_names()" t-as="column_name">
-                        <th class="text-center" t-raw="column_name" />
-                    </t>
-                </tr>
-            </thead>
-            <tbody>
-                <t t-foreach="lines" t-as="a">
-                    <t t-call="account.report_financial_line" />
-                </t>
-            </tbody>
-        </table>
+        <t t-call='account.report_financial_table'/>
         <t t-foreach="context.footnotes" t-as="footnote">
             <p class="footnote" t-att-id="'footnote' + str(footnote.number)">
                 <span class='text'><t t-raw="str(footnote.number) + '. ' + footnote.text"/></span>
