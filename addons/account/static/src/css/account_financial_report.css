@@ -20,7 +20,7 @@ div.oe-account-next-action:hover i.fa {
 div.savedSummary:hover {
     border-left: thin groove;
 }
-input#summary, div.dropdown, i.fa, div.savedSummary span, td.unfoldable, td.foldable, span#public-link, input[type=checkbox], div.oe-account-next-action {
+input#summary, div.dropdown, span.dropdown, i.fa, div.savedSummary span, td.unfoldable, td.foldable, span#public-link, input[type=checkbox], div.oe-account-next-action {
     cursor: pointer; cursor: hand;
 }
 td i.fa-pencil-square{

@@ -8,6 +8,10 @@ openerp.account.FollowupReportWidgets = openerp.account.ReportWidgets.extend({
         "change *[name='blocked']": 'onChangeBlocked',
         'click .oe-account-set-next-action': 'setNextAction',
         'click #saveNextAction': 'saveNextAction',
+        'click .oe-account-followup-one-week': 'setNextAction',
+        'click .oe-account-followup-two-weeks': 'setNextAction',
+        'click .oe-account-followup-one-month': 'setNextAction',
+        'click .oe-account-followup-two-months': 'setNextAction',
     }, openerp.account.ReportWidgets.prototype.events),
     saveNextAction: function(e) {
         e.stopPropagation();
@@ -26,6 +30,22 @@ openerp.account.FollowupReportWidgets = openerp.account.ReportWidgets.extend({
         e.stopPropagation();
         e.preventDefault();
         var target_id = $(e.target).parents("div.page").attr("class").split(/\s+/)[3];
+        var dt = new Date();
+        switch($(e.target).attr("class").split(/\s+/)[2]) {
+            case 'oe-account-followup-one-week':
+                dt.setDate(dt.getDate() + 7);
+                break;
+            case 'oe-account-followup-two-weeks':
+                dt.setDate(dt.getDate() + 14);
+                break;
+            case 'oe-account-followup-one-month':
+                dt.setMonth(dt.getMonth() + 1);
+                break;
+            case 'oe-account-followup-two-months':
+                dt.setMonth(dt.getMonth() + 2);
+                break;
+        }
+        $("#nextActionModal #nextActionDate").val(dt.toISOString().substr(0, 10));
         $("#nextActionModal #target_id").val(target_id);
         $('#nextActionModal').on('hidden.bs.modal', function (e) {
             $(this).find('form')[0].reset();

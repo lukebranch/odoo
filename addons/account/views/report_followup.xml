@@ -2,6 +2,12 @@
 <openerp>
 <data>
 
+<record model="mail.message.subtype" id="followup_logged_action">
+    <field name="name">Logged followup action</field>
+    <field name="description">Messages created after a followup action has been executed</field>
+    <field name="res_model">res.partner</field>
+</record>
+
 <template id="report_followup_line" inherit_id="account.report_financial_line" primary="True">
     <xpath expr="//span[@style='font-style: italic; margin-left: 70px']" position='attributes'>
         <attribute name="style">font-style: italic;</attribute>
@@ -58,13 +64,32 @@
 </template>
 <template id="report_followup_body" inherit_id="account.report_financial_body" primary="True">
     <xpath expr="//h2" position="after">
-        <t t-if="mode != 'print'">
-            <div id='public-link' style='text-align: right;'><button type="button" class="btn btn-info btn_share_url" t-att-data-clipboard-text='context.get_public_link()'>Share</button></div>
-        </t>
+        <div class='row mt32' t-if="mode != 'print' and not context.env.context.get('public')">
+            <div class='col-sm-5'>
+                <div class="alert alert-info" role="alert">
+                    <t t-raw="context.partner_id.phone and ('Phone: ' + str(context.env['res.partner'].browse(context.partner_id.address_get(['invoice'])['invoice']).phone) + '&lt;br /&gt;') or ''" />
+                    <t t-raw="context.partner_id.mobile and ('Mobile: ' + str(context.env['res.partner'].browse(context.partner_id.address_get(['invoice'])['invoice']).mobile) + '&lt;br /&gt;') or ''"/>
+                    <t t-raw="context.partner_id.fax and ('Fax: ' + str(context.env['res.partner'].browse(context.partner_id.address_get(['invoice'])['invoice']).fax or '')) or ''"/>
+                </div>
+            </div>
+            <div class='col-sm-7' id='public-link' style='text-align: right;'>
+                <div class="btn-group">
+                    <button type="button" class="btn btn-info dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+                        History <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu" role="menu">
+                        <t t-foreach="context.get_history()" t-as='msg'>
+                            <li><a><t t-raw='msg.body' /></a></li>
+                        </t>
+                    </ul>
+                </div>
+                <button type="button" class="btn btn-info btn_share_url" t-att-data-clipboard-text='context.get_public_link()'>Share</button>
+            </div>
+        </div>
     </xpath>
     <xpath expr="//h2" position="replace">
         <h2>
-            <span data-toggle='tooltip' data-placement='bottom' t-att-title="'Tel: ' + str(context.partner_id.phone or '') + '&lt;br /&gt;Mobile: ' + str(context.partner_id.mobile or '') + '&lt;br /&gt;Fax: ' + str(context.partner_id.fax or '')"><t t-esc='context.partner_id.name' /></span>
+            <span><t t-esc='context.partner_id.name' /></span>
             <small><a t-att-href="'/web#id=' + str(context.partner_id.id) + '&amp;view_type=form&amp;model=res.partner'">(view)</a></small>
         </h2>
     </xpath>
@@ -72,8 +97,14 @@
         <t t-call='account.report_followup_line' />
     </xpath>
     <xpath expr="//div[@class='summary']" position="before">
-        <div t-if="mode != 'print'">
-            <div id='action-buttons' style='text-align: right;'>
+        <div t-if="mode != 'print'" class='row'>
+            <div class='col-sm-5'>
+                <a type="button" class="btn btn-default oe-account-followup-one-week" t-att-partner="str(context.partner_id.id)">One week</a>
+                <a type="button" class="btn btn-default oe-account-followup-two-weeks" t-att-partner="str(context.partner_id.id)">Two weeks</a>
+                <a type="button" class="btn btn-default oe-account-followup-one-month" t-att-partner="str(context.partner_id.id)">One month</a>
+                <a type="button" class="btn btn-default oe-account-followup-two-months" t-att-partner="str(context.partner_id.id)">Two months</a>
+            </div>
+            <div id='action-buttons' style='text-align: right;' class='col-sm-7'>
                 <a type="button" class="btn btn-default followup-skip" t-att-partner="str(context.partner_id.id)">Skip</a>
                 <a type="button" class="btn btn-primary followup-letter" t-att-target="'/account/followup_report/' + str(context.partner_id.id) + '/?pdf'" t-att-context="str(context.id)">Print Letter</a>
                 <a type="button" class="btn btn-primary followup-email">Send by email</a>
@@ -188,7 +219,7 @@
     <xpath expr="//div[@id='public-link']" position="replace"></xpath>
     <xpath expr="//div[@id='action-buttons']" position='replace'></xpath>
     <xpath expr="//div[@class='summary']" position="replace"></xpath>
-    <xpath expr="//div[@class='summary']" position="replace"></xpath>
+    <xpath expr="//div[@class='summary mt32']" position="replace"></xpath>
     <xpath expr="//div[@class='savedSummary']" position="attributes">
         <attribute name="t-if"></attribute>
         <attribute name="class"></attribute>

@@ -33,7 +33,7 @@ class account_report_context_followup(models.TransientModel):
     def do_manual_action(self):
         for context in self:
             msg = 'Manual action done :\n' + context.level.manual_action_note
-            context.partner_id.message_post(body=msg)
+            context.partner_id.message_post(body=msg, subtype='account.followup_logged_action')
 
     def create(self, vals):
         if 'level' in vals:

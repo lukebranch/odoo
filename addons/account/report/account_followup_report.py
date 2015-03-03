@@ -37,45 +37,49 @@ class report_account_followup_report(models.AbstractModel):
             domain.append(('blocked', '=', False))
         total = 0
         total_issued = 0
-        currency_id = self.env.user.company_id.currency_id
-        for aml in self.env['account.move.line'].search(domain):
-            overdue = aml.date_maturity and datetime.today().strftime('%Y-%m-%d') > aml.date_maturity
-            date_due = overdue and (aml.date_maturity, 'color: red;') or aml.date_maturity
-            total += aml.amount_residual
-            if overdue:
-                total_issued += aml.amount_residual
-            view_type = total >= 0 and 'invoice' or 'payment'
-            amount = formatLang(self.env, aml.amount_residual, currency_obj=currency_id)
+        amls = self.env['account.move.line'].search(domain)
+        currencies = self.env['res.currency'].browse([])
+        for aml in amls:
+            currencies |= aml.currency_id or aml.company_id.currency_id
+        for currency in currencies:
+            for aml in amls.filtered(lambda aml: aml.currency_id and aml.currency_id == currency or aml.company_id.currency_id == currency):
+                overdue = aml.date_maturity and datetime.today().strftime('%Y-%m-%d') > aml.date_maturity
+                date_due = overdue and (aml.date_maturity, 'color: red;') or aml.date_maturity
+                total += aml.amount_residual
+                if overdue:
+                    total_issued += aml.amount_residual
+                view_type = total >= 0 and 'invoice' or 'payment'
+                amount = formatLang(self.env, aml.amount_residual, currency_obj=currency)
+                lines.append({
+                    'id': aml.id,
+                    'name': aml.ref,
+                    'type': 'unreconciled_aml',
+                    'view_type': view_type,
+                    'footnotes': self._get_footnotes('unreconciled_aml', aml.id, context_id),
+                    'unfoldable': False,
+                    'columns': [aml.date, date_due] + (not public and [aml.expected_pay_date and (aml.expected_pay_date, aml.internal_note) or ('', ''), aml.blocked] or []) + [amount],
+                })
+            total = formatLang(self.env, abs(total), currency_obj=currency)
             lines.append({
-                'id': aml.id,
-                'name': aml.ref,
-                'type': 'unreconciled_aml',
-                'view_type': view_type,
-                'footnotes': self._get_footnotes('unreconciled_aml', aml.id, context_id),
-                'unfoldable': False,
-                'columns': [aml.date, date_due] + (not public and [aml.expected_pay_date and (aml.expected_pay_date, aml.internal_note) or ('', ''), aml.blocked] or []) + [amount],
-            })
-        total = formatLang(self.env, abs(total), currency_obj=currency_id)
-        lines.append({
-            'id': 0,
-            'name': total >= 0 and 'Due Total' or '',
-            'type': 'line',
-            'footnotes': self._get_footnotes('line', 0, context_id),
-            'unfoldable': False,
-            'level': 0,
-            'columns': ['', ''] + (not public and ['', ''] or []) + [total],
-        })
-        if total_issued > 0:
-            total_issued = formatLang(self.env, total_issued, currency_obj=currency_id)
-            lines.append({
-                'id': 1,
-                'name': 'Issued Total',
+                'id': 0,
+                'name': total >= 0 and 'Due Total' or '',
                 'type': 'line',
-                'footnotes': self._get_footnotes('line', 1, context_id),
+                'footnotes': self._get_footnotes('line', 0, context_id),
                 'unfoldable': False,
                 'level': 0,
-                'columns': ['', ''] + (not public and ['', ''] or []) + [total_issued],
+                'columns': ['', ''] + (not public and ['', ''] or []) + [total],
             })
+            if total_issued > 0:
+                total_issued = formatLang(self.env, total_issued, currency_obj=currency)
+                lines.append({
+                    'id': 1,
+                    'name': 'Issued Total',
+                    'type': 'line',
+                    'footnotes': self._get_footnotes('line', 1, context_id),
+                    'unfoldable': False,
+                    'level': 0,
+                    'columns': ['', ''] + (not public and ['', ''] or []) + [total_issued],
+                })
         return lines
 
     @api.model
@@ -158,7 +162,7 @@ class account_report_context_followup(models.TransientModel):
     def change_next_action(self, date, note):
         self.partner_id.write({'payment_next_action': note, 'payment_next_action_date': date})
         msg = 'Next action date : ' + date + '.\n' + note
-        self.partner_id.message_post(body=msg)
+        self.partner_id.message_post(body=msg, subtype='account.followup_logged_action')
 
     @api.multi
     def add_footnote(self, type, target_id, column, number, text):
@@ -218,7 +222,7 @@ class account_report_context_followup(models.TransientModel):
             bodies.append((0, html))
             if log:
                 msg = 'Sent a followup letter'
-                context.partner_id.message_post(body=msg)
+                context.partner_id.message_post(body=msg, subtype='account.followup_logged_action')
 
         return self.env['report']._run_wkhtmltopdf([], [], bodies, False, self.env.user.company_id.paperformat_id)
 
@@ -242,7 +246,7 @@ class account_report_context_followup(models.TransientModel):
             })
             email_template.send_mail(self.id)
             msg = 'Sent a followup email'
-            self.partner_id.message_post(body=msg)
+            self.partner_id.message_post(body=msg, subtype='account.followup_logged_action')
             return True
         return False
 
@@ -252,3 +256,6 @@ class account_report_context_followup(models.TransientModel):
         base_url = self.env['ir.config_parameter'].sudo().get_param('web.base.url')
         check = md5(str(db_uuid) + self.partner_id.name).hexdigest()
         return base_url + '/account/public_followup_report/' + str(self.partner_id.id) + '/' + check
+
+    def get_history(self):
+        return self.env['mail.message'].search([('subtype_id', '=', self.env['ir.model.data'].xmlid_to_res_id('account.followup_logged_action')), ('id', 'in', self.partner_id.message_ids.ids)], limit=5)
