@@ -5,7 +5,7 @@ In https://docs.google.com/a/openerp.com/file/d/0B5BDHVRYo-q5TUN4OXYxY1NkaEE/edi
 - Filter : readgroup
 - calculate expansion mrr & churned mrr
 - use @MAT field to caculate nrr
-- filtered_product_template_ids should not be as a class variable
+V filtered_product_template_ids should not be as a class variable
 V graph behind boxes
 
 ? do not use negative mrr (asset, nothing to do with revenue recognition)

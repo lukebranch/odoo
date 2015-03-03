@@ -1,5 +1,13 @@
 (function () {
-   'use strict';
+    'use strict';
+
+    function get_filtered_product_templates(){
+      var filtered_product_template_ids = [];
+      $("input:checkbox[name=product_template_filter]:checked").each(function(){
+        filtered_product_template_ids.push($(this).val());
+      });
+      return filtered_product_template_ids;
+    };
 
     openerp.website.if_dom_contains('div.stat-box', function() {
 
@@ -23,12 +31,14 @@
             },
             start: function() {
                 var self = this;
+                var filtered_product_template_ids = get_filtered_product_templates();
 
                 var compute_numbers = function(){
                     return openerp.jsonRpc('/account_contract_dashboard/calculate_stats_diff', 'call', {
                         'stat_type': self.box_code,
                         'start_date': self.start_date,
                         'end_date': self.end_date,
+                        'filtered_product_template_ids': filtered_product_template_ids,
                     });
                 };
 
@@ -37,6 +47,7 @@
                         'stat_type': self.box_code,
                         'start_date' : start_date,
                         'end_date': end_date,
+                        'filtered_product_template_ids': filtered_product_template_ids,
                     });
                 };
 
@@ -97,10 +108,15 @@
         var loader = '<div class="loading"><div id="big-circle"><div id="little-circle"></div></div></div>';
         $('#stat_chart_div').html("<div class='loader' style='position: relative; text-align:center; width: 100%; height: 300px;'>" + loader + "</div>");
 
+        var filtered_product_template_ids = get_filtered_product_templates();
+
+        debugger;
+
         openerp.jsonRpc('/account_contract_dashboard/calculate_graph_stat', 'call', {
             'stat_type': stat_type,
             'start_date' : start_date,
             'end_date': end_date,
+            'filtered_product_template_ids': filtered_product_template_ids,
         }).then(function(result){
             loadChart_stat('#stat_chart_div', stat_type, result[0], result[1], true);
             $('#stat_chart_div div.loader').hide();
@@ -189,22 +205,25 @@
     }
 
 
-    openerp.website.if_dom_contains('#mrr_growth_chart_div', function() {
+    // openerp.website.if_dom_contains('#mrr_growth_chart_div', function() {
 
-        var start_date = $('input[type="date"][name="start_date"]').val();
-        var end_date = $('input[type="date"][name="end_date"]').val();
+    //     var start_date = $('input[type="date"][name="start_date"]').val();
+    //     var end_date = $('input[type="date"][name="end_date"]').val();
 
-        var loader = '<div class="loading"><div id="big-circle"><div id="little-circle"></div></div></div>';
-        $('#mrr_growth_chart_div').html("<div class='loader' style='position: relative; text-align:center; width: 100%; height: 300px;'>" + loader + "</div>");
+    //     var loader = '<div class="loading"><div id="big-circle"><div id="little-circle"></div></div></div>';
+    //     $('#mrr_growth_chart_div').html("<div class='loader' style='position: relative; text-align:center; width: 100%; height: 300px;'>" + loader + "</div>");
 
-        openerp.jsonRpc('/account_contract_dashboard/calculate_graph_mrr_growth', 'call', {
-            'start_date' : start_date,
-            'end_date': end_date,
-        }).then(function(result){
-            loadChart_mrr_growth_stat('#mrr_growth_chart_div', result);
-            $('#mrr_growth_chart_div div.loader').hide();
-        });
-    });
+    //     var filtered_product_template_ids = get_filtered_product_templates();
+
+    //     openerp.jsonRpc('/account_contract_dashboard/calculate_graph_mrr_growth', 'call', {
+    //         'start_date' : start_date,
+    //         'end_date': end_date,
+    //         'filtered_product_template_ids': filtered_product_template_ids,
+    //     }).then(function(result){
+    //         loadChart_mrr_growth_stat('#mrr_growth_chart_div', result);
+    //         $('#mrr_growth_chart_div div.loader').hide();
+    //     });
+    // });
 
     function loadChart_mrr_growth_stat(div_to_display, result){
 

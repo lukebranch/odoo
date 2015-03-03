@@ -42,7 +42,7 @@
           <div class="row">
             <t t-foreach="all_stats" t-as="stat">
               <div class="col-sm-4">
-                <a class="fill-div" t-att-href="'account_contract_dashboard/detailed/%s?start_date=%s&amp;end_date=%s' % (stat['code'], start_date, end_date)">
+                <a class="fill-div" t-att-href="'account_contract_dashboard/detailed/%s?%s' % (stat['code'], href_post_args)">
                   <div class="box stat-box" t-att-name="stat['name']" t-att-code="stat['code']">
                     <div class="loading">
                       <div id="big-circle">
@@ -80,7 +80,7 @@
             <form t-att-action="'/account_contract_dashboard/detailed/%s' % stat_type">
               <div class="col-sm-4 text-left">
                 <div>
-                  <a t-att-href="'/account_contract_dashboard?start_date=%s&amp;end_date=%s' % (start_date, end_date)">Dashboard</a>
+                  <a t-att-href="'/account_contract_dashboard?%s' % href_post_args">Dashboard</a>
                 </div>
                 <a t-att-class="'' if filtered_product_template_ids else 'collapsed'" data-toggle="collapse" href="#collapse_filter_products">
                   Filter on Products
@@ -137,8 +137,8 @@
             </div>
           </div>
 
-          <div class="row box">
-            <div t-if="stat_type == 'mrr'" class="col-sm-12 mrr_growth_chart">
+          <div t-if="stat_type == 'mrr'" class="row box">
+            <div class="col-sm-12 mrr_growth_chart">
               <h3>Monthly Recurring Revenue Growth</h3>
               <div id="mrr_growth_chart_div">
                 <!-- <svg style="height:20em;"></svg> -->

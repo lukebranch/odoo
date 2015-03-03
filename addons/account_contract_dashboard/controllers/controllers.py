@@ -4,7 +4,7 @@ from openerp.http import request
 from dateutil.relativedelta import relativedelta
 from datetime import datetime, date, timedelta
 
-from openerp.tools import DEFAULT_SERVER_DATETIME_FORMAT
+from openerp.tools import DEFAULT_SERVER_DATETIME_FORMAT, DEFAULT_SERVER_DATE_FORMAT
 
 
 default_start_date = date.today() - timedelta(days=30)
@@ -40,10 +40,8 @@ def compute_rate(stat_type, old, new):
 
 class AccountContractDashboard(http.Controller):
 
-    filtered_product_template_ids = []
-
-    def get_filter_product_template(self):
-        return lambda x: str(x.product_id.product_tmpl_id.id) in self.filtered_product_template_ids
+    def get_filter_product_template(self, filtered_product_template_ids):
+        return lambda x: str(x.product_id.product_tmpl_id.id) in filtered_product_template_ids
 
     @http.route('/account_contract_dashboard', auth='user', website=True)
     def account_contract_dashboard(self, **kw):
@@ -51,19 +49,23 @@ class AccountContractDashboard(http.Controller):
         all_stats = sorted([stat_types[x] for x in stat_types], key=lambda k: k['prior'])
         product_templates = request.env['product.template'].search([('deferred_revenue_category_id', '!=', None)])
 
-        if kw.get('product_template_filter'):
-            self.filtered_product_template_ids = request.httprequest.args.getlist('product_template_filter')
+        filtered_product_template_ids = request.httprequest.args.getlist('product_template_filter') if kw.get('product_template_filter') else []
 
         start_date = datetime.strptime(kw.get('start_date'), '%Y-%m-%d') if kw.get('start_date') else default_start_date
         end_date = datetime.strptime(kw.get('end_date'), '%Y-%m-%d') if kw.get('end_date') else default_end_date
 
+        href_post_args = 'start_date=%s&end_date=%s&' % (start_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d'))
+        for item in filtered_product_template_ids:
+            href_post_args += 'product_template_filter=%s&' % item
+
         return http.request.render('account_contract_dashboard.dashboard', {
             'all_stats': all_stats,
             'product_templates': product_templates,
-            'filtered_product_template_ids': self.filtered_product_template_ids,
+            'filtered_product_template_ids': filtered_product_template_ids,
             'start_date': start_date.strftime('%Y-%m-%d'),
             'end_date': end_date.strftime('%Y-%m-%d'),
             'currency': '€',
+            'href_post_args': href_post_args,
         })
 
     @http.route('/account_contract_dashboard/detailed/<string:stat_type>', auth='user', website=True)
@@ -71,8 +73,7 @@ class AccountContractDashboard(http.Controller):
 
         product_templates = request.env['product.template'].search([('deferred_revenue_category_id', '!=', None)])
 
-        if kw.get('product_template_filter'):
-            self.filtered_product_template_ids = request.httprequest.args.getlist('product_template_filter')
+        filtered_product_template_ids = request.httprequest.args.getlist('product_template_filter') if kw.get('product_template_filter') else []
 
         start_date = datetime.strptime(kw.get('start_date'), '%Y-%m-%d') if kw.get('start_date') else default_start_date
         end_date = datetime.strptime(kw.get('end_date'), '%Y-%m-%d') if kw.get('end_date') else default_end_date
@@ -82,17 +83,21 @@ class AccountContractDashboard(http.Controller):
 
         report_name = stat_types[stat_type]['name']
 
-        value_now = self.calculate_stat_diff(stat_type, end_date - relativedelta(months=+1), end_date)
-        value_1_month_ago = self.calculate_stat_diff(stat_type, end_date_1_month_ago - relativedelta(months=+1), end_date_1_month_ago)
-        value_3_months_ago = self.calculate_stat_diff(stat_type, end_date_3_months_ago - relativedelta(months=+1), end_date_3_months_ago)
-        value_12_months_ago = self.calculate_stat_diff(stat_type, end_date_12_months_ago - relativedelta(months=+1), end_date_12_months_ago)
+        value_now = self.calculate_stat_diff(stat_type, end_date - relativedelta(months=+1), end_date, filtered_product_template_ids=filtered_product_template_ids)
+        value_1_month_ago = self.calculate_stat_diff(stat_type, end_date_1_month_ago - relativedelta(months=+1), end_date_1_month_ago, filtered_product_template_ids=filtered_product_template_ids)
+        value_3_months_ago = self.calculate_stat_diff(stat_type, end_date_3_months_ago - relativedelta(months=+1), end_date_3_months_ago, filtered_product_template_ids=filtered_product_template_ids)
+        value_12_months_ago = self.calculate_stat_diff(stat_type, end_date_12_months_ago - relativedelta(months=+1), end_date_12_months_ago, filtered_product_template_ids=filtered_product_template_ids)
 
-        stats_by_plan = [] if stat_type in ['nrr', 'arpu'] else sorted(self.get_stats_by_plan(stat_type, end_date), key=lambda k: k['value'], reverse=True)
+        stats_by_plan = [] if stat_type in ['nrr', 'arpu'] else sorted(self.get_stats_by_plan(stat_type, end_date, filtered_product_template_ids), key=lambda k: k['value'], reverse=True)
+
+        href_post_args = 'start_date=%s&end_date=%s&' % (start_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d'))
+        for item in filtered_product_template_ids:
+            href_post_args += 'product_template_filter=%s&' % item
 
         return http.request.render('account_contract_dashboard.detailed_dashboard', {
             'stat_type': stat_type,
             'product_templates': product_templates,
-            'filtered_product_template_ids': self.filtered_product_template_ids,
+            'filtered_product_template_ids': filtered_product_template_ids,
             'currency': '€',
             'report_name': report_name,
             'start_date': start_date.strftime('%Y-%m-%d'),
@@ -104,9 +109,10 @@ class AccountContractDashboard(http.Controller):
             'currency': '€',
             'rate': compute_rate,
             'stats_by_plan': stats_by_plan,
+            'href_post_args': href_post_args,
         })
 
-    def get_stats_by_plan(self, stat_type, date):
+    def get_stats_by_plan(self, stat_type, date, filtered_product_template_ids=None):
 
         results = []
         recurring_invoice_line_ids = request.env['account.invoice.line'].search([
@@ -117,8 +123,9 @@ class AccountContractDashboard(http.Controller):
         ])
 
         plans = request.env['product.template'].search([('deferred_revenue_category_id', '!=', None)])
-        if self.filtered_product_template_ids:
-            plans = plans.filtered(lambda x: str(x.id) in self.filtered_product_template_ids)
+
+        if filtered_product_template_ids:
+            plans = plans.filtered(lambda x: str(x.id) in filtered_product_template_ids)
 
         for plan in plans:
             invoice_line_ids_filter = lambda x: x.product_id.product_tmpl_id == plan
@@ -126,13 +133,13 @@ class AccountContractDashboard(http.Controller):
             results.append({
                 'name': plan.name,
                 'nb_customers': len(filtered_invoice_line_ids.mapped('account_analytic_id')),
-                'value': self.calculate_stat_diff(stat_type, date - relativedelta(months=+1), date, invoice_line_ids_filter=invoice_line_ids_filter)['value'],
+                'value': self.calculate_stat_diff(stat_type, date - relativedelta(months=+1), date, invoice_line_ids_filter=invoice_line_ids_filter, filtered_product_template_ids=filtered_product_template_ids)['value'],
             })
 
         return results
 
     @http.route('/account_contract_dashboard/calculate_graph_stat', type="json", auth='user', website=True)
-    def calculate_graph_stat(self, stat_type, start_date, end_date):
+    def calculate_graph_stat(self, stat_type, start_date, end_date, filtered_product_template_ids):
 
         start_date = datetime.strptime(start_date, '%Y-%m-%d')
         end_date = datetime.strptime(end_date, '%Y-%m-%d')
@@ -141,19 +148,66 @@ class AccountContractDashboard(http.Controller):
 
         results = []
 
+        date_limit_down = (start_date - relativedelta(months=+1)).strftime(DEFAULT_SERVER_DATETIME_FORMAT)
+        date_limit_up = (end_date).strftime(DEFAULT_SERVER_DATETIME_FORMAT)
+
+        invoice_line_ids = request.env['account.invoice.line'].search([
+            ('create_date', '>=', date_limit_down),
+            ('create_date', '<=', date_limit_up),
+        ])
+
+        recurring_invoice_line_ids = request.env['account.invoice.line'].search([
+            ('asset_start_date', '<=', date_limit_up),
+            ('asset_end_date', '>=', date_limit_down),
+            ('asset_category_id', '!=', None)
+        ])
+
+        # TODO: remove this when mrr only on revenue recognition
+        recurring_invoice_line_ids = recurring_invoice_line_ids.filtered(lambda x: x.mrr > 0)
+
+        if filtered_product_template_ids:
+            invoice_line_ids = invoice_line_ids.filtered(self.get_filter_product_template(filtered_product_template_ids))
+            recurring_invoice_line_ids = recurring_invoice_line_ids.filtered(self.get_filter_product_template(filtered_product_template_ids))
+
         # Use request.env['account.invoice.line'].read_group([], '', groupby=['create_date:day']) instead
+        # import timeit
+        # start = timeit.default_timer()
+
         for i in range(delta.days):
+
+            # METHOD OPTIMIZED
+            # date = start_date + timedelta(days=i)
+
+            # date_minus_1_days = date - relativedelta(days=+1)
+            # date_plus_1_days = date + relativedelta(days=+1)
+
+            # invoice_lines_ids_today = invoice_line_ids.filtered(lambda x: datetime.strptime(x.create_date, DEFAULT_SERVER_DATETIME_FORMAT) <= date_plus_1_days and datetime.strptime(x.create_date, DEFAULT_SERVER_DATETIME_FORMAT) >= date_minus_1_days)
+            # recurring_invoice_line_ids_today = recurring_invoice_line_ids.filtered(lambda x: datetime.strptime(x.asset_start_date, DEFAULT_SERVER_DATE_FORMAT) <= date and datetime.strptime(x.asset_end_date, DEFAULT_SERVER_DATE_FORMAT) >= date)
+            # non_recurring_invoice_line_ids_today = invoice_line_ids.filtered(lambda x: datetime.strptime(x.create_date, DEFAULT_SERVER_DATETIME_FORMAT) <= date_plus_1_days and datetime.strptime(x.create_date, DEFAULT_SERVER_DATETIME_FORMAT) >= date_minus_1_days and not x.asset_category_id)
+            # recurring_invoice_line_ids_1_month_ago = recurring_invoice_line_ids.filtered(lambda x: datetime.strptime(x.asset_start_date, DEFAULT_SERVER_DATE_FORMAT) <= date - relativedelta(months=+1) and datetime.strptime(x.asset_end_date, DEFAULT_SERVER_DATE_FORMAT) >= date - relativedelta(months=+1))
+
+            # value = self.calculate_stat_optimized(stat_type, invoice_lines_ids_today, recurring_invoice_line_ids_today, non_recurring_invoice_line_ids_today, recurring_invoice_line_ids_1_month_ago)
+            # results.append({
+            #     '0': str(date).split(' ')[0],
+            #     '1': value,
+            # })
+
+            # METHOD NON-OPTIMIZED
+
             date = start_date + timedelta(days=i)
-            value = self.calculate_stat(stat_type, date)
+            value = self.calculate_stat(stat_type, date, filtered_product_template_ids=filtered_product_template_ids)
             results.append({
                 '0': str(date).split(' ')[0],
                 '1': value,
             })
+        # stop = timeit.default_timer()
+        # exec_time = stop-start
+        # print('EXECUTION TIME OF LOOP : %s' % exec_time)
 
         return stat_types[stat_type]['name'], results
 
     @http.route('/account_contract_dashboard/calculate_graph_mrr_growth', type="json", auth='user', website=True)
-    def calculate_graph_mrr_growth(self, start_date, end_date):
+    def calculate_graph_mrr_growth(self, start_date, end_date, filtered_product_template_ids):
 
         # THIS IS ROLLING MONTH CALCULATION
 
@@ -168,9 +222,9 @@ class AccountContractDashboard(http.Controller):
         for i in range(delta.days):
             date = start_date + timedelta(days=i)
             date_30_days_ago = date - relativedelta(months=+1)
-            new_mrr = self.calculate_stat_aggregate('new_mrr', date_30_days_ago, date)
-            expansion_mrr = self.calculate_stat_aggregate('expansion_mrr', date_30_days_ago, date)
-            churned_mrr = self.calculate_stat_aggregate('churned_mrr', date_30_days_ago, date)
+            new_mrr = self.calculate_stat_aggregate('new_mrr', date_30_days_ago, date, filtered_product_template_ids=filtered_product_template_ids)
+            expansion_mrr = self.calculate_stat_aggregate('expansion_mrr', date_30_days_ago, date, filtered_product_template_ids=filtered_product_template_ids)
+            churned_mrr = self.calculate_stat_aggregate('churned_mrr', date_30_days_ago, date, filtered_product_template_ids=filtered_product_template_ids)
             net_new_mrr = new_mrr + expansion_mrr - churned_mrr
 
             results[0].append({
@@ -193,17 +247,17 @@ class AccountContractDashboard(http.Controller):
         return results
 
     @http.route('/account_contract_dashboard/calculate_stats_diff', type="json", auth='user', website=True)
-    def calculate_stats_diff(self, stat_type, start_date, end_date):
+    def calculate_stats_diff(self, stat_type, start_date, end_date, filtered_product_template_ids):
 
         # Used in global dashboard
 
         results = {}
 
-        results = self.calculate_stat_diff(stat_type, start_date, end_date, add_symbol=True)
+        results = self.calculate_stat_diff(stat_type, start_date, end_date, add_symbol=True, filtered_product_template_ids=filtered_product_template_ids)
 
         return results
 
-    def calculate_stat_diff(self, stat_type, start_date, end_date, invoice_line_ids_filter=None, add_symbol=False):
+    def calculate_stat_diff(self, stat_type, start_date, end_date, invoice_line_ids_filter=None, add_symbol=False, filtered_product_template_ids=None):
 
         if type(start_date) == datetime:
             start_date = start_date.strftime('%Y-%m-%d')
@@ -214,12 +268,12 @@ class AccountContractDashboard(http.Controller):
         end_date_30_days_ago = (datetime.strptime(end_date, '%Y-%m-%d') - relativedelta(months=+1)).strftime('%Y-%m-%d')
 
         if stat_types[stat_type]['type'] == 'last':
-                value_30_days_ago = self.calculate_stat(stat_type, end_date_30_days_ago, invoice_line_ids_filter=invoice_line_ids_filter)
-                value_end = self.calculate_stat(stat_type, end_date, invoice_line_ids_filter=invoice_line_ids_filter)
+                value_30_days_ago = self.calculate_stat(stat_type, end_date_30_days_ago, filtered_product_template_ids=filtered_product_template_ids, invoice_line_ids_filter=invoice_line_ids_filter)
+                value_end = self.calculate_stat(stat_type, end_date, filtered_product_template_ids=filtered_product_template_ids, invoice_line_ids_filter=invoice_line_ids_filter)
         elif stat_types[stat_type]['type'] == 'sum':
             # If sum, we aggregate all values between start_date and end_date
-            value_30_days_ago = self.calculate_stat_aggregate(stat_type, start_date_30_days_ago, end_date_30_days_ago, invoice_line_ids_filter=invoice_line_ids_filter)
-            value_end = self.calculate_stat_aggregate(stat_type, start_date, end_date, invoice_line_ids_filter=invoice_line_ids_filter)
+            value_30_days_ago = self.calculate_stat_aggregate(stat_type, start_date_30_days_ago, end_date_30_days_ago)
+            value_end = self.calculate_stat_aggregate(stat_type, start_date, end_date)
 
         perc = 0 if value_30_days_ago == 0 else round(100*(value_end - value_30_days_ago)/float(value_30_days_ago), 1)
 
@@ -238,7 +292,7 @@ class AccountContractDashboard(http.Controller):
         }
         return result
 
-    def calculate_stat_aggregate(self, stat_type, start_date, end_date, invoice_line_ids_filter=None):
+    def calculate_stat_aggregate(self, stat_type, start_date, end_date, invoice_line_ids_filter=None, filtered_product_template_ids=None):
 
         result = 0
 
@@ -252,50 +306,12 @@ class AccountContractDashboard(http.Controller):
         # Use request.env['account.invoice.line'].read_group([], '', groupby=['create_date:day']) instead
         for i in range(delta.days):
             date = start_date + timedelta(days=i)
-            value = self.calculate_stat(stat_type, date, invoice_line_ids_filter=invoice_line_ids_filter)
+            value = self.calculate_stat(stat_type, date, filtered_product_template_ids=filtered_product_template_ids, invoice_line_ids_filter=invoice_line_ids_filter)
             result += value
 
         return result
 
-    # @profile  # Used to estimate the cost of each line
-    def calculate_stat(self, stat_type, date, invoice_line_ids_filter=None):
-
-        if type(date) == str:
-            date = datetime.strptime(date, '%Y-%m-%d')
-
-        date_minus_1_days = (date - relativedelta(days=+1)).strftime(DEFAULT_SERVER_DATETIME_FORMAT)
-        # date_minus_1_months = (date - relativedelta(months=+1)).strftime(DEFAULT_SERVER_DATETIME_FORMAT)
-        date_plus_1_days = (date + relativedelta(days=+1)).strftime(DEFAULT_SERVER_DATETIME_FORMAT)
-
-        # TODO: improve efficiency by calculate only once and give them in kw
-        all_invoice_line_ids = request.env['account.invoice.line'].search([
-            ('create_date', '<=', date_plus_1_days),
-            ('create_date', '>=', date_minus_1_days),
-        ])
-        # grouped by account_id or account_analytic_id ?
-        recurring_invoice_line_ids = request.env['account.invoice.line'].search([
-            ('asset_start_date', '<=', date),
-            ('asset_end_date', '>=', date),
-            ('asset_category_id', '!=', None)
-        ])
-        non_recurring_invoice_line_ids = request.env['account.invoice.line'].search([
-            ('create_date', '<=', date_plus_1_days),
-            ('create_date', '>=', date_minus_1_days),
-            ('asset_category_id', '=', None)
-        ])
-
-        # TO FIX: we do not take into account customer invoice --> with mrr negative ?
-        recurring_invoice_line_ids = recurring_invoice_line_ids.filtered(lambda x: x.mrr > 0)
-
-        if invoice_line_ids_filter:
-            all_invoice_line_ids = all_invoice_line_ids.filtered(invoice_line_ids_filter)
-            recurring_invoice_line_ids = recurring_invoice_line_ids.filtered(invoice_line_ids_filter)
-            non_recurring_invoice_line_ids = non_recurring_invoice_line_ids.filtered(invoice_line_ids_filter)
-
-        if self.filtered_product_template_ids:
-            all_invoice_line_ids = all_invoice_line_ids.filtered(self.get_filter_product_template())
-            recurring_invoice_line_ids = recurring_invoice_line_ids.filtered(self.get_filter_product_template())
-            non_recurring_invoice_line_ids = non_recurring_invoice_line_ids.filtered(self.get_filter_product_template())
+    def calculate_stat_optimized(self, stat_type, all_invoice_line_ids, recurring_invoice_line_ids, non_recurring_invoice_line_ids, recurring_invoice_line_ids_1_month_ago):
 
         def _calculate_logo_churn():
             # [Baremetrics] (Cancelled Customers ÷ Previous Month's Active Customers) x 100
@@ -304,11 +320,6 @@ class AccountContractDashboard(http.Controller):
             result = 0
             active_customers_today = recurring_invoice_line_ids.mapped('account_analytic_id')
 
-            recurring_invoice_line_ids_1_month_ago = request.env['account.invoice.line'].search([
-                ('asset_start_date', '<=', date - relativedelta(months=+1)),
-                ('asset_end_date', '>=', date - relativedelta(months=+1)),
-                ('asset_category_id', '!=', None)
-            ])
             active_customers_1_month_ago = recurring_invoice_line_ids_1_month_ago.mapped('account_analytic_id')
 
             resigned_customers = active_customers_1_month_ago.filtered(lambda x: x not in active_customers_today)
@@ -325,12 +336,145 @@ class AccountContractDashboard(http.Controller):
 
         elif stat_type == 'new_mrr':
             # import pudb; pudb.set_trace()
-            new_recurring_invoice_line_ids = request.env['account.invoice.line'].search([
-                ('asset_start_date', '=', date),
-                ('asset_category_id', '!=', None)
-            ])
-            result = sum(new_recurring_invoice_line_ids.mapped('mrr'))
+            # TODO: wrong formula --> for each invoice.line, grouped by account, tag if new, expansion, churned or same
+            # new_recurring_invoice_line_ids = request.env['account.invoice.line'].search([
+            #     ('asset_start_date', '=', date),
+            #     ('asset_category_id', '!=', None)
+            # ])
+            # result = sum(new_recurring_invoice_line_ids.mapped('mrr'))
+            # result = int(result)
+            result = 0
+
+        elif stat_type == 'churned_mrr':
+            # TODO
+            result = 0
+
+        elif stat_type == 'expansion_mrr':
+            # TODO
+            result = 0
+
+        elif stat_type == 'net_revenue':
+            # TODO: use @MAT field instead of price_subtotal
+            result = sum(all_invoice_line_ids.mapped('price_subtotal'))
             result = int(result)
+
+        elif stat_type == 'nrr':
+            # TODO: use @MAT field instead of price_subtotal
+            result = sum(non_recurring_invoice_line_ids.mapped('price_subtotal'))
+            result = int(result)
+
+        elif stat_type == 'arpu':
+            mrr = sum(recurring_invoice_line_ids.mapped('mrr'))
+            customers = recurring_invoice_line_ids.mapped('account_analytic_id')
+            result = 0 if not customers else mrr/float(len(customers))
+            result = int(result)
+
+        elif stat_type == 'arr':
+            result = sum(recurring_invoice_line_ids.mapped('mrr')) * 12
+            result = int(result)
+
+        elif stat_type == 'ltv':
+            # LTV = Average Monthly Recurring Revenue Per Customer ÷ User Churn Rate
+            nb_contracts = len(recurring_invoice_line_ids.mapped('account_analytic_id'))
+            avg_mrr_per_customer = 0 if not recurring_invoice_line_ids.mapped('account_analytic_id') else sum(recurring_invoice_line_ids.mapped('mrr')) / float(nb_contracts)
+            logo_churn = _calculate_logo_churn()
+            result = 0 if logo_churn == 0 else avg_mrr_per_customer/float(logo_churn)
+            result = int(result)
+
+        elif stat_type == 'logo_churn':
+            result = 100*_calculate_logo_churn()
+            result = round(result, 1)
+
+        elif stat_type == 'revenue_churn':
+            # TODO
+            result = 0
+            result = round(result, 1)
+
+        elif stat_type == 'nb_contracts':
+            result = len(recurring_invoice_line_ids.mapped('account_analytic_id'))
+        else:
+            result = 0
+
+        return result
+
+    # @profile  # Used to estimate the cost of each line
+    def calculate_stat(self, stat_type, date, filtered_product_template_ids=None, invoice_line_ids_filter=None):
+
+        if type(date) == str:
+            date = datetime.strptime(date, '%Y-%m-%d')
+
+        date_minus_1_days = (date - relativedelta(days=+1)).strftime(DEFAULT_SERVER_DATETIME_FORMAT)
+        # date_minus_1_months = (date - relativedelta(months=+1)).strftime(DEFAULT_SERVER_DATETIME_FORMAT)
+        date_plus_1_days = (date + relativedelta(days=+1)).strftime(DEFAULT_SERVER_DATETIME_FORMAT)
+
+        all_invoice_line_ids = request.env['account.invoice.line'].search([
+            ('create_date', '<=', date_plus_1_days),
+            ('create_date', '>=', date_minus_1_days),
+        ])
+        # grouped by account_id or account_analytic_id ?
+        recurring_invoice_line_ids = request.env['account.invoice.line'].search([
+            ('asset_start_date', '<=', date),
+            ('asset_end_date', '>=', date),
+            ('asset_category_id', '!=', None)
+        ])
+        non_recurring_invoice_line_ids = request.env['account.invoice.line'].search([
+            ('create_date', '<=', date_plus_1_days),
+            ('create_date', '>=', date_minus_1_days),
+            ('asset_category_id', '=', None)
+        ])
+        recurring_invoice_line_ids_1_month_ago = request.env['account.invoice.line'].search([
+            ('asset_start_date', '<=', date - relativedelta(months=+1)),
+            ('asset_end_date', '>=', date - relativedelta(months=+1)),
+            ('asset_category_id', '!=', None)
+        ])        # TO FIX: we do not take into account customer invoice --> with mrr negative ?
+
+        # TODO: remove this when mrr only on revenue recognition
+        recurring_invoice_line_ids = recurring_invoice_line_ids.filtered(lambda x: x.mrr > 0)
+
+        if invoice_line_ids_filter:
+            all_invoice_line_ids = all_invoice_line_ids.filtered(invoice_line_ids_filter)
+            recurring_invoice_line_ids = recurring_invoice_line_ids.filtered(invoice_line_ids_filter)
+            non_recurring_invoice_line_ids = non_recurring_invoice_line_ids.filtered(invoice_line_ids_filter)
+
+        if filtered_product_template_ids:
+            filter_product_template = self.get_filter_product_template(filtered_product_template_ids)
+            all_invoice_line_ids = all_invoice_line_ids.filtered(filter_product_template)
+            recurring_invoice_line_ids = recurring_invoice_line_ids.filtered(filter_product_template)
+            non_recurring_invoice_line_ids = non_recurring_invoice_line_ids.filtered(filter_product_template)
+            recurring_invoice_line_ids_1_month_ago = recurring_invoice_line_ids_1_month_ago.filtered(filter_product_template)
+
+
+        def _calculate_logo_churn():
+            # [Baremetrics] (Cancelled Customers ÷ Previous Month's Active Customers) x 100
+            # [Wiki] (Number of employees resigned during the month / Average number of employees during the month) x 100
+            #   where Average number of employees during the month = (Total number of employees at the start of the month + Total number of employees at the end of the month) / 2.
+            result = 0
+            active_customers_today = recurring_invoice_line_ids.mapped('account_analytic_id')
+
+            active_customers_1_month_ago = recurring_invoice_line_ids_1_month_ago.mapped('account_analytic_id')
+
+            resigned_customers = active_customers_1_month_ago.filtered(lambda x: x not in active_customers_today)
+            nb_avg_customers = (len(active_customers_1_month_ago) - len(active_customers_1_month_ago))/2.
+
+            result = 0 if nb_avg_customers == 0 else len(resigned_customers)/float(nb_avg_customers)
+            return result
+
+        result = 0
+
+        if stat_type == 'mrr':
+            result = sum(recurring_invoice_line_ids.mapped('mrr'))
+            result = int(result)
+
+        elif stat_type == 'new_mrr':
+            # import pudb; pudb.set_trace()
+            # TODO: wrong formula --> for each invoice.line, grouped by account, tag if new, expansion, churned or same
+            # new_recurring_invoice_line_ids = request.env['account.invoice.line'].search([
+            #     ('asset_start_date', '=', date),
+            #     ('asset_category_id', '!=', None)
+            # ])
+            # result = sum(new_recurring_invoice_line_ids.mapped('mrr'))
+            # result = int(result)
+            result = 0
 
         elif stat_type == 'churned_mrr':
             # TODO
