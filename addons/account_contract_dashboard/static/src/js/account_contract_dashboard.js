@@ -4,52 +4,81 @@
     openerp.website.if_dom_contains('div.stat-box', function() {
 
 
-    // 1. MAIN DASHBOARD - Stat box with graph inside
+        // 1. MAIN DASHBOARD - Stat box with graph inside
 
+        var QWeb = openerp.qweb;
+        var website = openerp.website;
 
-    // if ($('.stat-box').length > 0){
+        openerp.account_contract_dashboard_boxes = {};
+        
+        openerp.account_contract_dashboard_boxes.Box = openerp.Widget.extend({
+            init: function(box, start_date, end_date) {
+                this.box = box;
+                this.start_date = start_date;
+                this.end_date = end_date;
 
-        console.log('coucou');
+                this.box_name = this.box.getAttribute("name");
+                this.box_code = this.box.getAttribute("code");
+                this.chart_div_id = 'chart_div_' + this.box_code;
+            },
+            start: function() {
+                var self = this;
+
+                var compute_numbers = function(){
+                    return openerp.jsonRpc('/account_contract_dashboard/calculate_stats_diff', 'call', {
+                        'stat_type': self.box_code,
+                        'start_date': self.start_date,
+                        'end_date': self.end_date,
+                    });
+                };
+
+                var compute_graph = function(){
+                    return openerp.jsonRpc('/account_contract_dashboard/calculate_graph_stat', 'call', {
+                        'stat_type': self.box_code,
+                        'start_date' : start_date,
+                        'end_date': end_date,
+                    });
+                };
+
+                $.when(compute_numbers(), compute_graph())
+                .done(function(compute_numbers, compute_graph){
+                    console.log(compute_numbers);
+                    self.value = compute_numbers['value'];
+                    self.perc = compute_numbers['perc'];
+                    self.color = compute_numbers['color'];
+
+                    self.chart_div = 
+                        '<div class="graph-box" id='+self.chart_div_id+'>'+
+                        '</div>';
+                    self.box.innerHTML = 
+                        '<div style="position: relative;">'+
+                            '<h2 style="color: #2693d5;">'+self.value+'</h2>'+
+                            '<div class="trend">'+
+                                '<h4 class="'+self.color+' mb0">'+self.perc+'%</h4>'+
+                                '<span style="font-size: 10px;">30 Days Ago</span>'+
+                            '</div>'+
+                        '</div>'+
+                        self.chart_div+
+                        '<div>'+
+                            '<h4 class="text-center mt32">'+self.box_name+'</h4>'+
+                        '</div>';
+
+                    loadChart_stat('#'+self.chart_div_id, self.box_code, false, compute_graph[1], false);
+                });
+            },
+        });
+
 
         var start_date = $('input[type="date"][name="start_date"]').val();
         var end_date = $('input[type="date"][name="end_date"]').val();
 
-        openerp.jsonRpc('/account_contract_dashboard/calculate_stats_diff', 'call', {
-            'start_date': start_date,
-            'end_date': end_date,
-        }).done(function(result){
+        for (var i=0; i<$('.stat-box').length; i++) {
+            var self = $(this);
+            var box = $('.stat-box')[i];
 
-            for (var i=0; i<$('.stat-box').length; i++) {
-                var box = $('.stat-box')[i];
-                var box_name = box.getAttribute("name");
-                var box_code = box.getAttribute("code");
-                var chart_div_id = 'chart_div_' + box_code;
-
-                // value_start = result[box_code]['value_start'];
-                var value = result[box_code]['value'];
-                var perc = result[box_code]['perc'];
-                var color = result[box_code]['color'];
-
-                var chart_div = 
-                    '<div style="position: absolute; top: 0; left: 0; opacity: 0.3;" id='+chart_div_id+'>'+
-                    '</div>';
-                var graph = []
-                box.innerHTML = 
-                    '<div style="position: relative;">'+
-                        '<h2 style="color: #2693d5;">'+value+'</h2>'+
-                        '<div class="trend">'+
-                            '<h4 class="'+color+' mb0">'+perc+'%</h4>'+
-                            '<span style="font-size: 10px;">30 Days Ago</span>'+
-                        '</div>'+
-                    '</div>'+
-                    chart_div+
-                    '<div>'+
-                        '<h4 class="text-center mt32">'+box_name+'</h4>'+
-                    '</div>';
-
-                // loadChart(chart_div_id, box_code, start_date, end_date, true);
-            }
-        });
+            var box_widget = new openerp.account_contract_dashboard_boxes.Box(box, start_date, end_date);
+            box_widget.start();
+        }
     });
 
 
@@ -73,12 +102,12 @@
             'start_date' : start_date,
             'end_date': end_date,
         }).then(function(result){
-            loadChart_stat('#stat_chart_div', stat_type, result, false);
+            loadChart_stat('#stat_chart_div', stat_type, result[0], result[1], true);
             $('#stat_chart_div div.loader').hide();
         });
     });
 
-    function loadChart_stat(div_to_display, stat_type, result, hide_legend){
+    function loadChart_stat(div_to_display, stat_type, key_name, result, show_legend){
 
         function getDate(d) { return new Date(d[0]); }
         function getValue(d) { return d[1]; }
@@ -94,24 +123,40 @@
         var myData = [
             {
               values: result,
-              key: stat_type,
+              key: key_name,
               color: '#2693d5',
               area: true
             },
           ];
+        console.log(myData);
 
         /*These lines are all chart setup.  Pick and choose which chart features you want to utilize. */
         nv.addGraph(function() {
           var chart = nv.models.lineChart()
                         .x(function(d) { return getDate(d); })
-                        .y(function(d) { return getValue(d); })
-                        .margin({left: 100})  //Adjust chart margins to give the x-axis some breathing room.
-                        .useInteractiveGuideline(true)  //We want nice looking tooltips and a guideline!
-                        .transitionDuration(350)  //how fast do you want the lines to transition?
-                        .showLegend(true)       //Show the legend, allowing users to turn on/off line series.
-                        .showYAxis(true)        //Show the y-axis
-                        .showXAxis(true)        //Show the x-axis
-          ;
+                        .y(function(d) { return getValue(d); });
+          if (show_legend){
+              chart
+                .margin({left: 100})  //Adjust chart margins to give the x-axis some breathing room.
+                .useInteractiveGuideline(true)  //We want nice looking tooltips and a guideline!
+                .transitionDuration(350)  //how fast do you want the lines to transition?
+                .showLegend(true)       //Show the legend, allowing users to turn on/off line series.
+                .showYAxis(true)        //Show the y-axis
+                .showXAxis(true)        //Show the x-axis
+              ;
+          }
+          else {
+            console.log('hide legend');
+            chart
+                .margin({left: 0, top: 0, bottom: 0, right: 0})  //Adjust chart margins to give the x-axis some breathing room.
+                .useInteractiveGuideline(false)  //We want nice looking tooltips and a guideline!
+                .transitionDuration(350)  //how fast do you want the lines to transition?
+                .showLegend(false)       //Show the legend, allowing users to turn on/off line series.
+                .showYAxis(false)        //Show the y-axis
+                .showXAxis(false)        //Show the x-axis
+                .interactive(false)
+            ;
+          }
 
           var tick_values = getPrunedTickValues(myData[0]['values'], 10);
 
@@ -125,8 +170,13 @@
               .tickFormat(d3.format('.02f'));
 
           var svg = d3.select(div_to_display)    //Select the <svg> element you want to render the chart in.   
-              .append("svg")
-              .attr("height", '20em')
+              .append("svg");
+          if (show_legend){
+              svg.attr("height", '20em');
+          }
+          else {
+              // svg.attr("height", '119px');
+          }
           svg
               .datum(myData)         //Populate the <svg> element with chart data...
               .call(chart);          //Finally, render the chart!

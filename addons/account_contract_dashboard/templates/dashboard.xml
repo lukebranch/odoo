@@ -24,7 +24,7 @@
                 </a>
 
                 <div role="tablist" aria-multiselectable="true">
-                  <div id="collapse_filter_products" t-att-class="'panel-collapse collapse in' if filtered_product_template_ids else 'panel-collapse collapsed'" role="tabpanel">
+                  <div id="collapse_filter_products" t-att-class="'panel-collapse collapse in' if filtered_product_template_ids else 'panel-collapse collapse'" role="tabpanel">
                     <t t-foreach="product_templates" t-as="template">
                       <div class="checkbox">
                         <input type="checkbox" t-att-checked="'checked' if str(template.id) in filtered_product_template_ids else ''" name="product_template_filter" t-att-value="template.id"><t t-esc="template.name"/></input>
@@ -82,12 +82,12 @@
                 <div>
                   <a t-att-href="'/account_contract_dashboard?start_date=%s&amp;end_date=%s' % (start_date, end_date)">Dashboard</a>
                 </div>
-                <a class="collapsed" data-toggle="collapse" href="#collapse_filter_products">
+                <a t-att-class="'' if filtered_product_template_ids else 'collapsed'" data-toggle="collapse" href="#collapse_filter_products">
                   Filter on Products
                 </a>
 
                 <div role="tablist" aria-multiselectable="true">
-                  <div id="collapse_filter_products" class="panel-collapse collapse" role="tabpanel">
+                  <div id="collapse_filter_products" t-att-class="'panel-collapse collapse in' if filtered_product_template_ids else 'panel-collapse collapse'" role="tabpanel">
                     <t t-foreach="product_templates" t-as="template">
                       <div class="checkbox">
                         <input type="checkbox" t-att-checked="'checked' if str(template.id) in filtered_product_template_ids else ''" name="product_template_filter" t-att-value="template.id"><t t-esc="template.name"/></input>

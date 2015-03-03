@@ -112,15 +112,15 @@ class AccountContractDashboard(http.Controller):
         recurring_invoice_line_ids = request.env['account.invoice.line'].search([
             ('asset_start_date', '<=', date),
             ('asset_end_date', '>=', date),
-            ('asset_category_id', '!=', None)
+            ('asset_category_id', '!=', None),
+            ('mrr', '>', 0),
         ])
 
-        plans = recurring_invoice_line_ids.mapped('product_id').mapped('product_tmpl_id')
+        plans = request.env['product.template'].search([('deferred_revenue_category_id', '!=', None)])
         if self.filtered_product_template_ids:
             plans = plans.filtered(lambda x: str(x.id) in self.filtered_product_template_ids)
 
         for plan in plans:
-            # TODO: filter according to plan
             invoice_line_ids_filter = lambda x: x.product_id.product_tmpl_id == plan
             filtered_invoice_line_ids = recurring_invoice_line_ids.filtered(invoice_line_ids_filter)
             results.append({
@@ -134,8 +134,6 @@ class AccountContractDashboard(http.Controller):
     @http.route('/account_contract_dashboard/calculate_graph_stat', type="json", auth='user', website=True)
     def calculate_graph_stat(self, stat_type, start_date, end_date):
 
-        # print('Calculate graph for %s between %s and %s' % (stat_type, start_date, end_date))
-
         start_date = datetime.strptime(start_date, '%Y-%m-%d')
         end_date = datetime.strptime(end_date, '%Y-%m-%d')
 
@@ -147,13 +145,12 @@ class AccountContractDashboard(http.Controller):
         for i in range(delta.days):
             date = start_date + timedelta(days=i)
             value = self.calculate_stat(stat_type, date)
-            # results.append([str(date).split(' ')[0], value])
             results.append({
                 '0': str(date).split(' ')[0],
                 '1': value,
             })
 
-        return results
+        return stat_types[stat_type]['name'], results
 
     @http.route('/account_contract_dashboard/calculate_graph_mrr_growth', type="json", auth='user', website=True)
     def calculate_graph_mrr_growth(self, start_date, end_date):
@@ -172,11 +169,9 @@ class AccountContractDashboard(http.Controller):
             date = start_date + timedelta(days=i)
             date_30_days_ago = date - relativedelta(months=+1)
             new_mrr = self.calculate_stat_aggregate('new_mrr', date_30_days_ago, date)
-            expansion_mrr = 0  # self.calculate_stat_aggregate('expansion_mrr', date_30_days_ago, date)
-            churned_mrr = 0  # self.calculate_stat_aggregate('churned_mrr', date_30_days_ago, date)
+            expansion_mrr = self.calculate_stat_aggregate('expansion_mrr', date_30_days_ago, date)
+            churned_mrr = self.calculate_stat_aggregate('churned_mrr', date_30_days_ago, date)
             net_new_mrr = new_mrr + expansion_mrr - churned_mrr
-
-            print(net_new_mrr)
 
             results[0].append({
                 '0': str(date).split(' ')[0],
@@ -198,14 +193,13 @@ class AccountContractDashboard(http.Controller):
         return results
 
     @http.route('/account_contract_dashboard/calculate_stats_diff', type="json", auth='user', website=True)
-    def calculate_stats_diff(self, start_date, end_date):
+    def calculate_stats_diff(self, stat_type, start_date, end_date):
 
         # Used in global dashboard
 
         results = {}
 
-        for stat_type in stat_types:
-            results[stat_type] = self.calculate_stat_diff(stat_type, start_date, end_date, add_symbol=True)
+        results = self.calculate_stat_diff(stat_type, start_date, end_date, add_symbol=True)
 
         return results
 
@@ -263,12 +257,8 @@ class AccountContractDashboard(http.Controller):
 
         return result
 
-    # @profile
+    # @profile  # Used to estimate the cost of each line
     def calculate_stat(self, stat_type, date, invoice_line_ids_filter=None):
-
-        # print('calculate_stats_diff for %s' % (date))
-        # if type(date) == datetime:
-        #     date = date.strftime('%Y-%m-%d')
 
         if type(date) == str:
             date = datetime.strptime(date, '%Y-%m-%d')
@@ -294,6 +284,9 @@ class AccountContractDashboard(http.Controller):
             ('asset_category_id', '=', None)
         ])
 
+        # TO FIX: we do not take into account customer invoice --> with mrr negative ?
+        recurring_invoice_line_ids = recurring_invoice_line_ids.filtered(lambda x: x.mrr > 0)
+
         if invoice_line_ids_filter:
             all_invoice_line_ids = all_invoice_line_ids.filtered(invoice_line_ids_filter)
             recurring_invoice_line_ids = recurring_invoice_line_ids.filtered(invoice_line_ids_filter)
@@ -318,11 +311,9 @@ class AccountContractDashboard(http.Controller):
             ])
             active_customers_1_month_ago = recurring_invoice_line_ids_1_month_ago.mapped('account_analytic_id')
 
-            # resigned_customers = [x for x in active_customers_1_month_ago if x not in active_customers_today]
             resigned_customers = active_customers_1_month_ago.filtered(lambda x: x not in active_customers_today)
             nb_avg_customers = (len(active_customers_1_month_ago) - len(active_customers_1_month_ago))/2.
 
-            # print('%s resigned customers : %s' % (len(resigned_customers), resigned_customers))
             result = 0 if nb_avg_customers == 0 else len(resigned_customers)/float(nb_avg_customers)
             return result
 
@@ -338,28 +329,16 @@ class AccountContractDashboard(http.Controller):
                 ('asset_start_date', '=', date),
                 ('asset_category_id', '!=', None)
             ])
-            if new_recurring_invoice_line_ids:
-                print('New invoice lines : %s for date %s' % (new_recurring_invoice_line_ids, date))
             result = sum(new_recurring_invoice_line_ids.mapped('mrr'))
             result = int(result)
 
         elif stat_type == 'churned_mrr':
             # TODO
-            new_recurring_invoice_line_ids = request.env['account.invoice.line'].search([
-                ('asset_start_date', '=', date),
-                ('asset_category_id', '!=', None)
-            ])
-            result = sum(new_recurring_invoice_line_ids.mapped('mrr'))
-            result = int(result)
+            result = 0
 
         elif stat_type == 'expansion_mrr':
             # TODO
-            new_recurring_invoice_line_ids = request.env['account.invoice.line'].search([
-                ('asset_start_date', '=', date),
-                ('asset_category_id', '!=', None)
-            ])
-            result = sum(new_recurring_invoice_line_ids.mapped('mrr'))
-            result = int(result)
+            result = 0
 
         elif stat_type == 'net_revenue':
             # TODO: use @MAT field instead of price_subtotal
@@ -404,10 +383,3 @@ class AccountContractDashboard(http.Controller):
             result = 0
 
         return result
-
-        # churn = 0
-        # logo_churn = 0
-        # upgrade = 0
-        # downgrade = 0
-        # customer_life_time = 0  # 1/churn
-        # customer_life_time_value = 0  # clt * mrr
