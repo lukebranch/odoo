@@ -46,6 +46,8 @@ class account_analytic_line(models.Model):
 
     def default_get(self,cr,uid,fields,context=None):
         values = super(account_analytic_line, self).default_get(cr, uid, fields, context=context)
+        if 'default_is_timesheet' in context:
+            values['is_timesheet'] = True
         if values.get('is_timesheet'):
             if 'product_id' in fields:    
                 values['product_id'] = self._get_employee_product(cr, uid, context=context)
