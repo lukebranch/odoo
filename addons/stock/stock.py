@@ -858,6 +858,20 @@ class stock_picking(osv.osv):
         ('name_uniq', 'unique(name, company_id)', 'Reference must be unique per company!'),
     ]
 
+    def _check_locations(self, cr, uid, ids, context=None):
+        for pick in self.browse(cr, uid, ids, context=context):
+            location_ids = set([x.location_id.id for x in pick.move_lines])
+            location_dest_ids = set([x.location_dest_id for x in pick.move_lines if not x.location_dest_id.scrap_location])
+            if len(location_ids) > 1 or len(location_dest_ids) > 1:
+                return False
+        return True
+
+    _constraints = [
+        (_check_locations,
+            'The locations of the moves should be the same',
+            ['move_lines']),
+    ]
+
     def do_print_picking(self, cr, uid, ids, context=None):
         '''This function prints the picking list'''
         context = dict(context or {}, active_ids=ids)
