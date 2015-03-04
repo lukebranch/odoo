@@ -85,10 +85,11 @@ class event_event(osv.osv):
                 display_name = record.reference or record.name
             if record.state != 'template':
                 date = datetime.strptime(record.date_begin, DT_FMT)
-                date_end = datetime.strptime(record.date_end, DT_FMT)
                 date_value = date.strftime(user_lang_formats['date'])
-                if date != date_end:
-                    date_value += ' - ' + date_end.strftime(user_lang_formats['date'])
+                if record.date_end:
+                    date_end = datetime.strptime(record.date_end, DT_FMT)
+                    if date != date_end:
+                        date_value += ' - ' + date_end.strftime(user_lang_formats['date'])
                 display_name += ' (' + date_value + ')'
             res.append((record['id'], display_name))
         return res
