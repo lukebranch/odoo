@@ -20,7 +20,9 @@ class TestStockFlow(TestStockCommon):
 
         picking_in = self.PickingObj.create({
             'partner_id': self.partner_delta_id,
-            'picking_type_id': self.picking_type_in})
+            'picking_type_id': self.picking_type_in,
+            'location_id': self.supplier_location,
+            'location_dest_id': self.stock_location})
         self.MoveObj.create({
             'name': self.productA.name,
             'product_id': self.productA.id,
@@ -161,39 +163,33 @@ class TestStockFlow(TestStockCommon):
 
         picking_out = self.PickingObj.create({
             'partner_id': self.partner_agrolite_id,
-            'picking_type_id': self.picking_type_out})
+            'picking_type_id': self.picking_type_out,
+            'location_id': self.stock_location,
+            'location_dest_id': self.customer_location})
         self.MoveObj.create({
             'name': self.productA.name,
             'product_id': self.productA.id,
             'product_uom_qty': 10,
             'product_uom': self.productA.uom_id.id,
-            'picking_id': picking_out.id,
-            'location_id': self.stock_location,
-            'location_dest_id': self.customer_location})
+            'picking_id': picking_out.id})
         self.MoveObj.create({
             'name': self.productB.name,
             'product_id': self.productB.id,
             'product_uom_qty': 5,
             'product_uom': self.productB.uom_id.id,
-            'picking_id': picking_out.id,
-            'location_id': self.stock_location,
-            'location_dest_id': self.customer_location})
+            'picking_id': picking_out.id})
         self.MoveObj.create({
             'name': self.productC.name,
             'product_id': self.productC.id,
             'product_uom_qty': 3,
             'product_uom': self.productC.uom_id.id,
-            'picking_id': picking_out.id,
-            'location_id': self.stock_location,
-            'location_dest_id': self.customer_location})
+            'picking_id': picking_out.id})
         self.MoveObj.create({
             'name': self.productD.name,
             'product_id': self.productD.id,
             'product_uom_qty': 10,
             'product_uom': self.productD.uom_id.id,
-            'picking_id': picking_out.id,
-            'location_id': self.stock_location,
-            'location_dest_id': self.customer_location})
+            'picking_id': picking_out.id})
         # Confirm outgoing shipment.
         picking_out.action_confirm()
         for move in picking_out.move_lines:
@@ -432,47 +428,45 @@ class TestStockFlow(TestStockCommon):
 
         picking_in_A = self.PickingObj.create({
             'partner_id': self.partner_delta_id,
-            'picking_type_id': self.picking_type_in})
+            'picking_type_id': self.picking_type_in,
+            'location_id': self.supplier_location,
+            'location_dest_id': self.stock_location
+            })
         self.MoveObj.create({
             'name': self.DozA.name,
             'product_id': self.DozA.id,
             'product_uom_qty': 10,
             'product_uom': self.DozA.uom_id.id,
             'picking_id': picking_in_A.id,
-            'location_id': self.supplier_location,
-            'location_dest_id': self.stock_location})
+            })
         self.MoveObj.create({
             'name': self.SDozA.name,
             'product_id': self.SDozA.id,
             'product_uom_qty': 10.5,
             'product_uom': self.SDozA.uom_id.id,
             'picking_id': picking_in_A.id,
-            'location_id': self.supplier_location,
-            'location_dest_id': self.stock_location})
+            })
         self.MoveObj.create({
             'name': self.SDozARound.name,
             'product_id': self.SDozARound.id,
             'product_uom_qty': 10.5,
             'product_uom': self.SDozARound.uom_id.id,
             'picking_id': picking_in_A.id,
-            'location_id': self.supplier_location,
-            'location_dest_id': self.stock_location})
+            })
         self.MoveObj.create({
             'name': self.kgB.name,
             'product_id': self.kgB.id,
             'product_uom_qty': 0.020,
             'product_uom': self.kgB.uom_id.id,
             'picking_id': picking_in_A.id,
-            'location_id': self.supplier_location,
-            'location_dest_id': self.stock_location})
+            })
         self.MoveObj.create({
             'name': self.gB.name,
             'product_id': self.gB.id,
             'product_uom_qty': 525.3,
             'product_uom': self.gB.uom_id.id,
             'picking_id': picking_in_A.id,
-            'location_id': self.supplier_location,
-            'location_dest_id': self.stock_location})
+            })
 
         # Check incoming shipment move lines state.
         for move in picking_in_A.move_lines:
@@ -526,7 +520,9 @@ class TestStockFlow(TestStockCommon):
 
         picking_in_B = self.PickingObj.create({
             'partner_id': self.partner_delta_id,
-            'picking_type_id': self.picking_type_in})
+            'picking_type_id': self.picking_type_in,
+            'location_id': self.supplier_location,
+            'location_dest_id': self.stock_location})
         self.MoveObj.create({
             'name': self.DozA.name,
             'product_id': self.DozA.id,
@@ -711,7 +707,10 @@ class TestStockFlow(TestStockCommon):
         before_out_quantity = self.kgB.qty_available
         picking_out = self.PickingObj.create({
             'partner_id': self.partner_agrolite_id,
-            'picking_type_id': self.picking_type_out})
+            'picking_type_id': self.picking_type_out,
+            'location_id': self.stock_location,
+            'location_dest_id': self.customer_location
+        })
         self.MoveObj.create({
             'name': self.kgB.name,
             'product_id': self.kgB.id,
@@ -749,7 +748,9 @@ class TestStockFlow(TestStockCommon):
 
         picking_out = self.PickingObj.create({
             'partner_id': self.partner_agrolite_id,
-            'picking_type_id': self.picking_type_out})
+            'picking_type_id': self.picking_type_out,
+            'location_id': self.stock_location,
+            'location_dest_id': self.customer_location})
         self.MoveObj.create({
             'name': self.DozA.name,
             'product_id': self.DozA.id,
@@ -867,7 +868,9 @@ class TestStockFlow(TestStockCommon):
         productKG = self.ProductObj.create({'name': 'Product KG', 'uom_id': self.uom_kg.id, 'uom_po_id': self.uom_kg.id})
         picking_in = self.PickingObj.create({
             'partner_id': self.partner_delta_id,
-            'picking_type_id': self.picking_type_in})
+            'picking_type_id': self.picking_type_in,
+            'location_id': self.supplier_location,
+            'location_dest_id': self.stock_location})
         self.MoveObj.create({
             'name': productKG.name,
             'product_id': productKG.id,
@@ -912,7 +915,9 @@ class TestStockFlow(TestStockCommon):
         self.assertEqual(productKG.qty_available, 1000, 'Wrong quantity available of product (%s found instead of 1000)' % (productKG.qty_available))
         picking_out = self.PickingObj.create({
             'partner_id': self.partner_agrolite_id,
-            'picking_type_id': self.picking_type_out})
+            'picking_type_id': self.picking_type_out,
+            'location_id': self.stock_location,
+            'location_dest_id': self.customer_location})
         self.MoveObj.create({
             'name': productKG.name,
             'product_id': productKG.id,

@@ -941,11 +941,9 @@ class stock_picking(osv.osv):
     ]
 
     def onchange_picking_type_id(self, cr, uid, ids, picking_type_id, context=None):
-        print "onchange"
         if picking_type_id:
             picking_type_obj = self.pool['stock.picking.type']
             pto = picking_type_obj.browse(cr, uid, picking_type_id, context=context)
-            print "onchange"
             return {'value': {'location_id': pto.default_location_src_id.id, 'location_dest_id': pto.default_location_dest_id.id}}
         return {}
 
