@@ -918,6 +918,15 @@ class stock_picking(osv.osv):
         ('name_uniq', 'unique(name, company_id)', 'Reference must be unique per company!'),
     ]
 
+    def onchange_picking_type_id(self, cr, uid, ids, picking_type_id, context=None):
+        print "onchange"
+        if picking_type_id:
+            picking_type_obj = self.pool['stock.picking.type']
+            pto = picking_type_obj.browse(cr, uid, picking_type_id, context=context)
+            print "onchange"
+            return {'value': {'location_id': pto.default_location_src_id.id, 'location_dest_id': pto.default_location_dest_id.id}}
+        return {}
+
     def do_print_picking(self, cr, uid, ids, context=None):
         '''This function prints the picking list'''
         context = dict(context or {}, active_ids=ids)
