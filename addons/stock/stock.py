@@ -732,7 +732,27 @@ class stock_picking(osv.osv):
             ptype_id = vals.get('picking_type_id', context.get('default_picking_type_id', False))
             sequence_id = self.pool.get('stock.picking.type').browse(cr, user, ptype_id, context=context).sequence_id.id
             vals['name'] = self.pool.get('ir.sequence').next_by_id(cr, user, sequence_id, context=context)
-        return super(stock_picking, self).create(cr, user, vals, context)
+        pick_id = super(stock_picking, self).create(cr, user, vals, context)
+        #need to be thought out differently
+        pick = self.browse(cr, user, pick_id, context=context)
+        #if vals.get('move_lines'):
+        #    self.write(cr, user, [x.id for x in pick.move_lines if not x.location_dest_id.scrap_location], {'location_id': vals['location_id'],
+        #                                                                                                    'location_dest_id': vals['location_dest_id']})
+        return pick_id
+
+    def write(self, cr, uid, ids, vals, context=None):
+        if vals.get('location_id') or vals.get('location_dest_id'):
+            write_vals = {}
+            if vals.get('location_id'):
+                write_vals = vals['location_id']
+            if vals.get('location_dest_id'):
+                write_vals = vals['location_dest_id']
+            for pick in self.browse(cr, uid, ids, context=context):
+                self.write(cr, uid, [x.id for x in pick.move_lines if not x.location_dest_id.scrap_location], write_vals, context=context)
+        if 'move_lines' in vals or 'pack_operation_ids' in vals:
+            self.do_recompute_remaining_quantities(cr, uid, ids, context=context)
+        return super(stock_picking, self).write(cr, uid, ids, vals, context=context)
+
 
     def _state_get(self, cr, uid, ids, field_name, arg, context=None):
         '''The state of a picking depends on the state of its related stock.move
@@ -744,6 +764,8 @@ class stock_picking(osv.osv):
         for pick in self.browse(cr, uid, ids, context=context):
             if (not pick.move_lines) or any([x.state == 'draft' for x in pick.move_lines]):
                 res[pick.id] = 'draft'
+                if pick.launch_pack_operations and not pick.move_lines:
+                    res[pick.id] = 'assigned'
                 continue
             if all([x.state == 'cancel' for x in pick.move_lines]):
                 res[pick.id] = 'cancel'
@@ -819,7 +841,7 @@ class stock_picking(osv.osv):
         'move_type': fields.selection([('direct', 'Partial'), ('one', 'All at once')], 'Delivery Method', required=True, states={'done': [('readonly', True)], 'cancel': [('readonly', True)]}, help="It specifies goods to be deliver partially or all at once"),
         'state': fields.function(_state_get, type="selection", copy=False,
             store={
-                'stock.picking': (lambda self, cr, uid, ids, ctx: ids, ['move_type'], 20),
+                'stock.picking': (lambda self, cr, uid, ids, ctx: ids, ['move_type', 'launch_pack_operations'], 20),
                 'stock.move': (_get_pickings, ['state', 'picking_id', 'partially_available'], 20)},
             selection=[
                 ('draft', 'Draft'),
@@ -856,13 +878,13 @@ class stock_picking(osv.osv):
         'pack_operation_exist': fields.function(_get_pack_operation_exist, type='boolean', string='Pack Operation Exists?', help='technical field for attrs in view'),
         'picking_type_id': fields.many2one('stock.picking.type', 'Picking Type', states={'done': [('readonly', True)], 'cancel': [('readonly', True)]}, required=True),
         'picking_type_code': fields.related('picking_type_id', 'code', type='char', string='Picking Type Code', help="Technical field used to display the correct label on print button in the picking view"),
-
         'owner_id': fields.many2one('res.partner', 'Owner', states={'done': [('readonly', True)], 'cancel': [('readonly', True)]}, help="Default Owner"),
         # Used to search on pickings
         'product_id': fields.related('move_lines', 'product_id', type='many2one', relation='product.product', string='Product'),
         'recompute_pack_op': fields.boolean('Recompute pack operation?', help='True if reserved quants changed, which mean we might need to recompute the package operations', copy=False),
-        'location_id': fields.many2one('stock.location', 'Source Location', required=True),
-        'location_dest_id': fields.many2one('stock.location', 'Source Location', required=True),
+        'location_id': fields.many2one('stock.location', 'Source Location (Zone)', required=True),
+        'location_dest_id': fields.many2one('stock.location', 'Destination Location (Zone)', required=True),
+        'launch_pack_operations': fields.boolean("Launch Pack Operations"),
 
         #     function(_get_location_id, fnct_inv=_set_location_id, type='many2one', relation='stock.location',
         #                                readonly=True, multi='locations', string="Source Location",
@@ -932,6 +954,11 @@ class stock_picking(osv.osv):
         context = dict(context or {}, active_ids=ids)
         return self.pool.get("report").get_action(cr, uid, ids, 'stock.report_picking', context=context)
 
+    def launch_packops(self, cr, uid, ids, context=None):
+        for pick in self.browse(cr, uid, ids, context=context):
+            if pick.move_lines and pick.state in ('assigned', 'partially_available'):
+                self.do_prepare_partial(cr, uid, [pick.id], context=context)
+        self.write(cr, uid, ids, {'launch_pack_operations': True}, context=context)
 
     def action_confirm(self, cr, uid, ids, context=None):
         todo = []
@@ -1008,13 +1035,6 @@ class stock_picking(osv.osv):
             move_obj.action_cancel(cr, uid, move_ids, context=context)
             move_obj.unlink(cr, uid, move_ids, context=context)
         return super(stock_picking, self).unlink(cr, uid, ids, context=context)
-
-    def write(self, cr, uid, ids, vals, context=None):
-        res = super(stock_picking, self).write(cr, uid, ids, vals, context=context)
-        #if we changed the move lines or the pack operations, we need to recompute the remaining quantities of both
-        if 'move_lines' in vals or 'pack_operation_ids' in vals:
-            self.do_recompute_remaining_quantities(cr, uid, ids, context=context)
-        return res
 
     def _create_backorder(self, cr, uid, picking, backorder_moves=[], context=None):
         """ Move all non-done lines into a new backorder picking. If the key 'do_only_split' is given in the context, then move all lines not in context.get('split', []) instead of all non-done lines.
