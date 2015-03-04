@@ -7,10 +7,10 @@
     }
 
     var website = openerp.website;
-    website.add_template_file('/website_gengo/static/src/xml/website.gengo.xml');
+    web_editor.add_template_file('/website_gengo/static/src/xml/website.gengo.xml');
 
-    website.EditorBar.include({
-        events: _.extend({}, website.EditorBar.prototype.events, {
+    website.TopBar.include({
+        events: _.extend({}, website.TopBar.prototype.events, {
             'click a[data-action=translation_gengo_post]': 'translation_gengo_post',
             'click a[data-action=translation_gengo_info]': 'translation_gengo_info',
         }),
@@ -105,7 +105,7 @@
     });
     
     website.GengoTranslatorPostDialog = openerp.Widget.extend({
-        events: _.extend({}, website.EditorBar.prototype.events, {
+        events: _.extend({}, website.TopBar.prototype.events, {
             'hidden.bs.modal': 'destroy',
             'click button[data-action=service_level]': function (ev) {
                 this.trigger('service_level');
@@ -122,7 +122,7 @@
     });
     
     website.GengoTranslatorStatisticDialog = openerp.Widget.extend({
-        events: _.extend({}, website.EditorBar.prototype.events, {
+        events: _.extend({}, website.TopBar.prototype.events, {
             'hidden.bs.modal': 'destroy',
         }),
         template: 'website.GengoTranslatorStatisticDialog',
@@ -145,7 +145,7 @@
         },
     });
     website.GengoApiConfigDialog = openerp.Widget.extend({
-        events: _.extend({}, website.EditorBar.prototype.events, {
+        events: _.extend({}, website.TopBar.prototype.events, {
             'hidden.bs.modal': 'destroy',
             'click button[data-action=set_config]': 'set_config'
         }),

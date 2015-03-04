@@ -7,10 +7,10 @@
     }
 
     var website = openerp.website;
-    website.add_template_file('/website/static/src/xml/website.translator.xml');
+    web_editor.add_template_file('/website/static/src/xml/website.translator.xml');
     var nodialog = 'website_translator_nodialog';
 
-    website.EditorBar.include({
+    website.TopBar.include({
         do_not_translate : ['-','*','!'],
         start: function () {
             var self = this;
@@ -215,7 +215,7 @@
     });
 
     website.TranslatorDialog = openerp.Widget.extend({
-        events: _.extend({}, website.EditorBar.prototype.events, {
+        events: _.extend({}, website.TopBar.prototype.events, {
             'hidden.bs.modal': 'destroy',
             'click button[data-action=activate]': function (ev) {
                 this.trigger('activate');

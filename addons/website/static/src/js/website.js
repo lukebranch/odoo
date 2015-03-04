@@ -15,12 +15,13 @@
 
     var website = {};
     openerp.website = website;
+    var web_editor = openerp.web_editor;
 
     website.translatable = !!$('html').data('translatable');
 
     /* ----------------------------------------------------
        Helpers
-       ---------------------------------------------------- */ 
+       ---------------------------------------------------- */
     website.get_context = function (dict) {
         var html = document.documentElement;
         return _.extend({
@@ -245,24 +246,10 @@
 
     /* ----------------------------------------------------
        Async Ready and Template loading
-       ---------------------------------------------------- */ 
+       ---------------------------------------------------- */
     var templates_def = $.Deferred().resolve();
-    website.add_template_file = function(template) {
-        var def = $.Deferred();
-        templates_def = templates_def.then(function() {
-            openerp.qweb.add_template(template, function(err) {
-                if (err) {
-                    def.reject(err);
-                } else {
-                    def.resolve();
-                }
-            });
-            return def;
-        });
-        return def;
-    };
 
-    website.add_template_file('/website/static/src/xml/website.xml');
+    web_editor.add_template_file('/website/static/src/xml/website.xml');
 
     website.dom_ready = $.Deferred();
     $(document).ready(function () {
@@ -315,6 +302,9 @@
                 for (var i = 0; i < keys.length; i++){
                     treat_node(templates[keys[i]]);
                 }
+            }).then(function () {
+                website.topBar = new website.TopBar();
+                return website.topBar.attachTo($("#oe_main_menu_navbar"));
             }).promise();
         }
         return all_ready;
@@ -367,6 +357,17 @@
         $('#oe_applications').before($collapse);
         $collapse.wrap('<div class="visible-xs"/>');
         $('[data-target="#oe_applications"]').attr("data-target", "#oe_applications_collapse");
+    });
+
+
+    /**
+     * Object who contains all method and bind for the top bar, the template is create server side.
+     */
+    website.TopBar = openerp.Widget.extend({
+        attachTo: function(target) {
+            this.setElement(target);
+            return this.start();
+        },
     });
 
     return website;
