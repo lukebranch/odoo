@@ -14,6 +14,16 @@ V graph behind boxes
 	--> either billing (all invoice)
 	--> either non-recurring + prorata of monthly recurrent*nb_months
 - revenue churn
+- graph : last day
+
+--> revenue churn : 
+	- comment se passe concrètement un downgrade, comment est-ce que ca se reflète sur les invoice lines ?
+	- pareil pour les cancellations ?
+		--> ex: invoice de 1200€ pour 12 mois (mrr : 100€) - date : 01/01/2014 --> 01/01/2015
+			si le type annule le 01/09/2015, elle disparait ?
+			si le type downgrade ?
+		--> only for renewal ?
+
 
 # OPTIMIZATIONS
 
