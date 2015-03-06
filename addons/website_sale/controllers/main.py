@@ -978,3 +978,11 @@ class website_sale(http.Controller):
             }
             ret['lines'] = self.order_lines_2_google_api(order.order_line)
         return ret
+
+    #------------------------------------------------------
+    # Menu's snippets
+    #------------------------------------------------------
+
+    @http.route(['/website_sale/menu/products'], type='json', auth="public", website=True)
+    def get_products(self, values=None):
+        return ["apple", "orange", "pear"]

@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <openerp>
 <data>
+
+<template name="5 Products" id="s_menu_products">
+    <li class="s_menu_products"><span>5 best products</span></li>
+</template>
+
 <template id="website_sale" inherit_id="website.snippets" name="Snippet Ecommerce">
 
     <xpath expr="//div[@id='snippet_options']" position="inside">
@@ -36,8 +41,17 @@
               </ul>
           </li>
         </div>
+
+        <div data-js="menu_products" 
+          data-selector=".s_menu_products"
+          data-drop-in=".o_column_list, .dropdown-menu"
+          data-no-check="true">
+        </div>
     </xpath>
 
+    <xpath expr="//div[@id='snippet_menu']//div[@class='o_panel_body']" position="inside">
+      <t t-snippet="website_sale.s_menu_products" t-thumbnail="/website/static/src/img/blocks/block_references.png"/>
+    </xpath>
 </template>
 </data>
 </openerp>

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <templates id="template" xml:space="preserve">
     <!-- menu template -->
-    <t t-name="website.menu.products">
+    <t t-name="website_sale.menu_products">
         <li class="s_menu_products"><span>5 best products</span></li>
     </t>
 </templates>

@@ -55,28 +55,13 @@
         saveElement: function($el){
             if($el.hasClass('top_menu')){
                 this.clean_menu($el);
-                if($el.find('.s_menu_products').length > 0){
-                    var self = this;
-                    return openerp.jsonRpc('/website/menu/products','get_products').then(function(results){
-                        self.insert_products($el, results);
-                        var markup = $el.prop('outerHTML');
-                        console.log(markup);
-                        return openerp.jsonRpc('/website/save_menu', 'save_menu', {
-                            view_id: $el.data('oe-id'),
-                            value: markup,
-                            xpath: $el.data('oe-xpath') || null,
-                            context: website.get_context(),
-                        });
-                     });
-                }else{
-                    var markup = $el.prop('outerHTML');
-                    return openerp.jsonRpc('/website/save_menu', 'save_menu', {
-                        view_id: $el.data('oe-id'),
-                        value: markup,
-                        xpath: $el.data('oe-xpath') || null,
-                        context: website.get_context(),
-                    });
-                }   
+                var markup = $el.prop('outerHTML');
+                return openerp.jsonRpc('/website/save_menu', 'save_menu', {
+                    view_id: $el.data('oe-id'),
+                    value: markup,
+                    xpath: $el.data('oe-xpath') || null,
+                    context: website.get_context(),
+                });
             }else{
                 return this._super($el);
             }
@@ -101,20 +86,6 @@
             $el.find(".ui-droppable").removeClass("ui-droppable");
             $el.find(".oe_current_dropdown").removeClass("oe_current_dropdown");
         },
-
-        insert_products: function($el, products){
-            var self = this;
-            $el.find(".s_menu_products").each(function(){
-                var el = $(this);
-                var ul = $(document.createElement("ul"));
-                ul.addClass('s_products');
-                el.after(ul);
-                $.each(products, function(){
-                    ul.append("<li ><a href='/page/homepage'><span>" + this + "</span></a></li>");
-                });
-                el.remove();
-            });
-        }
     });
 
     website.snippet.options.menu_link = website.snippet.Option.extend({
