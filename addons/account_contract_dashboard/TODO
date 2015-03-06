@@ -24,6 +24,8 @@ V graph behind boxes
 			si le type downgrade ?
 		--> only for renewal ?
 
+- table by plan on js --> too slow
+
 
 # OPTIMIZATIONS
 

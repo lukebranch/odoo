@@ -43,6 +43,9 @@ class AccountContractDashboard(http.Controller):
     def get_filter_product_template(self, filtered_product_template_ids):
         return lambda x: str(x.product_id.product_tmpl_id.id) in filtered_product_template_ids
 
+    def get_filter_out_invoice(self):
+        return lambda x: x.invoice_id.type == 'out_invoice'
+
     @http.route('/account_contract_dashboard', auth='user', website=True)
     def account_contract_dashboard(self, **kw):
 
@@ -95,6 +98,7 @@ class AccountContractDashboard(http.Controller):
             href_post_args += 'product_template_filter=%s&' % item
 
         return http.request.render('account_contract_dashboard.detailed_dashboard', {
+            'all_stats': stat_types,
             'stat_type': stat_type,
             'product_templates': product_templates,
             'filtered_product_template_ids': filtered_product_template_ids,
@@ -128,12 +132,12 @@ class AccountContractDashboard(http.Controller):
             plans = plans.filtered(lambda x: str(x.id) in filtered_product_template_ids)
 
         for plan in plans:
-            invoice_line_ids_filter = lambda x: x.product_id.product_tmpl_id == plan
+            invoice_line_ids_filter = lambda x: x.product_id.product_tmpl_id.id == plan.id
             filtered_invoice_line_ids = recurring_invoice_line_ids.filtered(invoice_line_ids_filter)
             results.append({
                 'name': plan.name,
                 'nb_customers': len(filtered_invoice_line_ids.mapped('account_analytic_id')),
-                'value': self.calculate_stat_diff(stat_type, date - relativedelta(months=+1), date, invoice_line_ids_filter=invoice_line_ids_filter, filtered_product_template_ids=filtered_product_template_ids)['value'],
+                'value': self.calculate_stat(stat_type, date, invoice_line_ids_filter=invoice_line_ids_filter, filtered_product_template_ids=filtered_product_template_ids),
             })
 
         return results
@@ -155,6 +159,8 @@ class AccountContractDashboard(http.Controller):
             ('create_date', '>=', date_limit_down),
             ('create_date', '<=', date_limit_up),
         ])
+        # Is this usefull ?
+        invoice_line_ids = invoice_line_ids.filtered(self.get_filter_out_invoice())
 
         recurring_invoice_line_ids = request.env['account.invoice.line'].search([
             ('asset_start_date', '<=', date_limit_up),
@@ -411,6 +417,10 @@ class AccountContractDashboard(http.Controller):
             ('create_date', '<=', date_plus_1_days),
             ('create_date', '>=', date_minus_1_days),
         ])
+
+        # Is this usefull ?
+        all_invoice_line_ids = all_invoice_line_ids.filtered(self.get_filter_out_invoice())
+        
         # grouped by account_id or account_analytic_id ?
         recurring_invoice_line_ids = request.env['account.invoice.line'].search([
             ('asset_start_date', '<=', date),
@@ -422,6 +432,7 @@ class AccountContractDashboard(http.Controller):
             ('create_date', '>=', date_minus_1_days),
             ('asset_category_id', '=', None)
         ])
+        non_recurring_invoice_line_ids = non_recurring_invoice_line_ids.filtered(self.get_filter_out_invoice())
         recurring_invoice_line_ids_1_month_ago = request.env['account.invoice.line'].search([
             ('asset_start_date', '<=', date - relativedelta(months=+1)),
             ('asset_end_date', '>=', date - relativedelta(months=+1)),
