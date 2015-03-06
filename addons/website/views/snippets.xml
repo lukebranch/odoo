@@ -752,7 +752,7 @@
     </div>
 </template>
 
-<template name="link" id="s_menu_link">
+<template name="Link" id="s_menu_link">
     <li class="s_menu_link">
         <a href="/page/homepage">Link</a>
     </li>
@@ -762,6 +762,10 @@
     <li class="s_menu_parent open">
         <a href="/page/homepage"><span>Home</span></a>
     </li>
+</template>
+
+<template name="5 Products" id="s_menu_products">
+    <li class="s_menu_products"><span>5 best products</span></li>
 </template>
 
 <template id="snippets">
@@ -884,6 +888,7 @@
         <t t-snippet="website.s_menu_column" t-thumbnail="/website/static/src/img/blocks/block_three_columns.png"/>
         <t t-snippet="website.s_menu_link" t-thumbnail="/website/static/src/img/blocks/block_quote.png"/>
         <t t-snippet="website.s_menu_parent" t-thumbnail="/website/static/src/img/blocks/block_references.png"/>
+        <t t-snippet="website.s_menu_products" t-thumbnail="/website/static/src/img/blocks/block_references.png"/>
     </div>
 </div>
 
@@ -1075,13 +1080,19 @@
 
     <div data-js="menu_link" 
         data-selector=".s_menu_link"
-        data-drop-in=".o_column_list"
+        data-drop-in=".o_column_list, .dropdown-menu"
         data-no-check="true">
     </div>
 
     <div data-js="menu_parent" 
         data-selector=".s_menu_parent"
         data-drop-near=".s_menu_parent"
+        data-no-check="true">
+    </div>
+
+    <div data-js="menu_products" 
+        data-selector=".s_menu_products"
+        data-drop-in=".o_column_list, .dropdown-menu"
         data-no-check="true">
     </div>
 

@@ -543,3 +543,11 @@ class Website(openerp.addons.web.controllers.main.Home):
             'datarecord': datarecord
         })
         return request.website.render(kwargs.get("template") or "website.FieldTextHtml", kwargs)
+
+    #------------------------------------------------------
+    # Menu's snippets
+    #------------------------------------------------------
+
+    @http.route(['/website/menu/products'], type='json', auth="public", website=True)
+    def get_products(self, values=None):
+        return ["apple", "orange", "pear"]

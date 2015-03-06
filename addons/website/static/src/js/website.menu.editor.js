@@ -28,19 +28,25 @@
                     $('.oe_current_dropdown').removeClass("oe_current_dropdown");
                 }
             });
-            $(".s_menu_parent:not(:has(ul))").children('a').append('<span class="caret"></span>');
-            $(".s_menu_parent:not(:has(ul))").children('a').after('<ul class="dropdown-menu o_editable_menu" role="menu"></ul>');
-            $(".s_menu_parent").children('a').removeAttr('data-toggle class');
-            $(".s_menu_parent").addClass('open o_editable');
-            $(".s_menu_parent").children('ul').css('visibility', 'hidden');
-            $(".s_menu_parent").droppable({
+            $(".s_menu_parent").each(function(){
+                self.transform_menu_dropdown($(this));
+            });
+            $(".top_menu").addClass('o_dirty o_editable');
+        },
+
+        transform_menu_dropdown: function(el){
+            var self = this;
+            el.not(":has(ul)").children('a').append('<span class="caret"></span>');
+            el.not(":has(ul)").children('a').after('<ul class="dropdown-menu o_editable_menu" role="menu"></ul>');
+            el.children('a').removeAttr('data-toggle class');
+            el.addClass('open');
+            el.children('ul').css('visibility', 'hidden');
+            el.droppable({
                 over:function(){self.open_dropdown_hover($(this));}
             });
-            $("body").on("mouseenter", ".s_menu_parent", function () {
+            el.on("mouseenter", function () {
                 self.open_dropdown_hover($(this));
             });
-
-            $(".top_menu").addClass('o_dirty o_editable');
         },
     });
 
@@ -48,39 +54,66 @@
     website.EditorBar.include({
         saveElement: function($el){
             if($el.hasClass('top_menu')){
-                $el.find("[data-oe-field]").removeAttr("data-oe-type data-oe-expression data-oe-field data-oe-id data-oe-translate data-oe-model");
-                $el.find(".s_menu_parent").each(function(){
-                    var el = $(this);
-                    el.children('ul').css('visibility', '');
-                    el.off('mouseenter');
-                    el.removeClass('open');
-                    if(el.children('ul').children().length === 0){
-                        el.children('a').children('.caret').remove();
-                        el.children('ul').remove();
-                        el.children('.dropdown-menu').remove();
-                    }else{
-                        el.children('a').attr('data-toggle', 'dropdown');
-                        el.children('a').addClass('dropdown-toggle');
-                    }
-                });
-                $el.find(".o_editable").removeClass("o_editable");
-                $el.find(".ui-droppable").removeClass("ui-droppable");
-                $el.find(".o_is_inline_editable").removeClass("o_is_inline_editable");
-                $el.find(".oe_current_dropdown").removeClass("oe_current_dropdown");
-                $el.find(".note-air-editor").removeClass("note-air-editor");
-                $el.find(".note-editable").removeClass("note-editable");
-                var markup = $el.prop('outerHTML');
-                console.log(markup);
-
-                return openerp.jsonRpc('/website/save_menu', 'save_menu', {
-                    view_id: $el.data('oe-id'),
-                    value: markup,
-                    xpath: $el.data('oe-xpath') || null,
-                    context: website.get_context(),
-                });
+                this.clean_menu($el);
+                if($el.find('.s_menu_products').length > 0){
+                    var self = this;
+                    return openerp.jsonRpc('/website/menu/products','get_products').then(function(results){
+                        self.insert_products($el, results);
+                        var markup = $el.prop('outerHTML');
+                        console.log(markup);
+                        return openerp.jsonRpc('/website/save_menu', 'save_menu', {
+                            view_id: $el.data('oe-id'),
+                            value: markup,
+                            xpath: $el.data('oe-xpath') || null,
+                            context: website.get_context(),
+                        });
+                     });
+                }else{
+                    var markup = $el.prop('outerHTML');
+                    return openerp.jsonRpc('/website/save_menu', 'save_menu', {
+                        view_id: $el.data('oe-id'),
+                        value: markup,
+                        xpath: $el.data('oe-xpath') || null,
+                        context: website.get_context(),
+                    });
+                }   
             }else{
                 return this._super($el);
             }
+        },
+
+        clean_menu: function($el){
+            $el.find("[data-oe-field]").removeAttr("data-oe-type data-oe-expression data-oe-field data-oe-id data-oe-translate data-oe-model");
+            $el.find(".s_menu_parent").each(function(){
+                var el = $(this);
+                el.children('ul').css('visibility', '');
+                el.off('mouseenter');
+                el.removeClass('open');
+                if(el.children('ul').children().length === 0){
+                    el.children('a').children('.caret').remove();
+                    el.children('ul').remove();
+                    el.children('.dropdown-menu').remove();
+                }else{
+                    el.children('a').attr('data-toggle', 'dropdown');
+                    el.children('a').addClass('dropdown-toggle');
+                }
+            });
+            $el.find(".ui-droppable").removeClass("ui-droppable");
+            $el.find(".oe_current_dropdown").removeClass("oe_current_dropdown");
+        },
+
+        insert_products: function($el, products){
+            var self = this;
+            $el.find(".s_menu_products").each(function(){
+                var el = $(this);
+                var ul = $(document.createElement("ul"));
+                ul.addClass('s_products');
+                el.after(ul);
+                $.each(products, function(){
+                    ul.append("<li ><a href='/page/homepage'><span>" + this + "</span></a></li>");
+                });
+                el.remove();
+            });
         }
     });
 
@@ -108,14 +141,13 @@
     });
 
     website.snippet.options.menu_parent = website.snippet.Option.extend({
-        //TODO exactly same function as menu_link start, put the same code in an external function
         start: function(){
             this._super();
             var link = this.$target.children('a');
-            this.$target.addClass('o_editable');
             var new_range = $.summernote.core.range.createFromNode(link[0]);
             new_range.select();
             var linkInfo = {range: new_range};
+            //TODO error with the open in new window option, when desactivated the change in not done in the html
             var editor = new website.editor.LinkDialog(link, linkInfo);
             editor.appendTo(document.body);
             var self = this;
@@ -128,23 +160,8 @@
                 if(linkInfo.newWindow){
                     link.attr('target', '_blank');
                 }
-                self.BuildingBlock.init_edit_menu();
+                self.BuildingBlock.transform_menu_dropdown(this.$target);
             });
-        },
-
-        clean_for_save: function(){
-            debugger;
-            this.$target.children('ul').css('visibility', '');
-            this.$target.off('mouseenter');
-            this.$target.removeClass('open');
-            if(this.$target.children('ul').children().length === 0){
-                this.$target.children('a').children('.caret').remove();
-                this.$target.children('ul').remove();
-                this.$target.children('.dropdown-menu').remove();
-            }else{
-                this.$target.children('a').attr('data-toggle', 'dropdown');
-                this.$target.children('a').addClass('dropdown-toggle');
-            }
         },
     });
 
