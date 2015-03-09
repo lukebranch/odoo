@@ -42,17 +42,17 @@
                     });
                 };
 
-                var compute_graph = function(){
-                    return openerp.jsonRpc('/account_contract_dashboard/calculate_graph_stat', 'call', {
-                        'stat_type': self.box_code,
-                        'start_date' : start_date,
-                        'end_date': end_date,
-                        'filtered_product_template_ids': filtered_product_template_ids,
-                    });
-                };
+                // var compute_graph = function(){
+                //     return openerp.jsonRpc('/account_contract_dashboard/calculate_graph_stat', 'call', {
+                //         'stat_type': self.box_code,
+                //         'start_date' : start_date,
+                //         'end_date': end_date,
+                //         'filtered_product_template_ids': filtered_product_template_ids,
+                //     });
+                // };
 
-                $.when(compute_numbers(), compute_graph())
-                .done(function(compute_numbers, compute_graph){
+                $.when(compute_numbers()) //, compute_graph())
+                .done(function(compute_numbers){//, compute_graph){
                     console.log(compute_numbers);
                     self.value = compute_numbers['value'];
                     self.perc = compute_numbers['perc'];
@@ -74,7 +74,7 @@
                             '<h4 class="text-center mt32">'+self.box_name+'</h4>'+
                         '</div>';
 
-                    loadChart_stat('#'+self.chart_div_id, self.box_code, false, compute_graph[1], false);
+                    // loadChart_stat('#'+self.chart_div_id, self.box_code, false, compute_graph[1], false);
                 });
             },
         });
@@ -182,7 +182,7 @@
                 .rotateLabels(55);
 
           chart.yAxis     //Chart y-axis settings
-              .axisLabel('MRR (€)')
+              .axisLabel(key_name)
               .tickFormat(d3.format('.02f'));
 
           var svg = d3.select(div_to_display)    //Select the <svg> element you want to render the chart in.   

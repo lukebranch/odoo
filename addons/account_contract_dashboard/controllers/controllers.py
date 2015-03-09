@@ -91,7 +91,7 @@ class AccountContractDashboard(http.Controller):
         value_3_months_ago = self.calculate_stat_diff(stat_type, end_date_3_months_ago - relativedelta(months=+1), end_date_3_months_ago, filtered_product_template_ids=filtered_product_template_ids)
         value_12_months_ago = self.calculate_stat_diff(stat_type, end_date_12_months_ago - relativedelta(months=+1), end_date_12_months_ago, filtered_product_template_ids=filtered_product_template_ids)
 
-        stats_by_plan = [] if stat_type in ['nrr', 'arpu'] else sorted(self.get_stats_by_plan(stat_type, end_date, filtered_product_template_ids), key=lambda k: k['value'], reverse=True)
+        stats_by_plan = [] if stat_type in ['nrr', 'arpu', 'logo_churn'] else sorted(self.get_stats_by_plan(stat_type, end_date, filtered_product_template_ids), key=lambda k: k['value'], reverse=True)
 
         href_post_args = 'start_date=%s&end_date=%s&' % (start_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d'))
         for item in filtered_product_template_ids:
@@ -465,9 +465,9 @@ class AccountContractDashboard(http.Controller):
             active_customers_1_month_ago = recurring_invoice_line_ids_1_month_ago.mapped('account_analytic_id')
 
             resigned_customers = active_customers_1_month_ago.filtered(lambda x: x not in active_customers_today)
-            nb_avg_customers = (len(active_customers_1_month_ago) - len(active_customers_1_month_ago))/2.
+            # nb_avg_customers = (len(active_customers_1_month_ago) - len(active_customers_1_month_ago))/2.
 
-            result = 0 if nb_avg_customers == 0 else len(resigned_customers)/float(nb_avg_customers)
+            result = 0 if not active_customers_1_month_ago else len(resigned_customers)/float(len(active_customers_1_month_ago))
             return result
 
         result = 0
@@ -528,9 +528,23 @@ class AccountContractDashboard(http.Controller):
             result = round(result, 1)
 
         elif stat_type == 'revenue_churn':
-            # TODO
+
+            previous_month_mrr = sum(recurring_invoice_line_ids_1_month_ago.mapped('mrr'))
             result = 0
-            result = round(result, 1)
+            mrr_lost_to_cancel = 0
+            mrr_lost_to_down = 0
+            invoice_lines_ids_stopping_today = recurring_invoice_line_ids.filtered(lambda x: datetime.strptime(x.asset_end_date, DEFAULT_SERVER_DATE_FORMAT) == date)
+            for invoice_line in invoice_lines_ids_stopping_today:
+                next_invoice_lines = recurring_invoice_line_ids.filtered(lambda x: x.account_analytic_id == invoice_line.account_analytic_id and datetime.strptime(x.asset_start_date, DEFAULT_SERVER_DATE_FORMAT) >= date)
+                if next_invoice_lines:
+                    next_invoice_line = next_invoice_lines[0]
+                    if next_invoice_line.mrr < invoice_line.mrr:
+                        mrr_lost_to_down += invoice_line.mrr - next_invoice_line.mrr
+                else:
+                    mrr_lost_to_cancel += invoice_line.mrr
+
+            result = 0 if previous_month_mrr == 0 else (mrr_lost_to_cancel + mrr_lost_to_down)/float(previous_month_mrr)
+            result = 100*round(result, 1)
 
         elif stat_type == 'nb_contracts':
             result = len(recurring_invoice_line_ids.mapped('account_analytic_id'))

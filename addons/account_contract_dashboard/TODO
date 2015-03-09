@@ -5,7 +5,7 @@ In https://docs.google.com/a/openerp.com/file/d/0B5BDHVRYo-q5TUN4OXYxY1NkaEE/edi
 - Filter : readgroup
 - calculate expansion mrr & churned mrr
 - use @MAT field to caculate nrr
-V filtered_product_template_ids should not be as a class variable
+V filtered_contract_template_ids should not be as a class variable
 V graph behind boxes
 
 ? do not use negative mrr (asset, nothing to do with revenue recognition)
@@ -13,10 +13,10 @@ V graph behind boxes
 ? net revenue
 	--> either billing (all invoice)
 	--> either non-recurring + prorata of monthly recurrent*nb_months
-- revenue churn
+V revenue churn
 - graph : last day
 
---> revenue churn : 
+V revenue churn : 
 	- comment se passe concrètement un downgrade, comment est-ce que ca se reflète sur les invoice lines ?
 	- pareil pour les cancellations ?
 		--> ex: invoice de 1200€ pour 12 mois (mrr : 100€) - date : 01/01/2014 --> 01/01/2015
@@ -25,6 +25,12 @@ V graph behind boxes
 		--> only for renewal ?
 
 - table by plan on js --> too slow
+- filter by contract_template and not by product_template
+- for more filtering, button on /stat to report/invoice analysis with groupby default on category
+V make demo data to tests algorithms
+	--> if next invoice has 10 days, churn during 10 days and then churn reup
+- to optimize call : --log-level=debug-sql
+- monthly revenu on an invoice on 1 month ?
 
 
 # OPTIMIZATIONS
