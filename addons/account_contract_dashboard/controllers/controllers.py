@@ -40,8 +40,8 @@ def compute_rate(stat_type, old, new):
 
 class AccountContractDashboard(http.Controller):
 
-    def get_filter_product_template(self, filtered_product_template_ids):
-        return lambda x: str(x.product_id.product_tmpl_id.id) in filtered_product_template_ids
+    def get_filter_contract_template(self, filtered_contract_template_ids):
+        return lambda x: str(x.contract_id.contract_tmpl_id.id) in filtered_contract_template_ids
 
     def get_filter_out_invoice(self):
         return lambda x: x.invoice_id.type == 'out_invoice'
@@ -50,21 +50,21 @@ class AccountContractDashboard(http.Controller):
     def account_contract_dashboard(self, **kw):
 
         all_stats = sorted([stat_types[x] for x in stat_types], key=lambda k: k['prior'])
-        product_templates = request.env['product.template'].search([('deferred_revenue_category_id', '!=', None)])
+        contract_templates = request.env['account.analytic.account'].search([('type', '=', 'template')])
 
-        filtered_product_template_ids = request.httprequest.args.getlist('product_template_filter') if kw.get('product_template_filter') else []
+        filtered_contract_template_ids = request.httprequest.args.getlist('contract_template_filter') if kw.get('contract_template_filter') else []
 
         start_date = datetime.strptime(kw.get('start_date'), '%Y-%m-%d') if kw.get('start_date') else default_start_date
         end_date = datetime.strptime(kw.get('end_date'), '%Y-%m-%d') if kw.get('end_date') else default_end_date
 
         href_post_args = 'start_date=%s&end_date=%s&' % (start_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d'))
-        for item in filtered_product_template_ids:
-            href_post_args += 'product_template_filter=%s&' % item
+        for item in filtered_contract_template_ids:
+            href_post_args += 'contract_template_filter=%s&' % item
 
         return http.request.render('account_contract_dashboard.dashboard', {
             'all_stats': all_stats,
-            'product_templates': product_templates,
-            'filtered_product_template_ids': filtered_product_template_ids,
+            'contract_templates': contract_templates,
+            'filtered_contract_template_ids': filtered_contract_template_ids,
             'start_date': start_date.strftime('%Y-%m-%d'),
             'end_date': end_date.strftime('%Y-%m-%d'),
             'currency': '€',
@@ -74,9 +74,9 @@ class AccountContractDashboard(http.Controller):
     @http.route('/account_contract_dashboard/detailed/<string:stat_type>', auth='user', website=True)
     def stats(self, stat_type, **kw):
 
-        product_templates = request.env['product.template'].search([('deferred_revenue_category_id', '!=', None)])
+        contract_templates = request.env['account.analytic.account'].search([('type', '=', 'template')])
 
-        filtered_product_template_ids = request.httprequest.args.getlist('product_template_filter') if kw.get('product_template_filter') else []
+        filtered_contract_template_ids = request.httprequest.args.getlist('contract_template_filter') if kw.get('contract_template_filter') else []
 
         start_date = datetime.strptime(kw.get('start_date'), '%Y-%m-%d') if kw.get('start_date') else default_start_date
         end_date = datetime.strptime(kw.get('end_date'), '%Y-%m-%d') if kw.get('end_date') else default_end_date
@@ -86,22 +86,22 @@ class AccountContractDashboard(http.Controller):
 
         report_name = stat_types[stat_type]['name']
 
-        value_now = self.calculate_stat_diff(stat_type, end_date - relativedelta(months=+1), end_date, filtered_product_template_ids=filtered_product_template_ids)
-        value_1_month_ago = self.calculate_stat_diff(stat_type, end_date_1_month_ago - relativedelta(months=+1), end_date_1_month_ago, filtered_product_template_ids=filtered_product_template_ids)
-        value_3_months_ago = self.calculate_stat_diff(stat_type, end_date_3_months_ago - relativedelta(months=+1), end_date_3_months_ago, filtered_product_template_ids=filtered_product_template_ids)
-        value_12_months_ago = self.calculate_stat_diff(stat_type, end_date_12_months_ago - relativedelta(months=+1), end_date_12_months_ago, filtered_product_template_ids=filtered_product_template_ids)
+        value_now = self.calculate_stat_diff(stat_type, end_date - relativedelta(months=+1), end_date, filtered_contract_template_ids=filtered_contract_template_ids)
+        value_1_month_ago = self.calculate_stat_diff(stat_type, end_date_1_month_ago - relativedelta(months=+1), end_date_1_month_ago, filtered_contract_template_ids=filtered_contract_template_ids)
+        value_3_months_ago = self.calculate_stat_diff(stat_type, end_date_3_months_ago - relativedelta(months=+1), end_date_3_months_ago, filtered_contract_template_ids=filtered_contract_template_ids)
+        value_12_months_ago = self.calculate_stat_diff(stat_type, end_date_12_months_ago - relativedelta(months=+1), end_date_12_months_ago, filtered_contract_template_ids=filtered_contract_template_ids)
 
-        stats_by_plan = [] if stat_type in ['nrr', 'arpu', 'logo_churn'] else sorted(self.get_stats_by_plan(stat_type, end_date, filtered_product_template_ids), key=lambda k: k['value'], reverse=True)
+        stats_by_plan = [] if stat_type in ['nrr', 'arpu', 'logo_churn'] else sorted(self.get_stats_by_plan(stat_type, end_date, filtered_contract_template_ids), key=lambda k: k['value'], reverse=True)
 
         href_post_args = 'start_date=%s&end_date=%s&' % (start_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d'))
-        for item in filtered_product_template_ids:
-            href_post_args += 'product_template_filter=%s&' % item
+        for item in filtered_contract_template_ids:
+            href_post_args += 'contract_template_filter=%s&' % item
 
         return http.request.render('account_contract_dashboard.detailed_dashboard', {
             'all_stats': stat_types,
             'stat_type': stat_type,
-            'product_templates': product_templates,
-            'filtered_product_template_ids': filtered_product_template_ids,
+            'contract_templates': contract_templates,
+            'filtered_contract_template_ids': filtered_contract_template_ids,
             'currency': '€',
             'report_name': report_name,
             'start_date': start_date.strftime('%Y-%m-%d'),
@@ -116,7 +116,7 @@ class AccountContractDashboard(http.Controller):
             'href_post_args': href_post_args,
         })
 
-    def get_stats_by_plan(self, stat_type, date, filtered_product_template_ids=None):
+    def get_stats_by_plan(self, stat_type, date, filtered_contract_template_ids=None):
 
         results = []
         recurring_invoice_line_ids = request.env['account.invoice.line'].search([
@@ -126,24 +126,24 @@ class AccountContractDashboard(http.Controller):
             ('mrr', '>', 0),
         ])
 
-        plans = request.env['product.template'].search([('deferred_revenue_category_id', '!=', None)])
-
-        if filtered_product_template_ids:
-            plans = plans.filtered(lambda x: str(x.id) in filtered_product_template_ids)
+        plans = request.env['account.analytic.account'].search([('type', '=', 'template')])
+        
+        if filtered_contract_template_ids:
+            plans = plans.filtered(lambda x: str(x.id) in filtered_contract_template_ids)
 
         for plan in plans:
-            invoice_line_ids_filter = lambda x: x.product_id.product_tmpl_id.id == plan.id
+            invoice_line_ids_filter = lambda x: x.contract_id.contract_tmpl_id.id == plan.id
             filtered_invoice_line_ids = recurring_invoice_line_ids.filtered(invoice_line_ids_filter)
             results.append({
                 'name': plan.name,
                 'nb_customers': len(filtered_invoice_line_ids.mapped('account_analytic_id')),
-                'value': self.calculate_stat(stat_type, date, invoice_line_ids_filter=invoice_line_ids_filter, filtered_product_template_ids=filtered_product_template_ids),
+                'value': self.calculate_stat(stat_type, date, invoice_line_ids_filter=invoice_line_ids_filter, filtered_contract_template_ids=filtered_contract_template_ids),
             })
 
         return results
 
     @http.route('/account_contract_dashboard/calculate_graph_stat', type="json", auth='user', website=True)
-    def calculate_graph_stat(self, stat_type, start_date, end_date, filtered_product_template_ids):
+    def calculate_graph_stat(self, stat_type, start_date, end_date, filtered_contract_template_ids):
 
         start_date = datetime.strptime(start_date, '%Y-%m-%d')
         end_date = datetime.strptime(end_date, '%Y-%m-%d')
@@ -171,9 +171,9 @@ class AccountContractDashboard(http.Controller):
         # TODO: remove this when mrr only on revenue recognition
         recurring_invoice_line_ids = recurring_invoice_line_ids.filtered(lambda x: x.mrr > 0)
 
-        if filtered_product_template_ids:
-            invoice_line_ids = invoice_line_ids.filtered(self.get_filter_product_template(filtered_product_template_ids))
-            recurring_invoice_line_ids = recurring_invoice_line_ids.filtered(self.get_filter_product_template(filtered_product_template_ids))
+        if filtered_contract_template_ids:
+            invoice_line_ids = invoice_line_ids.filtered(self.get_filter_contract_template(filtered_contract_template_ids))
+            recurring_invoice_line_ids = recurring_invoice_line_ids.filtered(self.get_filter_contract_template(filtered_contract_template_ids))
 
         # Use request.env['account.invoice.line'].read_group([], '', groupby=['create_date:day']) instead
         # import timeit
@@ -201,7 +201,7 @@ class AccountContractDashboard(http.Controller):
             # METHOD NON-OPTIMIZED
 
             date = start_date + timedelta(days=i)
-            value = self.calculate_stat(stat_type, date, filtered_product_template_ids=filtered_product_template_ids)
+            value = self.calculate_stat(stat_type, date, filtered_contract_template_ids=filtered_contract_template_ids)
             results.append({
                 '0': str(date).split(' ')[0],
                 '1': value,
@@ -213,7 +213,7 @@ class AccountContractDashboard(http.Controller):
         return stat_types[stat_type]['name'], results
 
     @http.route('/account_contract_dashboard/calculate_graph_mrr_growth', type="json", auth='user', website=True)
-    def calculate_graph_mrr_growth(self, start_date, end_date, filtered_product_template_ids):
+    def calculate_graph_mrr_growth(self, start_date, end_date, filtered_contract_template_ids):
 
         # THIS IS ROLLING MONTH CALCULATION
 
@@ -228,9 +228,9 @@ class AccountContractDashboard(http.Controller):
         for i in range(delta.days):
             date = start_date + timedelta(days=i)
             date_30_days_ago = date - relativedelta(months=+1)
-            new_mrr = self.calculate_stat_aggregate('new_mrr', date_30_days_ago, date, filtered_product_template_ids=filtered_product_template_ids)
-            expansion_mrr = self.calculate_stat_aggregate('expansion_mrr', date_30_days_ago, date, filtered_product_template_ids=filtered_product_template_ids)
-            churned_mrr = self.calculate_stat_aggregate('churned_mrr', date_30_days_ago, date, filtered_product_template_ids=filtered_product_template_ids)
+            new_mrr = self.calculate_stat_aggregate('new_mrr', date_30_days_ago, date, filtered_contract_template_ids=filtered_contract_template_ids)
+            expansion_mrr = self.calculate_stat_aggregate('expansion_mrr', date_30_days_ago, date, filtered_contract_template_ids=filtered_contract_template_ids)
+            churned_mrr = self.calculate_stat_aggregate('churned_mrr', date_30_days_ago, date, filtered_contract_template_ids=filtered_contract_template_ids)
             net_new_mrr = new_mrr + expansion_mrr - churned_mrr
 
             results[0].append({
@@ -253,17 +253,17 @@ class AccountContractDashboard(http.Controller):
         return results
 
     @http.route('/account_contract_dashboard/calculate_stats_diff', type="json", auth='user', website=True)
-    def calculate_stats_diff(self, stat_type, start_date, end_date, filtered_product_template_ids):
+    def calculate_stats_diff(self, stat_type, start_date, end_date, filtered_contract_template_ids):
 
         # Used in global dashboard
 
         results = {}
 
-        results = self.calculate_stat_diff(stat_type, start_date, end_date, add_symbol=True, filtered_product_template_ids=filtered_product_template_ids)
+        results = self.calculate_stat_diff(stat_type, start_date, end_date, add_symbol=True, filtered_contract_template_ids=filtered_contract_template_ids)
 
         return results
 
-    def calculate_stat_diff(self, stat_type, start_date, end_date, invoice_line_ids_filter=None, add_symbol=False, filtered_product_template_ids=None):
+    def calculate_stat_diff(self, stat_type, start_date, end_date, invoice_line_ids_filter=None, add_symbol=False, filtered_contract_template_ids=None):
 
         if type(start_date) == datetime:
             start_date = start_date.strftime('%Y-%m-%d')
@@ -274,8 +274,8 @@ class AccountContractDashboard(http.Controller):
         end_date_30_days_ago = (datetime.strptime(end_date, '%Y-%m-%d') - relativedelta(months=+1)).strftime('%Y-%m-%d')
 
         if stat_types[stat_type]['type'] == 'last':
-                value_30_days_ago = self.calculate_stat(stat_type, end_date_30_days_ago, filtered_product_template_ids=filtered_product_template_ids, invoice_line_ids_filter=invoice_line_ids_filter)
-                value_end = self.calculate_stat(stat_type, end_date, filtered_product_template_ids=filtered_product_template_ids, invoice_line_ids_filter=invoice_line_ids_filter)
+                value_30_days_ago = self.calculate_stat(stat_type, end_date_30_days_ago, filtered_contract_template_ids=filtered_contract_template_ids, invoice_line_ids_filter=invoice_line_ids_filter)
+                value_end = self.calculate_stat(stat_type, end_date, filtered_contract_template_ids=filtered_contract_template_ids, invoice_line_ids_filter=invoice_line_ids_filter)
         elif stat_types[stat_type]['type'] == 'sum':
             # If sum, we aggregate all values between start_date and end_date
             value_30_days_ago = self.calculate_stat_aggregate(stat_type, start_date_30_days_ago, end_date_30_days_ago)
@@ -298,7 +298,7 @@ class AccountContractDashboard(http.Controller):
         }
         return result
 
-    def calculate_stat_aggregate(self, stat_type, start_date, end_date, invoice_line_ids_filter=None, filtered_product_template_ids=None):
+    def calculate_stat_aggregate(self, stat_type, start_date, end_date, invoice_line_ids_filter=None, filtered_contract_template_ids=None):
 
         result = 0
 
@@ -312,7 +312,7 @@ class AccountContractDashboard(http.Controller):
         # Use request.env['account.invoice.line'].read_group([], '', groupby=['create_date:day']) instead
         for i in range(delta.days):
             date = start_date + timedelta(days=i)
-            value = self.calculate_stat(stat_type, date, filtered_product_template_ids=filtered_product_template_ids, invoice_line_ids_filter=invoice_line_ids_filter)
+            value = self.calculate_stat(stat_type, date, filtered_contract_template_ids=filtered_contract_template_ids, invoice_line_ids_filter=invoice_line_ids_filter)
             result += value
 
         return result
@@ -404,7 +404,7 @@ class AccountContractDashboard(http.Controller):
         return result
 
     # @profile  # Used to estimate the cost of each line
-    def calculate_stat(self, stat_type, date, filtered_product_template_ids=None, invoice_line_ids_filter=None):
+    def calculate_stat(self, stat_type, date, filtered_contract_template_ids=None, invoice_line_ids_filter=None):
 
         if type(date) == str:
             date = datetime.strptime(date, '%Y-%m-%d')
@@ -447,12 +447,12 @@ class AccountContractDashboard(http.Controller):
             recurring_invoice_line_ids = recurring_invoice_line_ids.filtered(invoice_line_ids_filter)
             non_recurring_invoice_line_ids = non_recurring_invoice_line_ids.filtered(invoice_line_ids_filter)
 
-        if filtered_product_template_ids:
-            filter_product_template = self.get_filter_product_template(filtered_product_template_ids)
-            all_invoice_line_ids = all_invoice_line_ids.filtered(filter_product_template)
-            recurring_invoice_line_ids = recurring_invoice_line_ids.filtered(filter_product_template)
-            non_recurring_invoice_line_ids = non_recurring_invoice_line_ids.filtered(filter_product_template)
-            recurring_invoice_line_ids_1_month_ago = recurring_invoice_line_ids_1_month_ago.filtered(filter_product_template)
+        if filtered_contract_template_ids:
+            filter_contract_template = self.get_filter_contract_template(filtered_contract_template_ids)
+            all_invoice_line_ids = all_invoice_line_ids.filtered(filter_contract_template)
+            recurring_invoice_line_ids = recurring_invoice_line_ids.filtered(filter_contract_template)
+            non_recurring_invoice_line_ids = non_recurring_invoice_line_ids.filtered(filter_contract_template)
+            recurring_invoice_line_ids_1_month_ago = recurring_invoice_line_ids_1_month_ago.filtered(filter_contract_template)
 
 
         def _calculate_logo_churn():

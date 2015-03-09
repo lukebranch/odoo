@@ -19,15 +19,15 @@
           <div class="row mb32">
             <form action="/account_contract_dashboard">
               <div class="col-sm-4 text-left">
-                <a t-att-class="'' if filtered_product_template_ids else 'collapsed'" data-toggle="collapse" href="#collapse_filter_products">
-                  Filter on Products
+                <a t-att-class="'' if filtered_contract_template_ids else 'collapsed'" data-toggle="collapse" href="#collapse_filter_contracts">
+                  Filter on contracts
                 </a>
 
                 <div role="tablist" aria-multiselectable="true">
-                  <div id="collapse_filter_products" t-att-class="'panel-collapse collapse in' if filtered_product_template_ids else 'panel-collapse collapse'" role="tabpanel">
-                    <t t-foreach="product_templates" t-as="template">
+                  <div id="collapse_filter_contracts" t-att-class="'panel-collapse collapse in' if filtered_contract_template_ids else 'panel-collapse collapse'" role="tabpanel">
+                    <t t-foreach="contract_templates" t-as="template">
                       <div class="checkbox">
-                        <input type="checkbox" t-att-checked="'checked' if str(template.id) in filtered_product_template_ids else ''" name="product_template_filter" t-att-value="template.id"><t t-esc="template.name"/></input>
+                        <input type="checkbox" t-att-checked="'checked' if str(template.id) in filtered_contract_template_ids else ''" name="contract_template_filter" t-att-value="template.id"><t t-esc="template.name"/></input>
                       </div>
                     </t>
                   </div>
@@ -82,15 +82,15 @@
                 <div>
                   <a t-att-href="'/account_contract_dashboard?%s' % href_post_args">Dashboard</a>
                 </div>
-                <a t-att-class="'' if filtered_product_template_ids else 'collapsed'" data-toggle="collapse" href="#collapse_filter_products">
-                  Filter on Products
+                <a t-att-class="'' if filtered_contract_template_ids else 'collapsed'" data-toggle="collapse" href="#collapse_filter_contracts">
+                  Filter on contracts
                 </a>
 
                 <div role="tablist" aria-multiselectable="true">
-                  <div id="collapse_filter_products" t-att-class="'panel-collapse collapse in' if filtered_product_template_ids else 'panel-collapse collapse'" role="tabpanel">
-                    <t t-foreach="product_templates" t-as="template">
+                  <div id="collapse_filter_contracts" t-att-class="'panel-collapse collapse in' if filtered_contract_template_ids else 'panel-collapse collapse'" role="tabpanel">
+                    <t t-foreach="contract_templates" t-as="template">
                       <div class="checkbox">
-                        <input type="checkbox" t-att-checked="'checked' if str(template.id) in filtered_product_template_ids else ''" name="product_template_filter" t-att-value="template.id"><t t-esc="template.name"/></input>
+                        <input type="checkbox" t-att-checked="'checked' if str(template.id) in filtered_contract_template_ids else ''" name="contract_template_filter" t-att-value="template.id"><t t-esc="template.name"/></input>
                       </div>
                     </t>
                   </div>
