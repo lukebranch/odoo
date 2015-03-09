@@ -18,9 +18,7 @@
         'templates/dashboard.xml',
         'templates/assets.xml',
     ],
-    # 'qweb': [
-    #     "static/src/xml/account_asset_template.xml",
-    # ],
+    'qweb': ['static/src/xml/*.xml'],
     'installable': True,
     'application': False,
 }

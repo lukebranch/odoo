@@ -41,7 +41,7 @@ def compute_rate(stat_type, old, new):
 class AccountContractDashboard(http.Controller):
 
     def get_filter_contract_template(self, filtered_contract_template_ids):
-        return lambda x: str(x.contract_id.contract_tmpl_id.id) in filtered_contract_template_ids
+        return lambda x: str(x.account_analytic_id.template_id.id) in filtered_contract_template_ids
 
     def get_filter_out_invoice(self):
         return lambda x: x.invoice_id.type == 'out_invoice'
@@ -91,8 +91,6 @@ class AccountContractDashboard(http.Controller):
         value_3_months_ago = self.calculate_stat_diff(stat_type, end_date_3_months_ago - relativedelta(months=+1), end_date_3_months_ago, filtered_contract_template_ids=filtered_contract_template_ids)
         value_12_months_ago = self.calculate_stat_diff(stat_type, end_date_12_months_ago - relativedelta(months=+1), end_date_12_months_ago, filtered_contract_template_ids=filtered_contract_template_ids)
 
-        stats_by_plan = [] if stat_type in ['nrr', 'arpu', 'logo_churn'] else sorted(self.get_stats_by_plan(stat_type, end_date, filtered_contract_template_ids), key=lambda k: k['value'], reverse=True)
-
         href_post_args = 'start_date=%s&end_date=%s&' % (start_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d'))
         for item in filtered_contract_template_ids:
             href_post_args += 'contract_template_filter=%s&' % item
@@ -110,12 +108,13 @@ class AccountContractDashboard(http.Controller):
             'value_1_month_ago': value_1_month_ago,
             'value_3_months_ago': value_3_months_ago,
             'value_12_months_ago': value_12_months_ago,
+            'display_stats_by_plan': False if stat_type in ['nrr', 'arpu', 'logo_churn'] else True,
             'currency': '€',
             'rate': compute_rate,
-            'stats_by_plan': stats_by_plan,
             'href_post_args': href_post_args,
         })
 
+    @http.route('/account_contract_dashboard/get_stats_by_plan', type="json", auth='user', website=True)
     def get_stats_by_plan(self, stat_type, date, filtered_contract_template_ids=None):
 
         results = []
@@ -132,7 +131,7 @@ class AccountContractDashboard(http.Controller):
             plans = plans.filtered(lambda x: str(x.id) in filtered_contract_template_ids)
 
         for plan in plans:
-            invoice_line_ids_filter = lambda x: x.contract_id.contract_tmpl_id.id == plan.id
+            invoice_line_ids_filter = lambda x: x.account_analytic_id.template_id.id == plan.id
             filtered_invoice_line_ids = recurring_invoice_line_ids.filtered(invoice_line_ids_filter)
             results.append({
                 'name': plan.name,
@@ -140,7 +139,9 @@ class AccountContractDashboard(http.Controller):
                 'value': self.calculate_stat(stat_type, date, invoice_line_ids_filter=invoice_line_ids_filter, filtered_contract_template_ids=filtered_contract_template_ids),
             })
 
-        return results
+        results = sorted((results), key=lambda k: k['value'], reverse=True)
+
+        return results, stat_types
 
     @http.route('/account_contract_dashboard/calculate_graph_stat', type="json", auth='user', website=True)
     def calculate_graph_stat(self, stat_type, start_date, end_date, filtered_contract_template_ids):
@@ -179,7 +180,7 @@ class AccountContractDashboard(http.Controller):
         # import timeit
         # start = timeit.default_timer()
 
-        for i in range(delta.days):
+        for i in range(delta.days + 1):
 
             # METHOD OPTIMIZED
             # date = start_date + timedelta(days=i)

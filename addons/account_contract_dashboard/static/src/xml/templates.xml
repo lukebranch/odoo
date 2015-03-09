@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<templates id="template" xml:space="preserve">
+  <t t-name="account_contract_dashboard.statsByPlan">
+    <div t-if="stats_by_plan.length > 0" class="row box">
+      <table class="table table-striped">
+        <tr>
+          <th>Plan</th>
+          <th># of Contracts</th>
+          <th t-if="stat_type != 'nb_contracts'"><t t-esc="all_stats[stat_type]['name']"/></th>
+          <th></th>
+        </tr>
+        <t t-foreach="stats_by_plan" t-as="plan">
+          <tr>
+            <td><t t-esc="plan['name']"/></td>
+            <td class="oGreen"><t t-esc="plan['nb_customers']"/></td>
+            <td t-if="stat_type != 'nb_contracts'" class="oGreen"><t t-esc="plan['value']"/><t t-esc="all_stats[stat_type]['add_symbol']"/></td>
+            <td>
+              <div t-if="value_now != 0" class="progress" style="width:80%; height:10px;">
+                <div class="progress-bar" role="progressbar" t-att-aria-valuenow="100*plan['value']/value_now" aria-valuemin="0" aria-valuemax="100" t-att-style="'width: '+100*plan['value']/value_now+'%'">
+                  <span class="sr-only"><t t-esc="100*plan['value']/value_now"/>% Complete (success)</span>
+                </div>
+              </div>
+            </td>
+          </tr>
+        </t>
+      </table>
+    </div>
+  </t>
+</templates>
+

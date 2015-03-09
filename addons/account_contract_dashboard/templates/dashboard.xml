@@ -104,6 +104,7 @@
 
           <div class="row box">
             <div class="col-sm-12">
+              <div id="value_now" t-att-value="value_now['value']" class="hidden"/>
               <h1 class="metric_current oBlue mt32 mb32"><t t-esc="value_now['value']"/><t t-esc="all_stats[stat_type]['add_symbol']"/></h1>
             </div>
             <input type="hidden" name="stat_type" t-att-value="stat_type"/>
@@ -175,29 +176,7 @@
             </div>
           </div>
 
-          <div t-if="stats_by_plan" class="row box">
-            <table class="table table-striped">
-              <tr>
-                <th>Plan</th>
-                <th># of Contracts</th>
-                <th t-if="not stat_type == 'nb_contracts'"><t t-esc="report_name"/></th>
-                <th></th>
-              </tr>
-              <t t-foreach="stats_by_plan" t-as="plan">
-                <tr>
-                  <td><t t-esc="plan['name']"/></td>
-                  <td t-att-class="'oGreen' if plan['nb_customers'] > 0 else 'grey'"><t t-esc="plan['nb_customers']"/></td>
-                  <td t-if="not stat_type == 'nb_contracts'" t-att-class="'oGreen' if plan['value'] > 0 else 'grey'"><t t-esc="plan['value']"/><t t-esc="all_stats[stat_type]['add_symbol']"/></td>
-                  <td>
-                    <div t-if="not value_now['value'] == 0" class="progress" style="width:80%; height:10px;">
-                      <div class="progress-bar" role="progressbar" t-att-aria-valuenow="'{0}'.format(100*(plan['value'])/float(value_now['value']))" aria-valuemin="0" aria-valuemax="100" t-att-style="'width: {0}%'.format(100*(plan['value'])/float(value_now['value']))">
-                        <span class="sr-only"><t t-esc="'{0}'.format(100*(plan['value'])/float(value_now['value']))"/>% Complete (success)</span>
-                      </div>
-                    </div>
-                  </td>
-                </tr>
-              </t>
-            </table>
+          <div id="stats_by_plan" t-if="display_stats_by_plan" class="row box">
           </div>
 
       </div>

@@ -14,7 +14,7 @@ V graph behind boxes
 	--> either billing (all invoice)
 	--> either non-recurring + prorata of monthly recurrent*nb_months
 V revenue churn
-- graph : last day
+V graph : last day
 
 V revenue churn : 
 	- comment se passe concrètement un downgrade, comment est-ce que ca se reflète sur les invoice lines ?
@@ -24,7 +24,7 @@ V revenue churn :
 			si le type downgrade ?
 		--> only for renewal ?
 
-- table by plan on js --> too slow
+V table by plan on js --> too slow
 - filter by contract_template and not by product_template
 - for more filtering, button on /stat to report/invoice analysis with groupby default on category
 V make demo data to tests algorithms
