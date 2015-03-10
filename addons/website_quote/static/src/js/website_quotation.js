@@ -1,6 +1,8 @@
-(function () {
+odoo.define('website_quote.website_quote', ['web.ajax', 'website.website'], function (require) {
 'use strict';
-var website = openerp.website;
+
+var ajax = require('web.ajax');
+var website = require('website.website');
 
 website.if_dom_contains('div.o_website_quote', function () {
 
@@ -11,7 +13,7 @@ website.if_dom_contains('div.o_website_quote', function () {
         var order_id = href.match(/order_id=([0-9]+)/);
         var line_id = href.match(/update_line\/([0-9]+)/);
         var token = href.match(/token=(.*)/);
-        openerp.jsonRpc("/quote/update_line", 'call', {
+        ajax.jsonRpc("/quote/update_line", 'call', {
                 'line_id': line_id[1],
                 'order_id': parseInt(order_id[1]),
                 'token': token[1],
@@ -29,12 +31,12 @@ website.if_dom_contains('div.o_website_quote', function () {
     });
 
     var empty_sign = false;
-    $('#modelaccept').on('shown.bs.modal', function (e) {
+    $('#modelaccept').on('shown.bs.modal', function () {
         $("#signature").empty().jSignature({'decor-color' : '#D1D0CE'});
         empty_sign = $("#signature").jSignature("getData",'image');
     });
 
-    $('#sign_clean').on('click', function (e) {
+    $('#sign_clean').on('click', function () {
         $("#signature").jSignature('reset');
     });
 
@@ -57,12 +59,12 @@ website.if_dom_contains('div.o_website_quote', function () {
         if (is_empty || ! signer_name)
             return false;
 
-        openerp.jsonRpc("/quote/accept", 'call', {
+        ajax.jsonRpc("/quote/accept", 'call', {
             'order_id': parseInt(order_id[1]),
             'token': token,
             'signer': signer_name,
             'sign': sign?JSON.stringify(sign[1]):false,
-        }).then(function (data) {
+        }).then(function () {
             $('#modelaccept').modal('hide');
             window.location.href = '/quote/'+order_id[1]+'/'+token+'?message=3';
         });
@@ -98,4 +100,4 @@ website.if_dom_contains('div.o_website_quote', function () {
     });
 });
 
-}());
+});
