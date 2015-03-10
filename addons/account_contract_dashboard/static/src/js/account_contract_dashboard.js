@@ -14,8 +14,6 @@
 
     openerp.website.ready().done(function() {
 
-      // var website = openerp.website;
-
       openerp.website.if_dom_contains('div.stat-box', function() {
 
 
@@ -41,7 +39,7 @@
                   var filtered_contract_template_ids = get_filtered_contract_templates();
 
                   var compute_numbers = function(){
-                      return openerp.jsonRpc('/account_contract_dashboard/calculate_stats_diff', 'call', {
+                      return openerp.jsonRpc('/account_contract_dashboard/calculate_stats_diff_30_days_ago', 'call', {
                           'stat_type': self.box_code,
                           'start_date': self.start_date,
                           'end_date': self.end_date,
@@ -49,19 +47,20 @@
                       });
                   };
 
-                  // var compute_graph = function(){
-                  //     return openerp.jsonRpc('/account_contract_dashboard/calculate_graph_stat', 'call', {
-                  //         'stat_type': self.box_code,
-                  //         'start_date' : start_date,
-                  //         'end_date': end_date,
-                  //         'filtered_contract_template_ids': filtered_contract_template_ids,
-                  //     });
-                  // };
+                  var compute_graph = function(){
+                      return openerp.jsonRpc('/account_contract_dashboard/calculate_graph_stat', 'call', {
+                          'stat_type': self.box_code,
+                          'start_date' : start_date,
+                          'end_date': end_date,
+                          'complete': false,
+                          'filtered_contract_template_ids': filtered_contract_template_ids,
+                      });
+                  };
 
-                  $.when(compute_numbers()) //, compute_graph())
-                  .done(function(compute_numbers){//, compute_graph){
+                  $.when(compute_numbers(), compute_graph())
+                  .done(function(compute_numbers, compute_graph){
                       // console.log(compute_numbers);
-                      self.value = compute_numbers['value'];
+                      self.value = compute_numbers['value_2'];
                       self.perc = compute_numbers['perc'];
                       self.color = compute_numbers['color'];
 
@@ -81,7 +80,7 @@
                               '<h4 class="text-center mt32">'+self.box_name+'</h4>'+
                           '</div>';
 
-                      // loadChart_stat('#'+self.chart_div_id, self.box_code, false, compute_graph[1], false);
+                      loadChart_stat('#'+self.chart_div_id, self.box_code, false, compute_graph[1], false);
                   });
               },
           });
@@ -149,13 +148,14 @@
                 key: key_name,
                 color: '#2693d5',
                 area: true
-              },
+              },  
             ];
           // console.log(myData);
 
           /*These lines are all chart setup.  Pick and choose which chart features you want to utilize. */
           nv.addGraph(function() {
             var chart = nv.models.lineChart()
+                          .interpolate("monotone")
                           .x(function(d) { return getDate(d); })
                           .y(function(d) { return getValue(d); });
             if (show_legend){
@@ -212,25 +212,25 @@
       }
 
 
-      // openerp.website.if_dom_contains('#mrr_growth_chart_div', function() {
+      openerp.website.if_dom_contains('#mrr_growth_chart_div', function() {
 
-      //     var start_date = $('input[type="date"][name="start_date"]').val();
-      //     var end_date = $('input[type="date"][name="end_date"]').val();
+          var start_date = $('input[type="date"][name="start_date"]').val();
+          var end_date = $('input[type="date"][name="end_date"]').val();
 
-      //     var loader = '<div class="loading"><div id="big-circle"><div id="little-circle"></div></div></div>';
-      //     $('#mrr_growth_chart_div').html("<div class='loader' style='position: relative; text-align:center; width: 100%; height: 300px;'>" + loader + "</div>");
+          var loader = '<div class="loading"><div id="big-circle"><div id="little-circle"></div></div></div>';
+          $('#mrr_growth_chart_div').html("<div class='loader' style='position: relative; text-align:center; width: 100%; height: 300px;'>" + loader + "</div>");
 
-      //     var filtered_contract_template_ids = get_filtered_contract_templates();
+          var filtered_contract_template_ids = get_filtered_contract_templates();
 
-      //     openerp.jsonRpc('/account_contract_dashboard/calculate_graph_mrr_growth', 'call', {
-      //         'start_date' : start_date,
-      //         'end_date': end_date,
-      //         'filtered_contract_template_ids': filtered_contract_template_ids,
-      //     }).then(function(result){
-      //         loadChart_mrr_growth_stat('#mrr_growth_chart_div', result);
-      //         $('#mrr_growth_chart_div div.loader').hide();
-      //     });
-      // });
+          openerp.jsonRpc('/account_contract_dashboard/calculate_graph_mrr_growth', 'call', {
+              'start_date' : start_date,
+              'end_date': end_date,
+              'filtered_contract_template_ids': filtered_contract_template_ids,
+          }).then(function(result){
+              loadChart_mrr_growth_stat('#mrr_growth_chart_div', result);
+              $('#mrr_growth_chart_div div.loader').hide();
+          });
+      });
 
       function loadChart_mrr_growth_stat(div_to_display, result){
 

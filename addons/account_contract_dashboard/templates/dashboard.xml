@@ -104,8 +104,8 @@
 
           <div class="row box">
             <div class="col-sm-12">
-              <div id="value_now" t-att-value="value_now['value']" class="hidden"/>
-              <h1 class="metric_current oBlue mt32 mb32"><t t-esc="value_now['value']"/><t t-esc="all_stats[stat_type]['add_symbol']"/></h1>
+              <div id="value_now" t-att-value="value_now['value_2']" class="hidden"/>
+              <h1 class="metric_current oBlue mt32 mb32"><t t-esc="value_now['value_2']"/><t t-esc="all_stats[stat_type]['add_symbol']"/></h1>
             </div>
             <input type="hidden" name="stat_type" t-att-value="stat_type"/>
             <div id="stat_chart_div">
@@ -116,25 +116,25 @@
           <div class="row box">
             <div class="col-md-3 text-center">
               <h4 class="text-muted smallCaps">Current</h4>
-              <h2><t t-esc="value_now['value']"/><t t-esc="all_stats[stat_type]['add_symbol']"/></h2>
+              <h2><t t-esc="value_now['value_2']"/><t t-esc="all_stats[stat_type]['add_symbol']"/></h2>
             </div>
 
 
             <div class="col-md-3 text-center">
               <h4 class="text-muted smallCaps">1 month ago</h4>
-              <h2><t t-esc="value_1_month_ago['value']"/><t t-esc="all_stats[stat_type]['add_symbol']"/> <small t-if="not value_1_month_ago['value'] == 0" t-attf-class="#{rate(stat_type, value_1_month_ago['value'], value_now['value'])[1]}"><t t-esc="rate(stat_type, value_1_month_ago['value'], value_now['value'])[0]"/>%</small></h2>
+              <h2><t t-esc="value_1_month_ago['value_2']"/><t t-esc="all_stats[stat_type]['add_symbol']"/> <small t-if="not value_1_month_ago['value_2'] == 0" t-attf-class="#{rate(stat_type, value_1_month_ago['value_2'], value_now['value_2'])[1]}"><t t-esc="rate(stat_type, value_1_month_ago['value_2'], value_now['value_2'])[0]"/>%</small></h2>
             </div>
 
 
             <div class="col-md-3 text-center">
               <h4 class="text-muted smallCaps">3 months ago</h4>
-              <h2><t t-esc="value_3_months_ago['value']"/><t t-esc="all_stats[stat_type]['add_symbol']"/> <small t-if="not value_3_months_ago['value'] == 0" t-attf-class="#{rate(stat_type, value_3_months_ago['value'], value_now['value'])[1]}"><t t-esc="rate(stat_type, value_3_months_ago['value'], value_now['value'])[0]"/>%</small></h2>
+              <h2><t t-esc="value_3_months_ago['value_2']"/><t t-esc="all_stats[stat_type]['add_symbol']"/> <small t-if="not value_3_months_ago['value_2'] == 0" t-attf-class="#{rate(stat_type, value_3_months_ago['value_2'], value_now['value_2'])[1]}"><t t-esc="rate(stat_type, value_3_months_ago['value_2'], value_now['value_2'])[0]"/>%</small></h2>
             </div>
 
 
             <div class="col-md-3 text-center">
               <h4 class="text-muted smallCaps">12 months ago</h4>
-              <h2><t t-esc="value_12_months_ago['value']"/><t t-esc="all_stats[stat_type]['add_symbol']"/> <small t-if="not value_12_months_ago['value'] == 0" t-attf-class="#{rate(stat_type, value_12_months_ago['value'], value_now['value'])[1]}"><t t-esc="rate(stat_type, value_12_months_ago['value'], value_now['value'])[0]"/>%</small></h2>
+              <h2><t t-esc="value_12_months_ago['value_2']"/><t t-esc="all_stats[stat_type]['add_symbol']"/> <small t-if="not value_12_months_ago['value_2'] == 0" t-attf-class="#{rate(stat_type, value_12_months_ago['value_2'], value_now['value_2'])[1]}"><t t-esc="rate(stat_type, value_12_months_ago['value_2'], value_now['value_2'])[0]"/>%</small></h2>
             </div>
           </div>
 
