@@ -926,7 +926,6 @@ class mrp_production(osv.osv):
                 if not produced_products.get(produced_product.product_id.id, False):
                     produced_products[produced_product.product_id.id] = 0
                 produced_products[produced_product.product_id.id] += produced_product.product_qty
-
             for produce_product in production.move_created_ids:
                 subproduct_factor = self._get_subproduct_factor(cr, uid, production.id, produce_product.id, context=context)
                 lot_id = False
@@ -958,6 +957,8 @@ class mrp_production(osv.osv):
             for consume in consume_lines:
                 remaining_qty = consume['product_qty']
                 for raw_material_line in production.move_lines:
+                    if raw_material_line.state in ('done', 'cancel'):
+                        continue
                     if remaining_qty <= 0:
                         break
                     if consume['product_id'] != raw_material_line.product_id.id:
