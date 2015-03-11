@@ -938,11 +938,10 @@ class mrp_production(osv.osv):
                 remaining_qty = subproduct_factor * production_qty_uom - qty
                 if remaining_qty: # In case you need to make more than planned
                     #consumed more in wizard than previously planned
-                    extra_move_id = stock_mov_obj.copy(cr, uid, produce_product.id, default={'state': 'confirmed',
-                                                                                             'product_uom_qty': remaining_qty,
+                    extra_move_id = stock_mov_obj.copy(cr, uid, produce_product.id, default={'product_uom_qty': remaining_qty,
                                                                                              'production_id': production_id}, context=context)
-                    if extra_move_id:
-                        stock_mov_obj.action_done(cr, uid, [extra_move_id], context=context)
+                    stock_mov_obj.action_confirm(cr, uid, [extra_move_id], context=context)
+                    stock_mov_obj.action_done(cr, uid, [extra_move_id], context=context)
 
                 if produce_product.product_id.id == production.product_id.id:
                     main_production_move = produce_product.id
