@@ -2284,10 +2284,12 @@ class stock_move(osv.osv):
                     elif move.move_dest_id.state == 'waiting':
                         #If waiting, the chain will be broken and we are not sure if we can still wait for it (=> could take from stock instead)
                         self.write(cr, uid, [move.move_dest_id.id], {'state': 'confirmed'}, context=context)
+                else:
+                    if move.origin_returned_move_id and move.origin_returned_move_id.move_dest_id:
+                        self.action_assign(cr, uid, move.origin_returned_move_id.move_dest_id.id, context=context)
                 if move.procurement_id:
                     # Does the same as procurement check, only eliminating a refresh
                     procs_to_check.append(move.procurement_id.id)
-                    
         res = self.write(cr, uid, ids, {'state': 'cancel', 'move_dest_id': False}, context=context)
         if procs_to_check:
             procurement_obj.check(cr, uid, procs_to_check, context=context)
@@ -2327,6 +2329,14 @@ class stock_move(osv.osv):
                     vals['state'] = 'confirmed'
             if vals:
                 self.write(cr, uid, [move.id], vals, context=context)
+
+    def _get_move_children(self, cr, uid, ids, context=None):
+        if not ids:
+            return []
+        ids = self.search(cr, uid, [('split_from','in',ids), ('state','in',('waiting', 'confirmed'))], context=context)
+        res = ids
+        res.extend(self._get_move_children(cr, uid, res, context=context))
+        return res
 
     def action_done(self, cr, uid, ids, context=None):
         """ Process completely the moves given as ids and if all moves are done, it will finish the picking.
@@ -2398,7 +2408,13 @@ class stock_move(osv.osv):
                 quant_obj.quants_move(cr, uid, quants, move, move.location_dest_id, lot_id=move.restrict_lot_id.id, owner_id=move.restrict_partner_id.id, context=context)
 
             # If the move has a destination, add it to the list to reserve
-            if move.move_dest_id and move.move_dest_id.state in ('waiting', 'confirmed'):
+            split_move_ids = []
+            if move.move_dest_id:
+                split_move_ids = self._get_move_children(cr, uid, [move.move_dest_id.id], context=context)
+                move_ids = self.search(cr, uid, [('split_from', '=', move.move_dest_id.id),('state','in',('waiting', 'confirmed'))], context=context)
+            if move.move_dest_id and move.move_dest_id.state in ('waiting', 'confirmed') or split_move_ids:
+                for split_move in split_move_ids:
+                    move_dest_ids.add(split_move)
                 move_dest_ids.add(move.move_dest_id.id)
 
             if move.procurement_id:

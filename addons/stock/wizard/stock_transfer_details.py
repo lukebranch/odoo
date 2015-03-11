@@ -61,7 +61,7 @@ class stock_transfer_details(models.TransientModel):
                 'sourceloc_id': op.location_id.id,
                 'destinationloc_id': op.location_dest_id.id,
                 'result_package_id': op.result_package_id.id,
-                'date': op.date, 
+                'date': op.date,
                 'owner_id': op.owner_id.id,
             }
             if op.product_id:
@@ -104,7 +104,18 @@ class stock_transfer_details(models.TransientModel):
 
         # Execute the transfer of the picking
         self.picking_id.do_transfer()
+        # Split move if quantity return less then destination move quantity.
+        self.split_moves()
+        return True
 
+    def split_moves(self):
+        Move = self.env['stock.move']
+        for move in self.picking_id.move_lines:
+            if move.origin_returned_move_id and move.origin_returned_move_id.move_dest_id and not move.move_dest_id:
+                destination_move = move.origin_returned_move_id.move_dest_id
+                if move.product_uom_qty < destination_move.product_uom_qty and destination_move.state not in ('done', 'cancel'):
+                    Move.split(destination_move, move.product_uom_qty)
+                    destination_move.action_assign()
         return True
 
     @api.multi
