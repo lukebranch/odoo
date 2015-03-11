@@ -6,10 +6,8 @@ from openerp import api, fields, models, _
 class Bank(models.Model):
     _inherit = "res.partner.bank"
 
-    journal_id = fields.Many2one('account.journal', string='Account Journal',
-        help="This journal will be created automatically for this bank account when you save the record")
-    currency_id = fields.Many2one('res.currency', related='journal_id.currency', string='Currency',
-        readonly=True, help="Currency of the related account journal.")
+    journal_id = fields.Many2one('account.journal', string='Account Journal', help="This journal will be created automatically for this bank account when you save the record")
+    currency_id = fields.Many2one('res.currency', related='journal_id.currency', string='Currency', readonly=True, help="Currency of the related account journal.")
 
     @api.model
     def create(self, data):
@@ -41,22 +39,22 @@ class Bank(models.Model):
 
     @api.multi
     def post_write(self):
-        AccountObj = self.env['account.account']
-        JournalObj = self.env['account.journal']
+        AccountAccount = self.env['account.account']
+        AccountJournal = self.env['account.journal']
 
         for bank in self:
             if bank.company_id and not bank.journal_id:
                 # Find the code and parent of the bank account to create
                 dig = 6
                 current_num = 1
-                account = AccountObj.search([('internal_type', '=', 'liquidity'), ('company_id', '=', bank.company_id.id)], limit=1)
+                account = AccountAccount.search([('internal_type', '=', 'liquidity'), ('company_id', '=', bank.company_id.id)], limit=1)
                 # No liquidity account exists, no template available
                 if not account: continue
 
                 ref_acc_bank = account
                 while True:
                     new_code = str(ref_acc_bank.code.ljust(dig-len(str(current_num)), '0')) + str(current_num)
-                    account = AccountObj.search([('code', '=', new_code), ('company_id', '=', bank.company_id.id)], limit=1)
+                    account = AccountAccount.search([('code', '=', new_code), ('company_id', '=', bank.company_id.id)], limit=1)
                     if not account:
                         break
                     current_num += 1
@@ -68,12 +66,12 @@ class Bank(models.Model):
                     'reconcile': False,
                     'company_id': bank.company_id.id,
                 }
-                acc_bank = AccountObj.create(acc)
+                acc_bank = AccountAccount.create(acc)
 
                 new_code = 1
                 while True:
                     code = _('BNK')+str(new_code)
-                    account = JournalObj.search([('code', '=', code)], limit=1)
+                    account = AccountJournal.search([('code', '=', code)], limit=1)
                     if not account:
                         break
                     new_code += 1
@@ -89,5 +87,5 @@ class Bank(models.Model):
                     'default_debit_account_id': acc_bank.id,
                 }
 
-                bank.journal_id = JournalObj.create(vals_journal)
+                bank.journal_id = AccountJournal.create(vals_journal)
         return True

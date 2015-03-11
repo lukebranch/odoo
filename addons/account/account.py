@@ -130,13 +130,13 @@ class AccountAccount(models.Model):
 
     @api.model
     def search(self, args, offset=0, limit=None, order=None, count=False):
-        context = self._context or {}
-        if context.get('journal_id', False):
-            jour = self.env['account.journal'].browse(context['journal_id'])
-            if jour.account_control_ids:
-                args.append(('id', 'in', map(lambda x: x.id, jour.account_control_ids)))
-            if jour.type_control_ids:
-                args.append(('user_type', 'in', map(lambda x: x.id, jour.type_control_ids)))
+        context = self.env.context or {}
+        if context.get('journal_id'):
+            journal = self.env['account.journal'].browse(context['journal_id'])
+            if journal.account_control_ids:
+                args.append(('id', 'in', map(lambda x: x.id, journal.account_control_ids)))
+            if journal.type_control_ids:
+                args.append(('user_type', 'in', map(lambda x: x.id, journal.type_control_ids)))
         return super(AccountAccount, self).search(args, offset, limit, order, count=count)
 
     @api.multi
@@ -431,7 +431,7 @@ class AccountMove(models.Model):
 
     @api.multi
     def post(self):
-        invoice = self._context.get('invoice', False)
+        invoice = self.env.context.get('invoice')
         self._post_validate()
 
         for move in self:
@@ -455,8 +455,8 @@ class AccountMove(models.Model):
                 if new_name:
                     move.name = new_name
 
-        self._cr.execute('UPDATE account_move '\
-                   'SET state=%s '\
+        self.env.cr.execute('UPDATE account_move '
+                   'SET state=%s '
                    'WHERE id IN %s',
                    ('posted', tuple(self.ids),))
         self.invalidate_cache()
@@ -472,8 +472,8 @@ class AccountMove(models.Model):
             if not move.journal_id.update_posted:
                 raise UserError(_('You cannot modify a posted entry of this journal.\nFirst you should set the journal to allow cancelling entries.'))
         if self.ids:
-            self._cr.execute('UPDATE account_move '\
-                       'SET state=%s '\
+            self.env.cr.execute('UPDATE account_move '
+                       'SET state=%s '
                        'WHERE id IN %s', ('draft', tuple(self.ids),))
             self.invalidate_cache()
         return True
@@ -602,7 +602,7 @@ class AccountTax(models.Model):
 
     @api.model
     def search(self, args, offset=0, limit=None, order=None, count=False):
-        context = self._context or {}
+        context = self.env.context or {}
 
         if context.get('type'):
             if context.get('type') in ('out_invoice', 'out_refund'):
@@ -778,13 +778,13 @@ class AccountAddTmplWizard(models.TransientModel):
 
     @api.model
     def _get_def_cparent(self):
-        context = self._context or {}
-        tmpl_obj = self.env['account.account.template']
+        context = self.env.context or {}
+        AccountAccountTemplate = self.env['account.account.template']
 
-        tids = tmpl_obj.read([context['tmpl_ids']], ['parent_id'])
+        tids = AccountAccountTemplate.read([context['tmpl_ids']], ['parent_id'])
         if not tids or not tids[0]['parent_id']:
             return False
-        ptids = tmpl_obj.read([tids[0]['parent_id'][0]], ['code'])
+        ptids = AccountAccountTemplate.read([tids[0]['parent_id'][0]], ['code'])
         account = False
         if not ptids or not ptids[0]['code']:
             raise UserError(_('There is no parent code for the template account.'))
@@ -796,10 +796,10 @@ class AccountAddTmplWizard(models.TransientModel):
 
     @api.multi
     def action_create(self):
-        context = self._context or {}
-        AccountObj = self.env['account.account']
+        context = self.env.context or {}
+        AccountAccount = self.env['account.account']
         data = self.read()[0]
-        company_id = AccountObj.read([data['cparent_id'][0]], ['company_id'])[0]['company_id'][0]
+        company_id = AccountAccount.read([data['cparent_id'][0]], ['company_id'])[0]['company_id'][0]
         account_template = self.env['account.account.template'].browse(context['tmpl_ids'])
         vals = {
             'name': account_template.name,
@@ -811,7 +811,7 @@ class AccountAddTmplWizard(models.TransientModel):
             'parent_id': data['cparent_id'][0],
             'company_id': company_id,
         }
-        AccountObj.create(vals)
+        AccountAccount.create(vals)
         return {'type': 'state', 'state': 'end'}
 
     @api.multi
@@ -859,12 +859,12 @@ class AccountChartTemplate(models.Model):
             self._load_template(company)
             # Create account and journal for cash
             company.write({'bank_account_code_char': self.bank_account_code_char, 'accounts_code_digits': self.code_digits})
-            wiz_obj = self.env['wizard.multi.charts.accounts']
-            acc_obj = self.env['account.account']
+            WizMultiChartsAccounts = self.env['wizard.multi.charts.accounts']
+            AccountAccount = self.env['account.account']
             line = {'acc_name': 'cash', 'account_type': 'cash', 'currency_id': False}
-            vals = wiz_obj._prepare_bank_account(company, line)
-            cash_account = acc_obj.create(vals)
-            vals = wiz_obj._prepare_bank_journal(company, line, cash_account.id)
+            vals = WizMultiChartsAccounts._prepare_bank_account(company, line)
+            cash_account = AccountAccount.create(vals)
+            vals = WizMultiChartsAccounts._prepare_bank_journal(company, line, cash_account.id)
             self.env['account.journal'].create(vals)
 
     @api.model
@@ -872,10 +872,10 @@ class AccountChartTemplate(models.Model):
         """
         This method used for checking journals already created or not. If not then create new journal.
         """
-        JournalObj = self.env['account.journal']
-        rec_list = JournalObj.search([('name', '=', vals_journal['name']), ('company_id', '=', company.id)], limit=1)
+        AccountJournal = self.env['account.journal']
+        rec_list = AccountJournal.search([('name', '=', vals_journal['name']), ('company_id', '=', company.id)], limit=1)
         if not rec_list:
-            JournalObj.create(vals_journal)
+            AccountJournal.create(vals_journal)
         return True
 
     @api.model
@@ -956,7 +956,7 @@ class AccountChartTemplate(models.Model):
         :returns: True
         """
         self.ensure_one()
-        PropertyObj = self.env['ir.property']
+        IrProperty = self.env['ir.property']
         todo_list = [
             ('property_account_receivable', 'res.partner', 'account.account'),
             ('property_account_payable', 'res.partner', 'account.account'),
@@ -976,13 +976,13 @@ class AccountChartTemplate(models.Model):
                     'fields_id': field.id,
                     'value': value,
                 }
-                properties = PropertyObj.search([('name', '=', record[0]), ('company_id', '=', company.id)])
+                properties = IrProperty.search([('name', '=', record[0]), ('company_id', '=', company.id)])
                 if properties:
                     #the property exist: modify it
                     properties.write(vals)
                 else:
                     #create the property
-                    PropertyObj.create(vals)
+                    IrProperty.create(vals)
         return True
 
     @api.multi
@@ -1035,7 +1035,7 @@ class AccountChartTemplate(models.Model):
             taxes_ref = {}
         if not code_digits:
             code_digits = self.code_digits
-        AccountTaxObj = self.env['account.tax']
+        AccountTax = self.env['account.tax']
 
         # Generate taxes from templates.
         generated_tax_res = self.tax_template_ids._generate_tax(company)
@@ -1048,7 +1048,7 @@ class AccountChartTemplate(models.Model):
         # writing account values on tax after creation of accounts
         for key, value in generated_tax_res['account_dict'].items():
             if value['refund_account_id'] or value['account_id']:
-                AccountTaxObj.browse(key).write({
+                AccountTax.browse(key).write({
                     'refund_account_id': account_ref.get(value['refund_account_id'], False),
                     'account_id': account_ref.get(value['account_id'], False),
                 })
@@ -1076,9 +1076,8 @@ class AccountChartTemplate(models.Model):
             :rtype: dict
         """
         self.ensure_one()
-        company_name = company.name
-        account_tmpl_obj = self.env['account.account.template']
-        acc_template = account_tmpl_obj.search([('nocreate', '!=', True), ('chart_template_id', '=', self.id)], order='id')
+        AccountAccountTemplate = self.env['account.account.template']
+        acc_template = AccountAccountTemplate.search([('nocreate', '!=', True), ('chart_template_id', '=', self.id)], order='id')
         for account_template in acc_template:
             tax_ids = []
             for tax in account_template.tax_ids:
@@ -1310,7 +1309,7 @@ class WizardMultiChartsAccounts(models.TransientModel):
     @api.onchange('chart_template_id')
     def onchange_chart_template_id(self):
         res = {}
-        tax_templ_obj = self.env['account.tax.template']
+        AccountTaxTemplate = self.env['account.tax.template']
         res['value'] = {'complete_tax_set': False, 'sale_tax': False, 'purchase_tax': False}
         if self.chart_template_id:
             currency_id = self.chart_template_id.currency_id and self.chart_template_id.currency_id.id or self.env.user.company_id.currency_id.id
@@ -1321,8 +1320,8 @@ class WizardMultiChartsAccounts(models.TransientModel):
                 base_tax_domain = [('chart_template_id', 'in', chart_ids)]
                 sale_tax_domain = base_tax_domain + [('type_tax_use', '=', 'sale')]
                 purchase_tax_domain = base_tax_domain + [('type_tax_use', '=', 'purchase')]
-                sale_taxes = tax_templ_obj.search(sale_tax_domain, order="sequence, id desc", limit=1)
-                purchase_taxes = tax_templ_obj.search(purchase_tax_domain, order="sequence, id desc", limit=1)
+                sale_taxes = AccountTaxTemplate.search(sale_tax_domain, order="sequence, id desc", limit=1)
+                purchase_taxes = AccountTaxTemplate.search(purchase_tax_domain, order="sequence, id desc", limit=1)
                 res['value']['sale_tax'] = sale_taxes.ids and sale_taxes.ids[0] or False
                 res['value']['purchase_tax'] = purchase_taxes.ids and purchase_taxes.ids[0] or False
                 res.setdefault('domain', {})
@@ -1336,10 +1335,10 @@ class WizardMultiChartsAccounts(models.TransientModel):
 
     @api.model
     def default_get(self, fields):
-        context = self._context or {}
+        context = self.env.context or {}
         res = super(WizardMultiChartsAccounts, self).default_get(fields)
-        tax_templ_obj = self.env['account.tax.template']
-        account_chart_template = self.env['account.chart.template']
+        AccountTaxTemplate = self.env['account.tax.template']
+        AccountChartTemplate = self.env['account.chart.template']
 
         if 'bank_accounts_id' in fields:
             res.update({'bank_accounts_id': [{'acc_name': _('Cash'), 'account_type': 'cash'}, {'acc_name': _('Bank'), 'account_type': 'bank'}]})
@@ -1352,7 +1351,7 @@ class WizardMultiChartsAccounts(models.TransientModel):
                 currency_id = company.on_change_country(company.country_id.id)['value']['currency_id']
                 res.update({'currency_id': currency_id})
 
-        chart_templates = account_chart_template.search([('visible', '=', True)])
+        chart_templates = AccountChartTemplate.search([('visible', '=', True)])
         if chart_templates:
             #in order to set default chart which was last created set max of ids.
             chart_id = max(chart_templates.ids)
@@ -1360,17 +1359,17 @@ class WizardMultiChartsAccounts(models.TransientModel):
                 model_data = self.env['ir.model.data'].search_read([('model', '=', 'account.chart.template'), ('module', '=', context.get("default_charts"))], ['res_id'])
                 if model_data:
                     chart_id = model_data[0]['res_id']
-            chart = account_chart_template.browse(chart_id)
+            chart = AccountChartTemplate.browse(chart_id)
             chart_hierarchy_ids = self._get_chart_parent_ids(chart)
             if 'chart_template_id' in fields:
                 res.update({'only_one_chart_template': len(chart_templates) == 1,
                             'chart_template_id': chart_id})
             if 'sale_tax' in fields:
-                sale_tax = tax_templ_obj.search([('chart_template_id', 'in', chart_hierarchy_ids),
+                sale_tax = AccountTaxTemplate.search([('chart_template_id', 'in', chart_hierarchy_ids),
                                                               ('type_tax_use', '=', 'sale')], limit=1, order='sequence')
                 res.update({'sale_tax': sale_tax and sale_tax.id or False})
             if 'purchase_tax' in fields:
-                purchase_tax = tax_templ_obj.search([('chart_template_id', 'in', chart_hierarchy_ids),
+                purchase_tax = AccountTaxTemplate.search([('chart_template_id', 'in', chart_hierarchy_ids),
                                                                   ('type_tax_use', '=', 'purchase')], limit=1, order='sequence')
                 res.update({'purchase_tax': purchase_tax and purchase_tax.id or False})
         res.update({
@@ -1381,22 +1380,21 @@ class WizardMultiChartsAccounts(models.TransientModel):
 
     @api.model
     def fields_view_get(self, view_id=None, view_type='form', toolbar=False, submenu=False):
-        context = self._context or {}
         res = super(WizardMultiChartsAccounts, self).fields_view_get(view_id=view_id, view_type=view_type, toolbar=toolbar, submenu=False)
         cmp_select = []
-        CompanyObj = self.env['res.company']
+        ResCompany = self.env['res.company']
 
-        companies = CompanyObj.search([])
+        companies = ResCompany.search([])
         #display in the widget selection of companies, only the companies that haven't been configured yet (but don't care about the demo chart of accounts)
-        self._cr.execute("SELECT company_id FROM account_account WHERE deprecated = 'f' AND name != 'Chart For Automated Tests' AND name NOT LIKE '%(test)'")
-        configured_cmp = [r[0] for r in self._cr.fetchall()]
+        self.env.cr.execute("SELECT company_id FROM account_account WHERE deprecated = 'f' AND name != 'Chart For Automated Tests' AND name NOT LIKE '%(test)'")
+        configured_cmp = [r[0] for r in self.cr.fetchall()]
         unconfigured_cmp = list(set(companies.ids) - set(configured_cmp))
         for field in res['fields']:
             if field == 'company_id':
                 res['fields'][field]['domain'] = [('id', 'in', unconfigured_cmp)]
                 res['fields'][field]['selection'] = [('', '')]
                 if unconfigured_cmp:
-                    cmp_select = [(line.id, line.name) for line in CompanyObj.browse(unconfigured_cmp)]
+                    cmp_select = [(line.id, line.name) for line in ResCompany.browse(unconfigured_cmp)]
                     res['fields'][field]['selection'] = cmp_select
         return res
 
@@ -1410,15 +1408,15 @@ class WizardMultiChartsAccounts(models.TransientModel):
         :param company_id: id of the company for wich the wizard is running
         :return: True
         '''
-        obj_tax_temp = self.env['account.tax.template']
+        AccountTaxTemplate = self.env['account.tax.template']
         all_parents = self._get_chart_parent_ids(self.chart_template_id)
         # create tax templates from purchase_tax_rate and sale_tax_rate fields
         if not self.chart_template_id.complete_tax_set:
             value = self.sale_tax_rate
-            ref_taxs = obj_tax_temp.search([('type_tax_use', '=', 'sale'), ('chart_template_id', 'in', all_parents)], order="sequence, id desc", limit=1)
+            ref_taxs = AccountTaxTemplate.search([('type_tax_use', '=', 'sale'), ('chart_template_id', 'in', all_parents)], order="sequence, id desc", limit=1)
             ref_taxs.write({'amount': value/100.0, 'name': _('Tax %.2f%%') % value})
             value = self.purchase_tax_rate
-            ref_taxs = obj_tax_temp.search([('type_tax_use', '=', 'purchase'), ('chart_template_id', 'in', all_parents)], order="sequence, id desc", limit=1)
+            ref_taxs = AccountTaxTemplate.search([('type_tax_use', '=', 'purchase'), ('chart_template_id', 'in', all_parents)], order="sequence, id desc", limit=1)
             ref_taxs.write({'amount': value/100.0, 'name': _('Purchase Tax %.2f%%') % value})
         return True
 
@@ -1431,7 +1429,7 @@ class WizardMultiChartsAccounts(models.TransientModel):
         '''
         if self._uid != self.sudo()._uid and not self.env.user.has_group('base.group_erp_manager'):
             raise AccessError(_("Only administrators can change the settings"))
-        ir_values_obj = self.env['ir.values']
+        IrValues = self.env['ir.values']
         company = self.company_id
         self.company_id.write({'currency_id': self.currency_id.id,
                                'accounts_code_digits': self.code_digits,
@@ -1455,9 +1453,9 @@ class WizardMultiChartsAccounts(models.TransientModel):
 
         # write values of default taxes for product as super user
         if self.sale_tax and taxes_ref:
-            ir_values_obj.sudo().set_default('product.template', "taxes_id", [taxes_ref[self.sale_tax.id]], for_all_users=True, company_id=company.id)
+            IrValues.sudo().set_default('product.template', "taxes_id", [taxes_ref[self.sale_tax.id]], for_all_users=True, company_id=company.id)
         if self.purchase_tax and taxes_ref:
-            ir_values_obj.sudo().set_default('product.template', "supplier_taxes_id", [taxes_ref[self.purchase_tax.id]], for_all_users=True, company_id=company.id)
+            IrValues.sudo().set_default('product.template', "supplier_taxes_id", [taxes_ref[self.purchase_tax.id]], for_all_users=True, company_id=company.id)
 
         # Create Bank journals
         self._create_bank_journals_from_o2m(company, acc_template_ref)

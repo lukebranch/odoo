@@ -27,11 +27,11 @@ class AccountInstaller(models.TransientModel):
 
     @api.model
     def _get_charts(self):
-        ModuleObj = self.env['ir.module.module']
+        IrModule = self.env['ir.module.module']
 
         # try get the list on apps server
         try:
-            apps_server = ModuleObj.get_apps_server()
+            apps_server = IrModule.get_apps_server()
 
             up = urlparse.urlparse(apps_server)
             url = '{0.scheme}://{0.netloc}/apps/charts?serie={1}'.format(up, serie)
@@ -45,7 +45,7 @@ class AccountInstaller(models.TransientModel):
 
         # Looking for the module with the 'Account Charts' category
         category_id = self.env.ref('base.module_category_localization_account_charts')
-        recs = ModuleObj.search([('category_id', '=', category_id.id)])
+        recs = IrModule.search([('category_id', '=', category_id.id)])
         if recs:
             charts.update((m.name, m.shortdesc) for m in recs)
 
@@ -72,7 +72,7 @@ class AccountInstaller(models.TransientModel):
         """ get the list of companies that have not been configured yet
         but don't care about the demo chart of accounts """
         company_ids = self.env['res.company'].search([])
-        self._cr.execute("SELECT company_id FROM account_account WHERE deprecated = 'f' AND name != 'Chart For Automated Tests' AND name NOT LIKE '%(test)'")
+        self.env.cr.execute("SELECT company_id FROM account_account WHERE deprecated = 'f' AND name != 'Chart For Automated Tests' AND name NOT LIKE '%(test)'")
         configured_cmp = [r[0] for r in self._cr.fetchall()]
         return list(set(company_ids.ids) - set(configured_cmp))
 
@@ -86,7 +86,7 @@ class AccountInstaller(models.TransientModel):
     def fields_view_get(self, view_id=None, view_type='form', toolbar=False, submenu=False):
         res = super(AccountInstaller, self).fields_view_get(view_id=view_id, view_type=view_type, toolbar=toolbar, submenu=False)
         cmp_select = []
-        CompanyObj = self.env['res.company']
+        ResCompany = self.env['res.company']
         # display in the widget selection only the companies that haven't been configured yet
         unconfigured_cmp = self.get_unconfigured_cmp()
         for field in res['fields']:
@@ -94,7 +94,7 @@ class AccountInstaller(models.TransientModel):
                 res['fields'][field]['domain'] = [('id', 'in', unconfigured_cmp)]
                 res['fields'][field]['selection'] = [('', '')]
                 if unconfigured_cmp:
-                    cmp_select = [(line.id, line.name) for line in CompanyObj.browse(unconfigured_cmp)]
+                    cmp_select = [(line.id, line.name) for line in ResCompany.browse(unconfigured_cmp)]
                     res['fields'][field]['selection'] = cmp_select
         return res
 

@@ -1,19 +1,20 @@
 from openerp import models, fields, api, _
 from openerp.exceptions import UserError
 
+
 class CashBox(models.TransientModel):
     _register = False
 
     name = fields.Char(string='Reason', required=True)
-    # Attention, we don't set a domain, because there is a journal_type key 
+    # Attention, we don't set a domain, because there is a journal_type key
     # in the context of the action
-    amount = fields.Float(string='Amount', digits=0, required=True)
+    amount = fields.Float(digits=0, required=True)
 
     @api.multi
     def run(self):
-        context = dict(self._context or {})
-        active_model = context.get('active_model', False)
-        active_ids = context.get('active_ids', [])
+        context = dict(self.env.context or {})
+        active_model = context.get('active_model')
+        active_ids = context.get('active_ids')
 
         records = self.env[active_model].browse(active_ids)
 
@@ -25,7 +26,7 @@ class CashBox(models.TransientModel):
             for record in records:
                 if not record.journal_id:
                     raise UserError(_("Please check that the field 'Journal' is set on the Bank Statement"))
-                    
+
                 if not record.journal_id.internal_account_id:
                     raise UserError(_("Please check that the field 'Internal Transfers Account' is set on the payment method '%s'.") % (record.journal_id.name,))
 

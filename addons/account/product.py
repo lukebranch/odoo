@@ -43,7 +43,7 @@ class ProductTemplate(models.Model):
             uoms = dict(self._cr.fetchall())
         res = super(ProductTemplate, self).write(vals)
         if check:
-            self._cr.execute("SELECT id, uom_po_id FROM product_template WHERE id IN %s", [tuple(self.ids)])
+            self.env.cr.execute("SELECT id, uom_po_id FROM product_template WHERE id IN %s", [tuple(self.ids)])
             if dict(self._cr.fetchall()) != uoms:
                 products = self.env['product.product'].search([('product_tmpl_id', 'in', self.ids)])
                 if self.env['account.move.line'].search_count([('product_id', 'in', products.ids)]):
@@ -61,5 +61,5 @@ class ProductTemplate(models.Model):
     def get_product_accounts(self, fiscal_pos=None):
         accounts = self._get_product_accounts()
         if not fiscal_pos:
-            fiscal_pos = self.env['account.fiscal.position']
-        return fiscal_pos.map_accounts(accounts)
+            AccountFiscalPosition = self.env['account.fiscal.position']
+        return AccountFiscalPosition.map_accounts(accounts)

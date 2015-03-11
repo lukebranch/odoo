@@ -19,8 +19,8 @@ class AccountBankStatementImport(models.TransientModel):
     def _get_journal(self, currency_id, bank_account_id, account_number):
         """ As .QIF format does not allow us to detect the journal, we need to let the user choose it.
             We set it in context before to call super so it's the same as calling the widget from a journal """
-        if self._context.get('active_id'):
-            record = self.browse(self._context.get('active_id'))
+        if self.env.context.get('active_id'):
+            record = self.browse(self.env.context['active_id'])
             if record.journal_id:
                 return super(AccountBankStatementImport, self).with_context(journal_id=record.journal_id.id)._get_journal(currency_id, bank_account_id, account_number)
         return super(AccountBankStatementImport, self)._get_journal(currency_id, bank_account_id, account_number)

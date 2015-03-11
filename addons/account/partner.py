@@ -100,8 +100,8 @@ class AccountFiscalPosition(models.Model):
         if not partner_id:
             return False
         # This can be easily overriden to apply more complex fiscal rules
-        PartnerObj = self.env['res.partner']
-        partner = PartnerObj.browse(partner_id)
+        ResPartner = self.env['res.partner']
+        partner = ResPartner.browse(partner_id)
 
         # partner manually set fiscal position always win
         if partner.property_account_position:
@@ -109,7 +109,7 @@ class AccountFiscalPosition(models.Model):
 
         # if no delivery use invocing
         if delivery_id:
-            delivery = PartnerObj.browse(delivery_id)
+            delivery = ResPartner.browse(delivery_id)
         else:
             delivery = partner
 
@@ -180,7 +180,7 @@ class ResPartner(models.Model):
             self.credit = 0
             return True
         where_params = [tuple(self.ids)] + where_params
-        self._cr.execute("""SELECT l.partner_id, act.type, SUM(l.debit-l.credit)
+        self.env.cr.execute("""SELECT l.partner_id, act.type, SUM(l.debit-l.credit)
                       FROM account_move_line l
                       LEFT JOIN account_account a ON (l.account_id=a.id)
                       LEFT JOIN account_account_type act ON (a.user_type=act.id)

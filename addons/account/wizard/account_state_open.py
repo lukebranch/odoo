@@ -8,8 +8,8 @@ class AccountStateOpen(models.TransientModel):
 
     @api.multi
     def change_inv_state(self):
-        context = dict(self._context or {})
-        active_ids = context.get('active_ids', [])
+        context = dict(self.env.context or {})
+        active_ids = context.get('active_ids')
         if active_ids:
             invoice = self.env['account.invoice'].browse(active_ids[0])
             if invoice.reconciled:

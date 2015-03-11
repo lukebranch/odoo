@@ -125,7 +125,7 @@ class AccountBankStatementImport(models.TransientModel):
         ResPartnerBank = self.env['res.partner.bank']
 
         # Find the journal from context or bank account
-        journal_id = self._context.get('journal_id')
+        journal_id = self.env.context.get('journal_id')
         if bank_account_id:
             bank_account = ResPartnerBank.browse(bank_account_id)
             if journal_id:

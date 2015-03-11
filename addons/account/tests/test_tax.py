@@ -9,31 +9,31 @@ class TestTax(AccountTestUsers):
     def setUp(self):
         super(TestTax, self).setUp()
 
-        self.fixed_tax = self.tax_model.create({
+        self.fixed_tax = self.AccountTax.create({
             'name': "Fixed tax",
             'amount_type': 'fixed',
             'amount': 10,
             'sequence': 1,
         })
-        self.fixed_tax_bis = self.tax_model.create({
+        self.fixed_tax_bis = self.AccountTax.create({
             'name': "Fixed tax bis",
             'amount_type': 'fixed',
             'amount': 15,
             'sequence': 2,
         })
-        self.percent_tax = self.tax_model.create({
+        self.percent_tax = self.AccountTax.create({
             'name': "Percent tax",
             'amount_type': 'percent',
             'amount': 10,
             'sequence': 3,
         })
-        self.division_tax = self.tax_model.create({
+        self.division_tax = self.AccountTax.create({
             'name': "Division tax",
             'amount_type': 'division',
             'amount': 10,
             'sequence': 4,
         })
-        self.group_tax = self.tax_model.create({
+        self.group_tax = self.AccountTax.create({
             'name': "Group tax",
             'amount_type': 'group',
             'amount': 0,
@@ -45,7 +45,7 @@ class TestTax(AccountTestUsers):
         })
         self.bank_journal = self.env['account.journal'].search([('type', '=', 'bank'), ('company_id', '=', self.account_manager.company_id.id)])[0]
         self.bank_account = self.bank_journal.default_debit_account_id
-        self.expense_account = self.env['account.account'].search([('user_type.type','=','expense')])
+        self.expense_account = self.env['account.account'].search([('user_type.type', '=', 'expense')])
         if not self.expense_account:
             self.expense_account = self.env.ref('account.a_expense')
 
@@ -121,7 +121,6 @@ class TestTax(AccountTestUsers):
                 })]
         })
 
-
         aml_fixed_tax = move.line_id.filtered(lambda l: l.tax_line_id.id == self.fixed_tax.id)
         aml_percent_tax = move.line_id.filtered(lambda l: l.tax_line_id.id == self.percent_tax.id)
         aml_fixed_tax_bis = move.line_id.filtered(lambda l: l.tax_line_id.id == self.fixed_tax_bis.id)
@@ -131,7 +130,7 @@ class TestTax(AccountTestUsers):
         self.assertEquals(aml_percent_tax.credit, 20)
         self.assertEquals(len(aml_fixed_tax_bis), 1)
         self.assertEquals(aml_fixed_tax_bis.credit, 15)
-        
+
         aml_with_taxes = move.line_id.filtered(lambda l: set(l.tax_ids.ids) == set([self.group_tax.id, self.fixed_tax_bis.id]))
         self.assertEquals(len(aml_with_taxes), 1)
         self.assertEquals(aml_with_taxes.credit, 190)

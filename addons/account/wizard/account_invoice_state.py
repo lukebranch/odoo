@@ -13,8 +13,8 @@ class AccountInvoiceConfirm(models.TransientModel):
 
     @api.multi
     def invoice_confirm(self):
-        context = dict(self._context or {})
-        active_ids = context.get('active_ids', []) or []
+        context = dict(self.env.context or {})
+        active_ids = context.get('active_ids') or []
 
         for record in self.env['account.invoice'].browse(active_ids):
             if record.state not in ('draft', 'proforma', 'proforma2'):
@@ -35,8 +35,8 @@ class AccountInvoiceCancel(models.TransientModel):
 
     @api.multi
     def invoice_cancel(self):
-        context = dict(self._context or {})
-        active_ids = context.get('active_ids', []) or []
+        context = dict(self.env.context or {})
+        active_ids = context.get('active_ids') or []
 
         for record in self.env['account.invoice'].browse(active_ids):
             if record.state in ('cancel', 'paid'):

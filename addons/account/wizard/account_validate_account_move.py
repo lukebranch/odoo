@@ -24,7 +24,7 @@ class ValidateAccountMoveLines(models.TransientModel):
 
     @api.multi
     def validate_move_lines(self):
-        context = dict(self._context or {})
+        context = dict(self.env.context or {})
         move_ids = []
         data_line = self.env['account.move.line'].browse(context['active_ids'])
         for line in data_line:

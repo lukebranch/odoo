@@ -55,20 +55,20 @@ class AccountMoveLine(models.Model):
     @api.model
     def _get_currency(self):
         currency = False
-        context = self._context or {}
-        if context.get('default_journal_id', False):
+        context = self.env.context or {}
+        if context.get('default_journal_id'):
             currency = self.env['account.journal'].browse(context['default_journal_id']).currency
         return currency
 
     @api.model
     def _get_journal(self):
         """ Return journal based on the journal type """
-        context = dict(self._context or {})
-        journal_id = context.get('journal_id', False)
+        context = dict(self.env.context or {})
+        journal_id = context.get('journal_id')
         if journal_id:
             return journal_id
 
-        journal_type = context.get('journal_type', False)
+        journal_type = context.get('journal_type')
         if journal_type:
             recs = self.env['account.journal'].search([('type', '=', journal_type)])
             if not recs:
@@ -312,7 +312,7 @@ class AccountMoveLine(models.Model):
             :param excluded_ids: list of ids of move lines that should not be fetched
             :param str: search string
         """
-        context = (self._context or {})
+        context = (self.env.context or {})
         if excluded_ids is None:
             excluded_ids = []
         domain = []
@@ -366,7 +366,7 @@ class AccountMoveLine(models.Model):
 
     @api.v7
     def prepare_move_lines_for_reconciliation_widget(self, cr, uid, line_ids, target_currency_id=False, context=None):
-        target_currency = target_currency_id and self.pool.get('res.currency').browse(cr, uid, target_currency_id, context=context) or False
+        target_currency = target_currency_id and self.pool['res.currency'].browse(cr, uid, target_currency_id, context=context) or False
         return self.browse(cr, uid, line_ids, context).prepare_move_lines_for_reconciliation_widget(target_currency=target_currency)
 
     @api.v8
@@ -376,10 +376,10 @@ class AccountMoveLine(models.Model):
             :param target_currency: curreny you want the move line debit/credit converted into
             :param target_date: date to use for the monetary conversion
         """
-        context = dict(self._context or {})
+        context = dict(self.env.context or {})
         # TODO : what about multicompany ? shouldn't it be sth like self and self[0].account_id.company_id.currency_id ?
         company_currency = self.env.user.company_id.currency_id
-        rml_parser = report_sxw.rml_parse(self._cr, self._uid, 'reconciliation_widget_aml', context=self._context)
+        rml_parser = report_sxw.rml_parse(self.env.cr, self._uid, 'reconciliation_widget_aml', context=self._context)
         ret = []
 
         for line in self:
@@ -604,9 +604,9 @@ class AccountMoveLine(models.Model):
             vals['currency_id'] = account_currency
             vals['amount_currency'] = sum([r.amount_residual_currency for r in self])
         if 'date' not in vals:
-            vals['date'] = self._context.get('date_p') or time.strftime('%Y-%m-%d')
+            vals['date'] = self.env.context.get('date_p') or time.strftime('%Y-%m-%d')
         if 'name' not in vals:
-            vals['name'] = self._context.get('comment') or _('Write-Off')
+            vals['name'] = self.env.context.get('comment') or _('Write-Off')
 
         # Writeoff line in the account of self
         first_line_dict = vals.copy()
@@ -661,25 +661,25 @@ class AccountMoveLine(models.Model):
                 debit-credit == 0 while creating the move lines composing the move.
 
         """
-        AccountObj = self.env['account.account']
-        MoveObj = self.env['account.move']
+        AccountAccount = self.env['account.account']
+        AccountMove = self.env['account.move']
         context = dict(self._context or {})
         amount = vals.get('debit', 0.0) - vals.get('credit', 0.0)
 
         if vals.get('move_id', False):
-            move = MoveObj.browse(vals['move_id'])
+            move = AccountMove.browse(vals['move_id'])
             if move.company_id:
                 vals['company_id'] = move.company_id.id
             if move.date and not vals.get('date'):
                 vals['date'] = move.date
-        if ('account_id' in vals) and AccountObj.browse(vals['account_id']).deprecated:
+        if ('account_id' in vals) and AccountAccount.browse(vals['account_id']).deprecated:
             raise UserError(_('You cannot use deprecated account.'))
         if 'journal_id' in vals and vals['journal_id']:
             context['journal_id'] = vals['journal_id']
         if 'date' in vals and vals['date']:
             context['date'] = vals['date']
         if ('journal_id' not in context) and ('move_id' in vals) and vals['move_id']:
-            m = MoveObj.browse(vals['move_id'])
+            m = AccountMove.browse(vals['move_id'])
             context['journal_id'] = m.journal_id.id
             context['date'] = m.date
         #we need to treat the case where a value is given in the context for period_id as a string
@@ -701,13 +701,13 @@ class AccountMoveLine(models.Model):
                     }
                     if vals.get('ref', ''):
                         v.update({'ref': vals['ref']})
-                    move_id = MoveObj.with_context(context).create(v)
+                    move_id = AccountMove.with_context(context).create(v)
                     vals['move_id'] = move_id.id
                 else:
                     raise UserError(_('Cannot create an automatic sequence for this piece.\nPut a sequence in the journal definition for automatic numbering or create a sequence manually for this piece.'))
         ok = not (journal.type_control_ids or journal.account_control_ids)
         if ('account_id' in vals):
-            account = AccountObj.browse(vals['account_id'])
+            account = AccountAccount.browse(vals['account_id'])
             if journal.type_control_ids:
                 type = account.user_type
                 for t in journal.type_control_ids:
@@ -766,8 +766,8 @@ class AccountMoveLine(models.Model):
             # TODO: remove .with_context(context) once this context nonsense is solved
             self.with_context(context).create(tax_line_vals)
 
-        if self._context.get('check_move_validity', True):
-            move = MoveObj.browse(vals['move_id'])
+        if self.env.context.get('check_move_validity', True):
+            move = AccountMove.browse(vals['move_id'])
             move.with_context(context)._post_validate()
             if journal.entry_posted:
                 move.with_context(context).post()
@@ -782,7 +782,7 @@ class AccountMoveLine(models.Model):
             if line.move_id.id not in move_ids:
                 move_ids.add(line.move_id.id)
         result = super(AccountMoveLine, self).unlink()
-        if self._context.get('check_move_validity', True) and move_ids:
+        if self.env.context.get('check_move_validity', True) and move_ids:
             self.env['account.move'].browse(list(move_ids))._post_validate()
         return result
 
@@ -880,7 +880,7 @@ class AccountMoveLine(models.Model):
 
     @api.model
     def _query_get(self, domain=None):
-        context = dict(self._context or {})
+        context = dict(self.env.context or {})
         domain = domain and safe_eval(domain) or []
 
         if context.get('date_to'):

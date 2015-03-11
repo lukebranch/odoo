@@ -19,31 +19,27 @@ class AccountInvoiceRefund(models.TransientModel):
 
     @api.model
     def _get_reason(self):
-        context = dict(self._context or {})
-        active_id = context.get('active_id', False)
+        context = dict(self.env.context or {})
+        active_id = context.get('active_id')
         if active_id:
-            inv = self.env['account.invoice'].browse(active_id)
-            return inv.name
+            invoice = self.env['account.invoice'].browse(active_id)
+            return invoice.name
         else:
             return ''
 
     @api.multi
     def compute_refund(self, mode='refund'):
-        inv_obj = self.env['account.invoice']
-        account_m_line_obj = self.env['account.move.line']
-        act_obj = self.env['ir.actions.act_window']
-        inv_tax_obj = self.env['account.invoice.tax']
-        inv_line_obj = self.env['account.invoice.line']
-        context = dict(self._context or {})
-        cr = self._cr
+        AccountInvoice = self.env['account.invoice']
+        AccountInvoiceTax = self.env['account.invoice.tax']
+        AccountInvoiceLine = self.env['account.invoice.line']
+        context = dict(self.env.context or {})
         xml_id = False
 
         for form in self:
             created_inv = []
             date = False
             description = False
-            company = self.env.user.company_id
-            for inv in inv_obj.browse(context.get('active_ids')):
+            for inv in AccountInvoice.browse(context.get('active_ids')):
                 if inv.state in ['draft', 'proforma2', 'cancel']:
                     raise UserError(_('Cannot %s draft/proforma/cancel invoice.') % (mode))
                 if inv.reconciled and mode in ('cancel', 'modify'):
@@ -81,11 +77,9 @@ class AccountInvoiceRefund(models.TransientModel):
                         if line.reconciled:
                             line.remove_move_reconcile()
                     refund.signal_workflow('invoice_open')
-                    for tmpline in  refund.move_id.line_id:
+                    for tmpline in refund.move_id.line_id:
                         if tmpline.account_id.id == inv.account_id.id:
-                            tmpline.reconcile(writeoff_journal_id = inv.journal_id,
-                                            writeoff_acc_id=inv.account_id
-                                            )
+                            tmpline.reconcile(writeoff_journal_id=inv.journal_id, writeoff_acc_id=inv.account_id)
                     if mode == 'modify':
                         invoice = inv.read(
                                     ['name', 'type', 'number', 'reference',
@@ -96,10 +90,10 @@ class AccountInvoiceRefund(models.TransientModel):
                                     'journal_id', 'date'])
                         invoice = invoice[0]
                         del invoice['id']
-                        invoice_lines = inv_line_obj.browse(invoice['invoice_line'])
-                        invoice_lines = inv_obj._refund_cleanup_lines(invoice_lines)
-                        tax_lines = inv_tax_obj.browse(invoice['tax_line'])
-                        tax_lines = inv_obj._refund_cleanup_lines(tax_lines)
+                        invoice_lines = AccountInvoiceLine.browse(invoice['invoice_line'])
+                        invoice_lines = AccountInvoice._refund_cleanup_lines(invoice_lines)
+                        tax_lines = AccountInvoiceTax.browse(invoice['tax_line'])
+                        tax_lines = AccountInvoice._refund_cleanup_lines(tax_lines)
                         invoice.update({
                             'type': inv.type,
                             'date_invoice': date,
@@ -113,7 +107,7 @@ class AccountInvoiceRefund(models.TransientModel):
                         for field in ('partner_id', 'account_id', 'currency_id',
                                          'payment_term', 'journal_id'):
                                 invoice[field] = invoice[field] and invoice[field][0]
-                        inv_id = inv_obj.create(invoice)
+                        inv_id = AccountInvoice.create(invoice)
                         if inv.payment_term.id:
                             data = inv_id.onchange_payment_term_date_invoice(inv.payment_term.id, date)
                             if 'value' in data and data['value']:

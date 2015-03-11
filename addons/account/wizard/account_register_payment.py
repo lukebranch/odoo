@@ -37,7 +37,7 @@ class AccountRegisterPayment(models.TransientModel):
 
     @api.model
     def default_get(self, fields):
-        context = self._context or {}
+        context = self.env.context or {}
         res = super(AccountRegisterPayment, self).default_get(fields)
         if context.get('active_id'):
             invoice = self.env['account.invoice'].browse(context.get('active_id'))

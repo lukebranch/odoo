@@ -16,9 +16,9 @@ class TestQifFile(TransactionCase):
         from openerp.tools import float_compare
         qif_file_path = get_module_resource('account_bank_statement_import_qif', 'test_qif_file', 'test_qif.qif')
         qif_file = open(qif_file_path, 'rb').read().encode('base64')
-        bank_statement_id = self.BankStatementImport.create(dict(
+        bank_statement = self.BankStatementImport.create(dict(
             data_file=qif_file,
         ))
-        bank_statement_id.with_context(journal_id=self.env.ref('account.bank_journal').id).import_file()
+        bank_statement.with_context(journal_id=self.env.ref('account.bank_journal').id).import_file()
         line = self.BankStatementLine.search([('name', '=', 'YOUR LOCAL SUPERMARKET')], limit=1)
         assert float_compare(line.statement_id.balance_end_real, -1896.09, 2) == 0

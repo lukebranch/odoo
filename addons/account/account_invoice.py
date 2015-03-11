@@ -1154,9 +1154,9 @@ class AccountInvoiceLine(models.Model):
 
     @api.model
     def _default_account(self):
-        if self._context.get('journal_id'):
-            journal = self.env['account.journal'].browse(self._context.get('journal_id'))
-            if self._context.get('type') in ('out_invoice', 'in_refund'):
+        if self.env.context.get('journal_id'):
+            journal = self.env['account.journal'].browse(self.env.context['journal_id'])
+            if self.env.context.get('type') in ('out_invoice', 'in_refund'):
                 return journal.default_credit_account_id.id
             return journal.default_debit_account_id.id
 
@@ -1201,10 +1201,10 @@ class AccountInvoiceLine(models.Model):
     def fields_view_get(self, view_id=None, view_type='form', toolbar=False, submenu=False):
         res = super(AccountInvoiceLine, self).fields_view_get(
             view_id=view_id, view_type=view_type, toolbar=toolbar, submenu=submenu)
-        if self._context.get('type'):
+        if self.env.context.get('type'):
             doc = etree.XML(res['arch'])
             for node in doc.xpath("//field[@name='product_id']"):
-                if self._context['type'] in ('in_invoice', 'in_refund'):
+                if self.env.context['type'] in ('in_invoice', 'in_refund'):
                     node.set('domain', "[('purchase_ok', '=', True)]")
                 else:
                     node.set('domain', "[('sale_ok', '=', True)]")

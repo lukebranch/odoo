@@ -13,8 +13,8 @@ class AccountStatementFromInvoiceLines(models.TransientModel):
 
     @api.multi
     def populate_statement(self):
-        context = dict(self._context or {})
-        statement_id = context.get('statement_id', False)
+        context = dict(self.env.context or {})
+        statement_id = context.get('statement_id')
         if not statement_id:
             return {'type': 'ir.actions.act_window_close'}
         if not self.line_ids:

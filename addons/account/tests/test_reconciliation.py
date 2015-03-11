@@ -1,6 +1,7 @@
 from openerp.tests.common import TransactionCase
 import time
 
+
 class TestReconciliation(TransactionCase):
 
     """Tests for reconciliation (account.tax)
@@ -11,10 +12,10 @@ class TestReconciliation(TransactionCase):
 
     def setUp(self):
         super(TestReconciliation, self).setUp()
-        self.account_invoice_model = self.env['account.invoice']
-        self.account_invoice_line_model = self.env['account.invoice.line']
-        self.acc_bank_stmt_model = self.env['account.bank.statement']
-        self.acc_bank_stmt_line_model = self.env['account.bank.statement.line']
+        self.AccountInvoice = self.env['account.invoice']
+        self.AccountInvoiceLine = self.env['account.invoice.line']
+        self.AccountBankStatement = self.env['account.bank.statement']
+        self.AccountBankStatementLine = self.env['account.bank.statement.line']
 
         self.partner_agrolait_id = self.env.ref("base.res_partner_2").id
         self.currency_swiss_id = self.env.ref("base.CHF").id
@@ -37,7 +38,7 @@ class TestReconciliation(TransactionCase):
 
     def create_invoice(self, type='out_invoice', currency_id=None):
         #we create an invoice in given currency
-        invoice = self.account_invoice_model.create({'partner_id': self.partner_agrolait_id,
+        invoice = self.AccountInvoice.create({'partner_id': self.partner_agrolait_id,
             'reference_type': 'none',
             'currency_id': currency_id,
             'name': type == 'out_invoice' and 'invoice to client' or 'invoice to supplier',
@@ -45,7 +46,7 @@ class TestReconciliation(TransactionCase):
             'type': type,
             'date_invoice': time.strftime('%Y') + '-07-01',
             })
-        self.account_invoice_line_model.create({'product_id': self.product.id,
+        self.AccountInvoiceLine.create({'product_id': self.product.id,
             'quantity': 1,
             'price_unit': 100,
             'invoice_id': invoice.id,
@@ -58,12 +59,12 @@ class TestReconciliation(TransactionCase):
         return invoice
 
     def make_payment(self, invoice_record, bank_journal, amount=0.0, amount_currency=0.0, currency_id=None):
-        bank_stmt = self.acc_bank_stmt_model.create({
+        bank_stmt = self.AccountBankStatement.create({
             'journal_id': bank_journal.id,
             'date': time.strftime('%Y') + '-07-15',
         })
 
-        bank_stmt_line = self.acc_bank_stmt_line_model.create({'name': 'payment',
+        bank_stmt_line = self.AccountBankStatementLine.create({'name': 'payment',
             'statement_id': bank_stmt.id,
             'partner_id': self.partner_agrolait_id,
             'amount': amount,

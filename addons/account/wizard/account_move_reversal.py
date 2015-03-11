@@ -13,6 +13,6 @@ class AccountMoveReversal(models.TransientModel):
 
     @api.multi
     def reverse_moves(self):
-        ac_move_ids = self._context.get('active_ids', False)
+        ac_move_ids = self.env.context.get('active_ids')
         self.env['account.move'].browse(ac_move_ids).reverse_moves(self.date, self.journal_id or False)
         return {'type': 'ir.actions.act_window_close'}

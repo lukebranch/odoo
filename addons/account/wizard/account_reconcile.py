@@ -34,9 +34,9 @@ class AccountMoveLineReconcile(models.TransientModel):
 
     @api.multi
     def trans_rec_get(self):
-        context = self._context or {}
+        context = self.env.context or {}
         credit = debit = 0
-        lines = self.env['account.move.line'].browse(context.get('active_ids', []))
+        lines = self.env['account.move.line'].browse(context.get('active_ids'))
         for line in lines:
             if not line.reconciled:
                 credit += line.credit
@@ -57,7 +57,7 @@ class AccountMoveLineReconcile(models.TransientModel):
 
     @api.multi
     def trans_rec_reconcile_full(self):
-        move_lines = self.env['account.move.line'].browse(self._context.get('active_ids', []))
+        move_lines = self.env['account.move.line'].browse(self.env.context.get('active_ids'))
         move_lines.reconcile()
         return {'type': 'ir.actions.act_window_close'}
 
@@ -80,7 +80,7 @@ class AccountMoveLineReconcileWriteoff(models.TransientModel):
         model_data_id = self.env['ir.model.data'].search([('model', '=', 'ir.ui.view'), ('name', '=', 'account_move_line_reconcile_writeoff')], limit=1)
         return {
             'name': _('Reconcile Writeoff'),
-            'context': self._context,
+            'context': self.env.context,
             'view_type': 'form',
             'view_mode': 'form',
             'res_model': 'account.move.line.reconcile.writeoff',
@@ -91,17 +91,17 @@ class AccountMoveLineReconcileWriteoff(models.TransientModel):
 
     @api.multi
     def trans_rec_reconcile_partial(self):
-        context = self._context or {}
-        self.env['account.move.line'].browse(context.get('active_ids', [])).reconcile()
+        context = self.env.context or {}
+        self.env['account.move.line'].browse(context.get('active_ids')).reconcile()
         return {'type': 'ir.actions.act_window_close'}
 
     @api.multi
     def trans_rec_reconcile(self):
-        context = dict(self._context or {})
+        context = dict(self.env.context or {})
         context['date_p'] = self.date_p
         context['comment'] = self.comment
         if self.analytic_id:
             context['analytic_id'] = self.analytic_id.id
-        move_lines = self.env['account.move.line'].browse(self._context.get('active_ids', []))
+        move_lines = self.env['account.move.line'].browse(self.env.context.get('active_ids'))
         move_lines.with_context(context).reconcile(self.writeoff_acc_id, self.journal_id)
         return {'type': 'ir.actions.act_window_close'}

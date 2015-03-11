@@ -19,10 +19,10 @@ class TestOfxFile(TransactionCase):
             return True
         ofx_file_path = get_module_resource('account_bank_statement_import_ofx', 'test_ofx_file', 'test_ofx.ofx')
         ofx_file = open(ofx_file_path, 'rb').read().encode('base64')
-        bank_statement_id = self.BankStatementImport.create(dict(
+        bank_statement = self.BankStatementImport.create(dict(
             data_file=ofx_file,
         ))
-        bank_statement_id.import_file()
+        bank_statement.import_file()
         statement = self.BankStatement.search([('name', '=', '000000123')], limit=1)
         self.assertEquals(statement.balance_start, 2156.56)
         self.assertEquals(statement.balance_end_real, 1796.56)

@@ -180,9 +180,9 @@ class AccountConfigSettings(models.TransientModel):
                         journal.type + '_sequence_next': journal.sequence_id.number_next,
                     })
             # update taxes
-            ir_values = self.env['ir.values']
-            taxes_id = ir_values.get_default('product.template', 'taxes_id', company_id = self.company_id.id)
-            supplier_taxes_id = ir_values.get_default('product.template', 'supplier_taxes_id', company_id = self.company_id.id)
+            IrValues = self.env['ir.values']
+            taxes_id = IrValues.get_default('product.template', 'taxes_id', company_id=self.company_id.id)
+            supplier_taxes_id = IrValues.get_default('product.template', 'supplier_taxes_id', company_id=self.company_id.id)
             values.update({
                 'default_sale_tax': isinstance(taxes_id, list) and taxes_id[0] or taxes_id,
                 'default_purchase_tax': isinstance(supplier_taxes_id, list) and supplier_taxes_id[0] or supplier_taxes_id,
@@ -197,7 +197,7 @@ class AccountConfigSettings(models.TransientModel):
 
     @api.onchange('chart_template_id')
     def onchange_chart_template_id(self):
-        tax_templ_obj = self.env['account.tax.template']
+        AccountTaxTemplate = self.env['account.tax.template']
         res = {'value': {
             'complete_tax_set': False, 'sale_tax': False, 'purchase_tax': False,
             'sale_tax_rate': 15, 'purchase_tax_rate': 15,
@@ -207,10 +207,10 @@ class AccountConfigSettings(models.TransientModel):
             res['value'].update({'complete_tax_set': self.chart_template_id.complete_tax_set})
             if self.chart_template_id.complete_tax_set:
                 # default tax is given by the lowest sequence. For same sequence we will take the latest created as it will be the case for tax created while isntalling the generic chart of account
-                sale_tax = tax_templ_obj.search(
+                sale_tax = AccountTaxTemplate.search(
                     [('chart_template_id', '=', self.chart_template_id.id), ('type_tax_use', '=', 'sale')], limit=1,
                     order="sequence, id desc")
-                purchase_tax = tax_templ_obj.search(
+                purchase_tax = AccountTaxTemplate.search(
                     [('chart_template_id', '=', self.chart_template_id.id), ('type_tax_use', '=', 'purchase')], limit=1,
                     order="sequence, id desc")
                 res['value']['sale_tax'] = sale_tax and sale_tax.id or False
@@ -242,12 +242,12 @@ class AccountConfigSettings(models.TransientModel):
     @api.multi
     def set_default_taxes(self):
         """ set default sale and purchase taxes for products """
-        if self._uid != SUPERUSER_ID and not self.env['res.users'].has_group('base.group_erp_manager'):
+        if self.env.uid != SUPERUSER_ID and not self.env['res.users'].has_group('base.group_erp_manager'):
             raise openerp.exceptions.AccessError(_("Only administrators can change the settings"))
-        ir_values = self.env['ir.values']
-        ir_values.sudo().set_default('product.template', 'taxes_id',
+        IrValues = self.env['ir.values']
+        IrValues.sudo().set_default('product.template', 'taxes_id',
             self.default_sale_tax and [self.default_sale_tax.id] or False, company_id=self.company_id.id)
-        ir_values.sudo().set_default('product.template', 'supplier_taxes_id',
+        IrValues.sudo().set_default('product.template', 'supplier_taxes_id',
             self.default_purchase_tax and [self.default_purchase_tax.id] or False, company_id=self.company_id.id)
 
     @api.multi

@@ -28,21 +28,21 @@ class AccountAnalyticLine(models.Model):
         if context is None:
             context = {}
         if not journal_id:
-            j_ids = self.pool.get('account.analytic.journal').search(cr, uid, [('type', '=', 'purchase')])
+            j_ids = self.pool['account.analytic.journal'].search(cr, uid, [('type', '=', 'purchase')])
             journal_id = j_ids and j_ids[0] or False
         if not journal_id or not prod_id:
             return {}
-        product_obj = self.pool.get('product.product')
-        analytic_journal_obj = self.pool.get('account.analytic.journal')
-        product_price_type_obj = self.pool.get('product.price.type')
-        product_uom_obj = self.pool.get('product.uom')
-        j_id = analytic_journal_obj.browse(cr, uid, journal_id, context=context)
-        prod = product_obj.browse(cr, uid, prod_id, context=context)
+        ProductProduct = self.pool['product.product']
+        AccountAnalyticJournal = self.pool['account.analytic.journal']
+        ProductPriceType = self.pool['product.price.type']
+        ProductUom = self.pool['product.uom']
+        j_id = AccountAnalyticJournal.browse(cr, uid, journal_id, context=context)
+        prod = ProductProduct.browse(cr, uid, prod_id, context=context)
         result = 0.0
         if prod_id:
             unit_obj = False
             if unit:
-                unit_obj = product_uom_obj.browse(cr, uid, unit, context=context)
+                unit_obj = ProductUom.browse(cr, uid, unit, context=context)
             if not unit_obj or prod.uom_id.category_id.id != unit_obj.category_id.id:
                 unit = prod.uom_id.id
             if j_id.type == 'purchase':
@@ -53,28 +53,28 @@ class AccountAnalyticLine(models.Model):
             if not a:
                 a = prod.categ_id.property_account_expense_categ.id
             if not a:
-                raise UserError(_('There is no expense account defined ' \
-                                'for this product: "%s" (id:%d).') % \
+                raise UserError(_('There is no expense account defined '
+                                'for this product: "%s" (id:%d).') %
                                 (prod.name, prod.id,))
         else:
             a = prod.property_account_income.id
             if not a:
                 a = prod.categ_id.property_account_income_categ.id
             if not a:
-                raise UserError(_('There is no income account defined ' \
-                                'for this product: "%s" (id:%d).') % \
+                raise UserError(_('There is no income account defined '
+                                'for this product: "%s" (id:%d).') %
                                 (prod.name, prod_id,))
 
         flag = False
         # Compute based on pricetype
-        product_price_type_ids = product_price_type_obj.search(cr, uid, [('field', '=', 'standard_price')], context=context)
-        pricetype = product_price_type_obj.browse(cr, uid, product_price_type_ids, context=context)[0]
+        product_price_type_ids = ProductPriceType.search(cr, uid, [('field', '=', 'standard_price')], context=context)
+        pricetype = ProductPriceType.browse(cr, uid, product_price_type_ids, context=context)[0]
         if journal_id:
-            journal = analytic_journal_obj.browse(cr, uid, journal_id, context=context)
+            journal = AccountAnalyticJournal.browse(cr, uid, journal_id, context=context)
             if journal.type == 'sale':
-                product_price_type_ids = product_price_type_obj.search(cr, uid, [('field', '=', 'list_price')], context=context)
+                product_price_type_ids = ProductPriceType.search(cr, uid, [('field', '=', 'list_price')], context=context)
                 if product_price_type_ids:
-                    pricetype = product_price_type_obj.browse(cr, uid, product_price_type_ids, context=context)[0]
+                    pricetype = ProductPriceType.browse(cr, uid, product_price_type_ids, context=context)[0]
         # Take the company currency as the reference one
         if pricetype.field == 'list_price':
             flag = True
@@ -100,7 +100,7 @@ class AccountAnalyticLine(models.Model):
     @api.v8
     @api.onchange('product_id', 'product_uom_id')
     def on_change_unit_amount(self):
-        product_price_type_obj = self.env['product.price.type']
+        ProductPriceType = self.env['product.price.type']
 
         journal_id = self.journal_id
         if not journal_id:
@@ -119,23 +119,23 @@ class AccountAnalyticLine(models.Model):
         if journal_id.type != 'sale':
             account = self.product_id.property_account_expense.id or self.product_id.categ_id.property_account_expense_categ.id
             if not account:
-                raise UserError(_('There is no expense account defined ' \
-                                'for this product: "%s" (id:%d).') % \
+                raise UserError(_('There is no expense account defined '
+                                'for this product: "%s" (id:%d).') %
                                 (self.product_id.name, self.product_id.id,))
         else:
             account = self.product_id.property_account_income.id or self.product_id.categ_id.property_account_income_categ.id
             if not account:
-                raise UserError(_('There is no income account defined ' \
-                                'for this product: "%s" (id:%d).') % \
+                raise UserError(_('There is no income account defined '
+                                'for this product: "%s" (id:%d).') %
                                 (self.product_id.name, self.product_id.id,))
 
         # Compute based on pricetype
         if journal_id.type == 'sale':
-            pricetype = product_price_type_obj.search([('field', '=', 'list_price')], limit=1)
+            pricetype = ProductPriceType.search([('field', '=', 'list_price')], limit=1)
         else:
-            pricetype = product_price_type_obj.search([('field', '=', 'standard_price')], limit=1)
+            pricetype = ProductPriceType.search([('field', '=', 'standard_price')], limit=1)
 
-        ctx = dict(self._context or {})
+        ctx = dict(self.env.context or {})
         if unit:
             # price_get() will respect a 'uom' in its context, in order
             # to return a default price for those units
@@ -151,9 +151,9 @@ class AccountAnalyticLine(models.Model):
 
     @api.model
     def view_header_get(self, view_id, view_type):
-        context = (self._context or {})
+        context = (self.env.context or {})
         header = False
-        if context.get('account_id', False):
+        if context.get('account_id'):
             analytic_account = self.env['account.analytic.account'].search([('id', '=', context['account_id'])], limit=1)
             header = _('Entries: ') + (analytic_account.name or '')
         return header
