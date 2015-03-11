@@ -37,6 +37,7 @@ class StockMove(osv.osv):
     }
 
     def check_tracking(self, cr, uid, move, lot_id, context=None):
+
         super(StockMove, self).check_tracking(cr, uid, move, lot_id, context=context)
         if move.product_id.track_production and (move.location_id.usage == 'production' or move.location_dest_id.usage == 'production') and not lot_id:
             raise osv.except_osv(_('Warning!'), _('You must assign a serial number for the product %s') % (move.product_id.name))
