@@ -111,7 +111,8 @@
           var end_date = $('input[type="date"][name="end_date"]').val();
           var stat_type = $('input[type="hidden"][name="stat_type"]').val();
 
-          var loader = '<div class="loading"><div id="big-circle"><div id="little-circle"></div></div></div>';
+          // var loader = '<div class="loading"><div id="big-circle"><div id="little-circle"></div></div></div>';
+          var loader = '<i class="fa fa-spin fa-refresh" style="font-size: 7em;"></i>';
           $('#stat_chart_div').html("<div class='loader' style='position: relative; text-align:center; width: 100%; height: 300px;'>" + loader + "</div>");
 
           var filtered_contract_template_ids = get_filtered_contract_templates();
@@ -209,6 +210,11 @@
             return chart;
           });
 
+          // setTimeout(function() {
+          //     console.log('coucou');
+          //     $(div_to_display + ' .nv-lineChart circle.nv-point').attr("r", "3.5");
+          // }, 500);
+
       }
 
 
@@ -217,7 +223,8 @@
           var start_date = $('input[type="date"][name="start_date"]').val();
           var end_date = $('input[type="date"][name="end_date"]').val();
 
-          var loader = '<div class="loading"><div id="big-circle"><div id="little-circle"></div></div></div>';
+          // var loader = '<div class="loading"><div id="big-circle"><div id="little-circle"></div></div></div>';
+          var loader = '<i class="fa fa-spin fa-refresh" style="font-size: 7em;"></i>';
           $('#mrr_growth_chart_div').html("<div class='loader' style='position: relative; text-align:center; width: 100%; height: 300px;'>" + loader + "</div>");
 
           var filtered_contract_template_ids = get_filtered_contract_templates();

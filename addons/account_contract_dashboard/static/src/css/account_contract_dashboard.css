@@ -1,4 +1,9 @@
+.no-padding {
+  padding-top: 0px !important;
+}
+
 div.box {
+  min-height: 120px;
   padding: 10px;
   /*padding: 1vw;*/
   color: #676a6c;
@@ -16,7 +21,7 @@ div.box {
 div.graph-box {
   position: absolute;
   opacity: 0.3;
-  padding: 15px 15px 0;
+  padding: 20px 0px 0;
   width: 100%;
   top: 0;
   left: 0;
@@ -109,7 +114,9 @@ a.fill-div {
   position: relative;
   margin: 0 auto;
 }
-#big-circle {
+
+
+/*#big-circle {
   position: relative;
   width: 10rem;
   height: 10rem;
@@ -119,8 +126,6 @@ a.fill-div {
   border-right-color: transparent;
   margin: 0px auto;
   box-shadow: inset 0 0 0 20px #F2F2F2;
-  -webkit-animation: rotation 3s infinite ease-out alternate;
-  animation: rotation 3s infinite ease-out alternate;
 }
 #little-circle {
   width: 60%;
@@ -307,4 +312,4 @@ a.fill-div {
     transform: rotate(-360deg);
     margin: 5%;
   }
-}
+}*/

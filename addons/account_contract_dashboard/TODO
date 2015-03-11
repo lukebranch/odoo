@@ -9,6 +9,7 @@ V filter by contract_template and not by product_template
 V make demo data to tests algorithms
 	--> if next invoice has 10 days, churn during 10 days and then churn reup
 V monthly revenu on an invoice on 1 month ?
+V design : coller les graphes
 
 ####################################
 
@@ -24,6 +25,11 @@ In https://docs.google.com/a/openerp.com/file/d/0B5BDHVRYo-q5TUN4OXYxY1NkaEE/edi
 	--> either billing (all invoice)
 	--> either non-recurring + prorata of monthly recurrent*nb_months
 
+- le style des graphs baremetrics est plus joli (lignes plus grosses)
+- utiliser une client_action (voir chrome.js, "database_manager") pour intégrer la page au backend
+- forecast
+- marketing : faire la page de présentation sur odoo.com
+- vérifier la formule du churn (revenue churn + mrr growth)
 
 # OPTIMIZATIONS
 

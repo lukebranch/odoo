@@ -2,7 +2,7 @@
 <openerp>
   <data>
 
-  <template id="dashboard" name="Recurrent Revenue Dashboard" page="True">
+  <template id="dashboard" name="Recurring Revenue Dashboard" page="True">
     <t t-name="account_contract_dashboard.dashboard"/>
     <t t-call="website.layout">
     <div id="wrap" class="oe_structure oe_empty" style="background-color: #ebf1f4;">
@@ -10,7 +10,7 @@
           
           <div class="row">              
             <div class="col-sm-12 text-center">
-              <h1 class="text-muted ">Recurrent Revenue Dashboard</h1>
+              <h1 class="text-muted ">Revenue KPIs</h1>
             </div>
           </div>
 
@@ -45,10 +45,11 @@
                 <a class="fill-div" t-att-href="'account_contract_dashboard/detailed/%s?%s' % (stat['code'], href_post_args)">
                   <div class="box stat-box" t-att-name="stat['name']" t-att-code="stat['code']">
                     <div class="loading">
-                      <div id="big-circle">
+                      <i class="fa fa-spin fa-refresh big-circle" style="font-size: 6em;"></i>
+                      <!-- <div id="big-circle">
                         <div id="little-circle">
                         </div>
-                      </div>
+                      </div> -->
                     </div>
                   </div>
                 </a>

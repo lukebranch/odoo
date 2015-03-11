@@ -12,7 +12,7 @@ default_start_date = date.today() - timedelta(days=30)
 default_end_date = date.today()
 
 stat_types = {
-    'mrr': {'name': 'Monthly Recurrent Revenue', 'code': 'mrr', 'dir': 'up', 'prior': 1, 'type': 'last', 'add_symbol': '€'},
+    'mrr': {'name': 'Monthly Recurring Revenue', 'code': 'mrr', 'dir': 'up', 'prior': 1, 'type': 'last', 'add_symbol': '€'},
     'net_revenue': {'name': 'Net Revenue', 'code': 'net_revenue', 'dir': 'up', 'prior': 2, 'type': 'sum', 'add_symbol': '€'},
     'nrr': {'name': 'Non-Recurring Revenue', 'code': 'nrr', 'dir': 'up', 'prior': 3, 'type': 'sum', 'add_symbol': '€'},  # 'down' if fees ?
     'arpu': {'name': 'Average Revenue per Contract', 'code': 'arpu', 'dir': 'up', 'prior': 4, 'type': 'last', 'add_symbol': '€'},
@@ -411,6 +411,7 @@ class AccountContractDashboard(http.Controller):
 
             # DOWN & CANCEL
             for invoice_line in invoice_lines_ids_stopping_last_month:
+                # Is there any invoice_line in the next 30 days for this contract ?
                 next_invoice_lines = request.env['account.invoice.line'].search([
                     ('asset_category_id', '!=', None),
                     ('asset_start_date', '>=', invoice_line.asset_end_date),
@@ -426,6 +427,7 @@ class AccountContractDashboard(http.Controller):
 
             # UP & NEW
             for invoice_line in invoice_lines_ids_starting_last_month:
+                # Was there any invoice_line in the last 30 days for this contract ?
                 previous_invoice_lines = request.env['account.invoice.line'].search([
                     ('asset_category_id', '!=', None),
                     ('asset_end_date', '<=', invoice_line.asset_start_date),
