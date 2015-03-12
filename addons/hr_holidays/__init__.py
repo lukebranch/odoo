@@ -19,7 +19,6 @@
 #
 ##############################################################################
 
-import hr_department
-import hr_holidays
+import models
 import report
 import wizard
