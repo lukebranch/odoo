@@ -19,9 +19,14 @@
           <div class="row mb32">
             <form action="/account_contract_dashboard">
               <div class="col-sm-4 text-left">
-                <a t-att-class="'' if filtered_contract_template_ids else 'collapsed'" data-toggle="collapse" href="#collapse_filter_contracts">
-                  Filter on contracts
-                </a>
+                <div>
+                  <a href="/account_contract_dashboard/forecast">Forecast</a>
+                </div>
+                <div>
+                  <a t-att-class="'' if filtered_contract_template_ids else 'collapsed'" data-toggle="collapse" href="#collapse_filter_contracts">
+                    Filter on contracts
+                  </a>
+                </div>
 
                 <div role="tablist" aria-multiselectable="true">
                   <div id="collapse_filter_contracts" t-att-class="'panel-collapse collapse in' if filtered_contract_template_ids else 'panel-collapse collapse'" role="tabpanel">
@@ -185,6 +190,81 @@
     </div>
     </t>
   </template>
-   
+
+  <template id="forecast" name="Metrics Forecasting" page="True">
+    <t t-name="account_contract_dashboard.forecast"/>
+    <t t-call="website.layout">
+    <div id="wrap" class="oe_structure oe_empty" style="background-color: #ebf1f4;">
+      <div class="container">
+          
+          <div class="row">              
+            <div class="col-sm-12 text-center">
+              <h1 class="text-muted ">Metrics Forecasting</h1>
+            </div>
+          </div>
+
+          <hr/>
+
+          <div class="row mb32">
+            <a href="/account_contract_dashboard">Dashboard</a>
+          </div>
+
+          <div class="row box">
+            <h3 class="text-center mt32 mb32" id="revenue_forecast_summary"></h3>
+            <div class="col-sm-4 forecast-options">
+              <table>
+                <tr>
+                  <td>Starting MRR:</td><td><input type="number" id="starting_mrr"/></td>
+                </tr>
+                <tr>
+                  <td>Growth Type:</td><td><input name="revenue_growth_type" type="radio" value="linear" checked="checked"> Linear</input> <br/> <input name="revenue_growth_type" type="radio" value="exponential"> Exponential</input></td>
+                </tr>
+                <tr>
+                  <td>Revenue Growth:</td><td><input type="number" id="revenue_growth_linear"/><input style="display: none;" type="number" id="revenue_growth_expon"/></td>
+                </tr>
+                <tr>
+                  <td>Revenue Churn:</td><td><input type="number" id="revenue_churn"/></td>
+                </tr>
+                <tr>
+                  <td>Projection Time:</td><td><input type="number" id="revenue_projection_time"/> <span class="text-muted">Months</span></td>
+                </tr>
+              </table>
+              
+              
+            </div>
+            <div id="revenue_forecast_chart_div" class="col-sm-8"></div>
+          </div>
+
+
+          <div class="row box">
+            <h3 class="text-center mt32 mb32" id="contracts_forecast_summary"></h3>
+            <div class="col-sm-4 forecast-options">
+              <table>
+                <tr>
+                  <td>Starting Contract:</td><td><input type="number" id="starting_contracts"/></td>
+                </tr>
+                <tr>
+                  <td>Growth Type:</td><td><input name="contracts_growth_type" type="radio" value="linear" checked="checked"> Linear</input> <br/> <input name="contracts_growth_type" type="radio" value="exponential"> Exponential</input></td>
+                </tr>
+                <tr>
+                  <td>Contracts Growth:</td><td><input type="number" id="contracts_growth_linear"/><input style="display: none;" type="number" id="contracts_growth_expon"/></td>
+                </tr>
+                <tr>
+                  <td>Contracts Churn:</td><td><input type="number" id="contracts_churn"/></td>
+                </tr>
+                <tr>
+                  <td>Projection Time:</td><td><input type="number" id="contracts_projection_time"/> <span class="text-muted">Months</span></td>
+                </tr>
+              </table>
+            </div>
+            <div id="contracts_forecast_chart_div" class="col-sm-8"></div>
+          </div>
+
+
+      </div>
+
+    </div>
+    </t>
+  </template>
   </data>
 </openerp>

@@ -2,6 +2,21 @@
   padding-top: 0px !important;
 }
 
+div.forecast-options {
+  border: 2px solid #c3cacd;
+  border-radius: 5px;
+  padding: 1em;
+}
+
+div.forecast-options input {
+  width: 100px;
+}
+
+div.forecast-options td {
+  padding-bottom: 10px;
+  padding-top: 1em;
+}
+
 div.box {
   min-height: 120px;
   padding: 10px;

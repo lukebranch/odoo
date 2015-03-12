@@ -68,7 +68,6 @@ class AccountContractDashboard(http.Controller):
             'filtered_contract_template_ids': filtered_contract_template_ids,
             'start_date': start_date.strftime('%Y-%m-%d'),
             'end_date': end_date.strftime('%Y-%m-%d'),
-            'currency': '€',
             'href_post_args': href_post_args,
         })
 
@@ -112,6 +111,33 @@ class AccountContractDashboard(http.Controller):
             'href_post_args': href_post_args,
         })
 
+    @http.route('/account_contract_dashboard/forecast', auth='user', website=True)
+    def forecast(self, **kw):
+
+        return http.request.render('account_contract_dashboard.forecast', {
+        })
+
+    @http.route('/account_contract_dashboard/get_default_values_forecast', type="json", auth='user', website=True)
+    def get_default_values_forecast(self):
+
+        mrr = self.calculate_stat('mrr', date.today())
+        net_new_mrr = self.calculate_stat('net_new_mrr', date.today())[3]
+        revenue_churn = self.calculate_stat('revenue_churn', date.today())
+        nb_contracts = self.calculate_stat('nb_contracts', date.today())
+        arpu = self.calculate_stat('arpu', date.today())
+
+        return {
+            'starting_mrr': mrr,
+            'revenue_growth_linear': net_new_mrr,
+            'revenue_growth_expon': 15,
+            'revenue_churn': revenue_churn,
+            'starting_contracts': nb_contracts,
+            'contracts_growth_linear': 0 if arpu == 0 else int(net_new_mrr/arpu),
+            'contracts_growth_expon': 15,
+            'contracts_churn': revenue_churn,
+            'projection_time': 12,
+        }
+
     @http.route('/account_contract_dashboard/get_stats_by_plan', type="json", auth='user', website=True)
     def get_stats_by_plan(self, stat_type, date, filtered_contract_template_ids=None):
 
@@ -124,7 +150,7 @@ class AccountContractDashboard(http.Controller):
         ])
 
         plans = request.env['account.analytic.account'].search([('type', '=', 'template')])
-        
+
         if filtered_contract_template_ids:
             plans = plans.filtered(lambda x: str(x.id) in filtered_contract_template_ids)
 

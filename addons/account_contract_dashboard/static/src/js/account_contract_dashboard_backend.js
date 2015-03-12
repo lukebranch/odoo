@@ -1,17 +1,22 @@
 openerp.account_contract_dashboard = function (instance) {
 
-    instance.web.account_contract_dashboard = function() {
-        $(document).ready(function() {
-            var $iframe = $('<iframe>', {'style': 'position: absolute; height: 100%; width: 100%', 'src': '/account_contract_dashboard'});
-            $('div .oe-view-manager-content').append($iframe);
-            $('iframe').load(function() {
-                $iframe.contents().find('#oe_main_menu_navbar').hide();
-                $iframe.contents().find('header').hide();
-                $iframe.contents().find('footer').hide();
-                $iframe.contents().find('#wrapwrap').addClass('no-padding');
+    instance.web.account_contract_dashboard = instance.web.Widget.extend({
+        tagName: 'iframe',
+        init: function(parent) {
+            this._super(parent);
+        },
+        start: function() {
+            var self = this;
+            this._super();
+            this.$el.attr({'style': 'height: 100%; width: 100%', 'src': '/account_contract_dashboard'});
+            this.$el.load(function() {
+                self.$el.contents().find('#oe_main_menu_navbar').hide();
+                self.$el.contents().find('header').hide();
+                self.$el.contents().find('footer').hide();
+                self.$el.contents().find('#wrapwrap').addClass('no-padding');
             });
-        });
-    };
+        }
+    });
 
     instance.web.client_actions.add("account_contract_dashboard", "instance.web.account_contract_dashboard");
 
