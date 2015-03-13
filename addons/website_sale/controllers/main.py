@@ -987,7 +987,8 @@ class website_sale(http.Controller):
     def get_products(self, values=None):
         import pudb
         pudb.set_trace()
-        ir_view = self.pool.get('ir.ui.view')
-        view = ir_view.xmlid_to_object('product.product_product_consultant')
-        print view
+        template = request.website.get_template('website_sale.shop_menu_link')
+        if template.active:
+            template.write({'active': False})
+
         return ["apple", "orange", "pear"]
