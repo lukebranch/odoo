@@ -985,4 +985,9 @@ class website_sale(http.Controller):
 
     @http.route(['/website_sale/menu/products'], type='json', auth="public", website=True)
     def get_products(self, values=None):
+        import pudb
+        pudb.set_trace()
+        ir_view = self.pool.get('ir.ui.view')
+        view = ir_view.xmlid_to_object('product.product_product_consultant')
+        print view
         return ["apple", "orange", "pear"]
