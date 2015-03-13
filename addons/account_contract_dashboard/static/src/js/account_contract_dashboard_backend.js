@@ -8,7 +8,7 @@ openerp.account_contract_dashboard = function (instance) {
         start: function() {
             var self = this;
             this._super();
-            this.$el.attr({'style': 'height: 100%; width: 100%', 'src': '/account_contract_dashboard'});
+            this.$el.attr({'style': 'height: 100%; width: 100%; border: 0;', 'src': '/account_contract_dashboard'});
             this.$el.load(function() {
                 self.$el.contents().find('#oe_main_menu_navbar').hide();
                 self.$el.contents().find('header').hide();

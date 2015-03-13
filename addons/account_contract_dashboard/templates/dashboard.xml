@@ -50,7 +50,7 @@
                 <a class="fill-div" t-att-href="'account_contract_dashboard/detailed/%s?%s' % (stat['code'], href_post_args)">
                   <div class="box stat-box" t-att-name="stat['name']" t-att-code="stat['code']">
                     <div class="loading">
-                      <i class="fa fa-spin fa-refresh big-circle" style="font-size: 6em;"></i>
+                      <i class="fa fa-spin fa-spinner fa-pulse" style="font-size: 3em;"></i>
                       <!-- <div id="big-circle">
                         <div id="little-circle">
                         </div>
@@ -214,19 +214,48 @@
             <div class="col-sm-4 forecast-options">
               <table>
                 <tr>
-                  <td>Starting MRR:</td><td><input type="number" id="starting_mrr"/></td>
+                  <td>Starting MRR:</td>
+                  <td class="pull-right">
+                    <div class="input-group">
+                      <span class="input-group-addon"><t t-esc="currency"/></span>
+                      <input class="form-control" type="number" id="starting_mrr"/>
+                    </div>
+                  </td>
                 </tr>
                 <tr>
                   <td>Growth Type:</td><td><input name="revenue_growth_type" type="radio" value="linear" checked="checked"> Linear</input> <br/> <input name="revenue_growth_type" type="radio" value="exponential"> Exponential</input></td>
                 </tr>
                 <tr>
-                  <td>Revenue Growth:</td><td><input type="number" id="revenue_growth_linear"/><input style="display: none;" type="number" id="revenue_growth_expon"/></td>
+                  <td>Revenue Growth:</td>
+                  <td class="pull-right">
+                    <div class="input-group">
+                      <span class="input-group-addon"><t t-esc="currency"/></span>
+                      <input class="form-control" type="number" id="revenue_growth_linear"/>
+                    </div>
+
+                    <div style="display: none;" class="input-group">
+                      <span class="input-group-addon">%</span>
+                      <input class="form-control" type="number" id="revenue_growth_expon"/>
+                    </div>
+                  </td>
                 </tr>
                 <tr>
-                  <td>Revenue Churn:</td><td><input type="number" id="revenue_churn"/></td>
+                  <td>Revenue Churn:</td>
+                  <td class="pull-right">
+                    <div class="input-group">
+                      <span class="input-group-addon"><t t-esc="currency"/></span>
+                      <input class="form-control" type="number" id="revenue_churn"/>
+                    </div>
+                  </td>
                 </tr>
                 <tr>
-                  <td>Projection Time:</td><td><input type="number" id="revenue_projection_time"/> <span class="text-muted">Months</span></td>
+                  <td>Projection Time:</td>
+                  <td class="pull-right">
+                    <div class="input-group">
+                      <span class="input-group-addon">Months</span>
+                      <input class="form-control" type="number" id="revenue_projection_time"/>
+                    </div>
+                  </td>
                 </tr>
               </table>
               
@@ -241,19 +270,47 @@
             <div class="col-sm-4 forecast-options">
               <table>
                 <tr>
-                  <td>Starting Contract:</td><td><input type="number" id="starting_contracts"/></td>
+                  <td>Starting Contract:</td>
+                  <td class="pull-right">
+                    <div class="input-group">
+                      <span class="input-group-addon"><t t-esc="currency"/></span>
+                      <input class="form-control" type="number" id="starting_contracts"/>
+                    </div>
+                  </td>
                 </tr>
                 <tr>
                   <td>Growth Type:</td><td><input name="contracts_growth_type" type="radio" value="linear" checked="checked"> Linear</input> <br/> <input name="contracts_growth_type" type="radio" value="exponential"> Exponential</input></td>
                 </tr>
                 <tr>
-                  <td>Contracts Growth:</td><td><input type="number" id="contracts_growth_linear"/><input style="display: none;" type="number" id="contracts_growth_expon"/></td>
+                  <td>Contracts Growth:</td>
+                  <td class="pull-right">
+                    <div class="input-group">
+                      <span class="input-group-addon"><t t-esc="currency"/></span>
+                      <input class="form-control" type="number" id="contracts_growth_linear"/>
+                    </div>
+                    <div style="display: none;" class="input-group">
+                      <span class="input-group-addon">%</span>
+                      <input class="form-control" type="number" id="contracts_growth_expon"/>
+                    </div>
+                  </td>
                 </tr>
                 <tr>
-                  <td>Contracts Churn:</td><td><input type="number" id="contracts_churn"/></td>
+                  <td>Contracts Churn:</td>
+                  <td class="pull-right">
+                    <div class="input-group">
+                      <span class="input-group-addon">%</span>
+                      <input class="form-control" type="number" id="contracts_churn"/>
+                    </div>
+                  </td>
                 </tr>
                 <tr>
-                  <td>Projection Time:</td><td><input type="number" id="contracts_projection_time"/> <span class="text-muted">Months</span></td>
+                  <td>Projection Time:</td>
+                  <td class="pull-right">
+                    <div class="input-group">
+                      <span class="input-group-addon">Months</span>
+                      <input class="form-control" type="number" id="contracts_projection_time"/>
+                    </div>
+                  </td>
                 </tr>
               </table>
             </div>

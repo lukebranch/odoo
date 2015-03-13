@@ -114,7 +114,10 @@ class AccountContractDashboard(http.Controller):
     @http.route('/account_contract_dashboard/forecast', auth='user', website=True)
     def forecast(self, **kw):
 
+        currency = request.env['res.company'].search([])[0].currency_id.symbol
+
         return http.request.render('account_contract_dashboard.forecast', {
+            'currency': currency,
         })
 
     @http.route('/account_contract_dashboard/get_default_values_forecast', type="json", auth='user', website=True)
@@ -126,7 +129,12 @@ class AccountContractDashboard(http.Controller):
         nb_contracts = self.calculate_stat('nb_contracts', date.today())
         arpu = self.calculate_stat('arpu', date.today())
 
+        currency = request.env['res.company'].search([])[0].currency_id.symbol
+
+        print(currency)
+
         return {
+            'currency': currency,
             'starting_mrr': mrr,
             'revenue_growth_linear': net_new_mrr,
             'revenue_growth_expon': 15,

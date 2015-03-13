@@ -1,7 +1,8 @@
 (function () {
     'use strict';
 
-    var value_now = 0;    
+    var value_now = 0;
+    var loader = '<i class="fa fa-spin fa-spinner fa-pulse" style="font-size: 3em;"></i>';
 
     openerp.website.ready().done(function() {
 
@@ -97,7 +98,7 @@
           var stat_type = $('input[type="hidden"][name="stat_type"]').val();
 
           // var loader = '<div class="loading"><div id="big-circle"><div id="little-circle"></div></div></div>';
-          var loader = '<i class="fa fa-spin fa-refresh" style="font-size: 7em;"></i>';
+          // var loader = '<i class="fa fa-spin fa-refresh" style="font-size: 7em;"></i>';
           $('#stat_chart_div').html("<div class='loader' style='position: relative; text-align:center; width: 100%; height: 300px;'>" + loader + "</div>");
 
           var filtered_contract_template_ids = get_filtered_contract_templates();
@@ -121,7 +122,7 @@
           var end_date = $('input[type="date"][name="end_date"]').val();
 
           // var loader = '<div class="loading"><div id="big-circle"><div id="little-circle"></div></div></div>';
-          var loader = '<i class="fa fa-spin fa-refresh" style="font-size: 7em;"></i>';
+          // var loader = '<i class="fa fa-spin fa-refresh" style="font-size: 7em;"></i>';
           $('#mrr_growth_chart_div').html("<div class='loader' style='position: relative; text-align:center; width: 100%; height: 300px;'>" + loader + "</div>");
 
           var filtered_contract_template_ids = get_filtered_contract_templates();
@@ -199,6 +200,8 @@
           var contracts_churn;
           var contracts_projection_time;
 
+          var currency;
+
           openerp.jsonRpc('/account_contract_dashboard/get_default_values_forecast', 'call', {
           }).then(function(result){
 
@@ -211,6 +214,7 @@
               default_contracts_growth_expon = result['contracts_growth_expon'];
               default_contracts_churn = result['contracts_churn'];
               default_projection_time = result['projection_time'];
+              currency = result['currency'];
 
               $('#starting_mrr').val(default_starting_mrr);
               $('#revenue_growth_linear').val(default_revenue_growth_linear);
@@ -232,12 +236,12 @@
               $('input:radio[name=revenue_growth_type]').change(function(){
                 revenue_growth_type = $("input:radio[name=revenue_growth_type]:checked").val();
                 if (revenue_growth_type === 'linear') {
-                  $('#revenue_growth_linear').show();
-                  $('#revenue_growth_expon').hide();
+                  $('#revenue_growth_linear').parent().show();
+                  $('#revenue_growth_expon').parent().hide();
                 }
                 else{
-                  $('#revenue_growth_linear').hide();
-                  $('#revenue_growth_expon').show();
+                  $('#revenue_growth_linear').parent().hide();
+                  $('#revenue_growth_expon').parent().show();
                 }
                 reloadChart(1);
               });
@@ -279,7 +283,6 @@
 
           });
 
-          var loader = '<i class="fa fa-spin fa-refresh" style="font-size: 7em;"></i>';
           $('#revenue_forecast_chart_div, #contracts_forecast_chart_div').html("<div class='loader' style='position: relative; text-align:center; width: 100%; height: 300px;'>" + loader + "</div>");
 
           
@@ -290,11 +293,11 @@
 
             if (chart_type == 1){
               loadChart_forecast('#revenue_forecast_chart_div', values);
-              $('#revenue_forecast_summary').text('In '+revenue_projection_time+' months with ' + (revenue_growth_type === 'linear' ? revenue_growth_linear : revenue_growth_expon + '%') + ' ' + revenue_growth_type + ' growth and ' + revenue_churn + '% churn, your MRR will be ' + parseInt(values[values.length - 1][1]));
+              $('#revenue_forecast_summary').replaceWith('<h3 class="text-center mt32 mb32" id="revenue_forecast_summary">In <span class="oBlue">'+revenue_projection_time+'</span> months with <span class="oBlue">' + (revenue_growth_type === 'linear' ? revenue_growth_linear + currency : revenue_growth_expon + '%') + ' ' + revenue_growth_type + '</span> growth and <span class="oRed">' + revenue_churn + '%</span> churn, your MRR will be <span class="oGreen">' + parseInt(values[values.length - 1][1]) + currency +'</span></h3>');
             }
             else {
               loadChart_forecast('#contracts_forecast_chart_div', values);
-              $('#contracts_forecast_summary').text('In '+contracts_projection_time+' months with ' + (contracts_growth_type === 'linear' ? contracts_growth_linear : contracts_growth_expon + '%') + ' ' + contracts_growth_type + ' growth and ' + contracts_churn + '% churn, your contract base will be ' + parseInt(values[values.length - 1][1]));
+              $('#contracts_forecast_summary').replaceWith('<h3 class="text-center mt32 mb32" id="contracts_forecast_summary">In <span class="oBlue">'+contracts_projection_time+'</span> months with <span class="oBlue">' + (contracts_growth_type === 'linear' ? contracts_growth_linear + ' contracts' : contracts_growth_expon + '%') + ' ' + contracts_growth_type + '</span> growth and <span class="oRed">' + contracts_churn + '%</span> churn, your contract base will be <span class="oGreen">' + parseInt(values[values.length - 1][1]) + '</span></h3>');
             }
 
           }
