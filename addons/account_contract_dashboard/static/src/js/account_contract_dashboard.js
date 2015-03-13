@@ -4,6 +4,7 @@
     var value_now = 0;
     var loader = '<i class="fa fa-spin fa-spinner fa-pulse" style="font-size: 3em;"></i>';
 
+    openerp.website.add_template_file('/account_contract_dashboard/static/src/xml/templates.xml');
     openerp.website.ready().done(function() {
 
    // 1. MAIN DASHBOARD - Stat box with graph inside
@@ -50,27 +51,18 @@
 
                   $.when(compute_numbers(), compute_graph())
                   .done(function(compute_numbers, compute_graph){
-                      // console.log(compute_numbers);
                       self.value = compute_numbers['value_2'];
                       self.perc = compute_numbers['perc'];
                       self.color = compute_numbers['color'];
 
-                      self.chart_div = 
-                          '<div class="graph-box" id='+self.chart_div_id+'>'+
-                          '</div>';
-                      self.box.innerHTML = 
-                          '<div style="position: relative;">'+
-                              '<h2 style="color: #2693d5;">'+self.value+'</h2>'+
-                              '<div class="trend">'+
-                                  '<h4 class="'+self.color+' mb0">'+self.perc+'%</h4>'+
-                                  '<span style="font-size: 10px;">30 Days Ago</span>'+
-                              '</div>'+
-                          '</div>'+
-                          self.chart_div+
-                          '<div>'+
-                              '<h4 class="text-center mt32">'+self.box_name+'</h4>'+
-                          '</div>';
-
+                      var box_content = openerp.qweb.render('account_contract_dashboard.boxContent', {
+                        'value': self.value,
+                        'color': self.color,
+                        'perc': self.perc,
+                        'chart_div_id': self.chart_div_id,
+                        'box_name': self.box_name,
+                      });
+                      self.box.innerHTML = box_content;
                       loadChart_stat('#'+self.chart_div_id, self.box_code, false, compute_graph[1], false);
                   });
               },
@@ -140,7 +132,6 @@
 
       // 4. STAT DASHBOARD - STATS BY PLAN
 
-      openerp.website.add_template_file('/account_contract_dashboard/static/src/xml/templates.xml');
       openerp.website.if_dom_contains('#stats_by_plan', function() {
                 
           var filtered_contract_template_ids = get_filtered_contract_templates();
@@ -290,7 +281,6 @@
           function reloadChart(chart_type){
 
             var values = calculateForecastValues(chart_type);
-            console.log(values);
 
             if (chart_type == 1){
               loadChart_forecast('#revenue_forecast_chart_div', values);
@@ -402,8 +392,6 @@
 
       function loadChart_stat(div_to_display, stat_type, key_name, result, show_legend){
 
-          console.log(result);
-
           var myData = [
               {
                 values: result,
@@ -412,7 +400,6 @@
                 area: true
               },  
             ];
-          // console.log(myData);
 
           /*These lines are all chart setup.  Pick and choose which chart features you want to utilize. */
           nv.addGraph(function() {
@@ -431,7 +418,6 @@
                 ;
             }
             else {
-              // console.log('hide legend');
               chart
                   .margin({left: 0, top: 0, bottom: 0, right: 0})  //Adjust chart margins to give the x-axis some breathing room.
                   .useInteractiveGuideline(false)  //We want nice looking tooltips and a guideline!

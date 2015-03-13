@@ -243,7 +243,7 @@
                   <td>Revenue Churn:</td>
                   <td class="pull-right">
                     <div class="input-group">
-                      <span class="input-group-addon"><t t-esc="currency"/></span>
+                      <span class="input-group-addon">%</span>
                       <input class="form-control" type="number" id="revenue_churn"/>
                     </div>
                   </td>
@@ -273,7 +273,7 @@
                   <td>Starting Contract:</td>
                   <td class="pull-right">
                     <div class="input-group">
-                      <span class="input-group-addon"><t t-esc="currency"/></span>
+                      <!-- <span class="input-group-addon"><t t-esc="currency"/></span> -->
                       <input class="form-control" type="number" id="starting_contracts"/>
                     </div>
                   </td>
@@ -285,7 +285,7 @@
                   <td>Contracts Growth:</td>
                   <td class="pull-right">
                     <div class="input-group">
-                      <span class="input-group-addon"><t t-esc="currency"/></span>
+                      <!-- <span class="input-group-addon"><t t-esc="currency"/></span> -->
                       <input class="form-control" type="number" id="contracts_growth_linear"/>
                     </div>
                     <div style="display: none;" class="input-group">

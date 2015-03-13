@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <templates id="template" xml:space="preserve">
+
+
   <t t-name="account_contract_dashboard.statsByPlan">
     <div t-if="stats_by_plan.length > 0" class="row box">
       <table class="table table-striped">
@@ -27,5 +29,21 @@
       </table>
     </div>
   </t>
+
+  <t t-name="account_contract_dashboard.boxContent">
+    <div style="position: relative;">'
+      <h2 style="color: #2693d5;"><t t-esc="value"/></h2>
+        <div class="trend">
+          <h4 t-att-class="'mb0 ' + color"><t t-esc="perc"/>%</h4>
+          <span style="font-size: 10px;">30 Days Ago</span>
+        </div>
+    </div>
+    <div class="graph-box" t-att-id="chart_div_id"></div>
+    <div>
+        <h4 class="text-center mt32"><t t-esc="box_name"/></h4>
+    </div>
+  </t>
+
+
 </templates>
 
