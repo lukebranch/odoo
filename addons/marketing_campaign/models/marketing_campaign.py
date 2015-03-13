@@ -565,29 +565,24 @@ class MarketingCampaignWorkitem(models.Model):
             else:
                 wi.res_name = '/'
 
-    def _resource_search(self, operator, val):
-        """Returns id of workitem whose resource_name matches with the given name"""
-        print 'operator, val=================', operator, val
+    @api.model
+    def _resource_search(self, *args):
+        """Returns id of workitem whose resource_name matches  with the given name"""
         if not len(args):
             return []
-
+        domain = ('res_name', ) + args
         condition_name = None
-        # for domain_item in args:
-        # we only use the first domain criterion and ignore all the rest
-        # including operators
-        if args:
-            condition_name = [None, domain_item[1], domain_item[2]]
-            # break
-
+        if isinstance(domain, (list, tuple)) and len(domain) == 3:
+            condition_name = [None, domain[1], domain[2]]
         assert condition_name, "Invalid search domain for marketing_campaign_workitem.res_name. It should use 'res_name'"
 
-        self.cr.execute("""select w.id, w.res_id, m.model  \
+        self.env.cr.execute("""select w.id, w.res_id, m.model  \
                                 from marketing_campaign_workitem w \
                                     left join marketing_campaign_activity a on (a.id=w.activity_id)\
                                     left join marketing_campaign c on (c.id=a.campaign_id)\
                                     left join ir_model m on (m.id=c.object_id)
                                     """)
-        res = self.cr.fetchall()
+        res = self.env.cr.fetchall()
         workitem_map = {}
         matching_workitems = []
         for id, res_id, model in res:
@@ -598,7 +593,7 @@ class MarketingCampaignWorkitem(models.Model):
             condition_name[0] = model_pool._rec_name
             condition = [('id', 'in', id_map.keys()), condition_name]
             for res_id in model_pool.search(condition):
-                matching_workitems.extend(id_map[res_id])
+                matching_workitems.extend(id_map[res_id.id])
         return [('id', 'in', list(set(matching_workitems)))]
 
     segment_id = fields.Many2one(
