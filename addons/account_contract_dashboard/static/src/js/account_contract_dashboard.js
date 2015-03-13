@@ -43,7 +43,7 @@
                           'stat_type': self.box_code,
                           'start_date' : start_date,
                           'end_date': end_date,
-                          'complete': false,
+                          'nb_points': 15,
                           'filtered_contract_template_ids': filtered_contract_template_ids,
                       });
                   };
@@ -107,6 +107,7 @@
               'stat_type': stat_type,
               'start_date' : start_date,
               'end_date': end_date,
+              'nb_points': 30,
               'filtered_contract_template_ids': filtered_contract_template_ids,
           }).then(function(result){
               loadChart_stat('#stat_chart_div', stat_type, result[0], result[1], true);
@@ -516,6 +517,7 @@
           /*These lines are all chart setup.  Pick and choose which chart features you want to utilize. */
           nv.addGraph(function() {
             var chart = nv.models.lineChart()
+                          .interpolate("monotone")
                           .x(function(d) { return getDate(d); })
                           .y(function(d) { return getValue(d); })
                           .margin({left: 100})  //Adjust chart margins to give the x-axis some breathing room.

@@ -108,7 +108,7 @@
             </form>
           </div>
 
-          <div class="row box">
+          <div class="row box graph-detailed">
             <div class="col-sm-12">
               <div id="value_now" t-att-value="value_now['value_2']" class="hidden"/>
               <h1 class="metric_current oBlue mt32 mb32"><t t-esc="value_now['value_2']"/><t t-esc="all_stats[stat_type]['add_symbol']"/></h1>

@@ -176,7 +176,7 @@ class AccountContractDashboard(http.Controller):
         return results, stat_types
 
     @http.route('/account_contract_dashboard/calculate_graph_stat', type="json", auth='user', website=True)
-    def calculate_graph_stat(self, stat_type, start_date, end_date, filtered_contract_template_ids, complete=True):
+    def calculate_graph_stat(self, stat_type, start_date, end_date, filtered_contract_template_ids, complete=False, nb_points=30):
 
         def get_pruned_tick_values(ticks, start_date, end_date, nb_desired_ticks):
             nb_values = len(ticks)
@@ -193,7 +193,7 @@ class AccountContractDashboard(http.Controller):
         ticks = range(delta.days + 1)
 
         if not complete:
-            ticks = get_pruned_tick_values(ticks, start_date, end_date, 15)
+            ticks = get_pruned_tick_values(ticks, start_date, end_date, nb_points)
 
         results = []
 
@@ -336,7 +336,6 @@ class AccountContractDashboard(http.Controller):
             # TODO: use @MAT field instead of price_subtotal
             result = sum(non_recurring_invoice_line_ids.mapped('price_subtotal'))
             result = int(result)
-
 
         return result
 

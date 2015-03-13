@@ -27,14 +27,43 @@ div.box {
   /*padding: 1vw;*/
   color: #676a6c;
   background-color: #FFFFFF;
-  border-radius: 0px;
+  border-radius: 5px;
   -webkit-box-shadow: 0 2px 0 rgba(0, 0, 0, 0.25);
   box-shadow: 0 2px 0 rgba(0, 0, 0, 0.25);
   /*background-image: url(/account_contract_dashboard/static/src/img/profile_bg.png);*/
   background-size: cover;
   margin-bottom: 1em;
-  opacity: 0.8;
   position: relative;
+}
+/*
+div.stat-box {
+  opacity: 0.8;
+}*/
+
+div.stat-box:hover {
+  background-color: silver;
+/*  opacity: 0.5;
+  filter: alpha(opacity=1);*/
+}
+
+div.stat-box .nvd3 .nv-groups path.nv-area {
+  fill-opacity: 0.2;
+}
+
+div.stat-box .nvd3 .nv-groups path.nv-line {
+  stroke-opacity: 0.8;
+  stroke-width: 4px;
+}
+
+div.graph-detailed .nvd3 .nv-groups path.nv-line {
+  stroke-width: 3px;
+}
+
+div.graph-detailed .nvd3.nv-scatter .nv-groups .nv-point,
+div.graph-detailed .nvd3 .nv-groups .nv-point {
+  stroke-width: 5px;
+  fill-opacity: .95 !important;
+  stroke-opacity: .95 !important;
 }
 
 div.graph-box {
@@ -53,10 +82,7 @@ div.col-sm-4 {
   padding-left: 8px;
 }
 
-div.box:hover {
-  opacity: 1;
-  filter: alpha(opacity=1);
-}
+
 
 div.box h1, h2, h3, h4 {
   margin-top: 5px;
