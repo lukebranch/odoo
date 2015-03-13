@@ -50,8 +50,8 @@
                 element:   '.modal button:contains("Continue")',
             },
             {
-                title:     "Check that the cart contains exactly 3 elements",
-                element:   'a:has(.my_cart_quantity:containsExact(3))',
+                title:     "Check that the cart contains exactly 2 elements",
+                element:   'a:has(.my_cart_quantity:containsExact(2))',
             },
             {
                 title:     "Modify the cart to add 1 unit of `VIP` ticket type",
