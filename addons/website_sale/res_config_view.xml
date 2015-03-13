@@ -20,4 +20,28 @@
         </field>
     </record>
 
+    <record id="view_website_config_settings" model="ir.ui.view">
+        <field name="name">website_sale settings</field>
+        <field name="model">website.config.settings</field>
+        <field name="inherit_id" ref="website.view_website_config_settings"/>
+        <field name="arch" type="xml">
+            <group string="Domain" position="after">
+                <separator string="eCommerce"/>
+                <group>
+                    <label for="oe_ws" string="eCommerce Grid"/>
+                    <div>
+                        <div name="oe_ws">
+                            <field name="products_per_page" class="oe_inline"/>
+                            <label for="products_per_page" string="Products per page"/>
+                        </div>
+                        <div>
+                            <field name="products_per_row" class="oe_inline"/>
+                            <label for="products_per_row" string="Products per row"/>
+                        </div>
+                    </div>
+                </group>
+            </group>
+        </field>
+    </record>
+
 </odoo>

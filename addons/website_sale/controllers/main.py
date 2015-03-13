@@ -9,14 +9,17 @@ from openerp.tools.translate import _
 from openerp.addons.website.models.website import slug
 from openerp.addons.web.controllers.main import login_redirect
 
-PPG = 20 # Products Per Page
-PPR = 4  # Products Per Row
+def get_product_grid():
+    PPR = request.website.products_per_row
+    PPG = request.website.products_per_page
+    return PPG, PPR
 
 class table_compute(object):
     def __init__(self):
         self.table = {}
 
     def _check_place(self, posx, posy, sizex, sizey):
+        PPG, PPR = get_product_grid()
         res = True
         for y in range(sizey):
             for x in range(sizex):
@@ -33,6 +36,7 @@ class table_compute(object):
 
     def process(self, products):
         # Compute products positions on the grid
+        PPG, PPR = get_product_grid()
         minpos = 0
         index = 0
         maxy = 0
@@ -144,6 +148,7 @@ class website_sale(http.Controller):
         '/shop/category/<model("product.public.category"):category>/page/<int:page>'
     ], type='http', auth="public", website=True)
     def shop(self, page=0, category=None, search='', **post):
+        PPG, PPR = get_product_grid()
         cr, uid, context, pool = request.cr, request.uid, request.context, request.registry
 
         domain = request.website.sale_product_domain()

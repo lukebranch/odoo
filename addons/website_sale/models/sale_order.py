@@ -123,6 +123,13 @@ class website(orm.Model):
             type='many2one', relation='product.pricelist', string='Default Pricelist'),
         'currency_id': fields.related('pricelist_id','currency_id',
             type='many2one', relation='res.currency', string='Default Currency'),
+        'products_per_page': fields.integer('Products per page in the Shop Frontend', help="Number of products per page"),
+        'products_per_row': fields.integer('Products per row in the Shop Frontend', help="Number of products per row")
+    }
+
+    _defaults = {
+        'products_per_page': 40,
+        'products_per_row': 4
     }
 
     def sale_product_domain(self, cr, uid, ids, context=None):
