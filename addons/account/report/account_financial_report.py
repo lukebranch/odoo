@@ -103,8 +103,7 @@ class report_account_common(report_sxw.rml_parse, common_report_header):
                         vals['balance_cmp'] = account_obj.browse(self.cr, self.uid, account.id, context=data['form']['comparison_context']).balance * report.sign or 0.0
                         if not currency_obj.is_zero(self.cr, self.uid, account.company_id.currency_id, vals['balance_cmp']):
                             flag = True
-                    if flag:
-                        lines.append(vals)
+                    lines.append(vals)
         return lines
 
 
