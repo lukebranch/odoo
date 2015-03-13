@@ -19,17 +19,19 @@
 #
 ##############################################################################
 
-from openerp.osv import osv, fields
-import uuid
-import time
 import datetime
+import time
+import uuid
 
 import openerp.addons.decimal_precision as dp
+from openerp.osv import osv, fields
 from openerp.tools import DEFAULT_SERVER_DATE_FORMAT
+
 
 class sale_quote_template(osv.osv):
     _name = "sale.quote.template"
     _description = "Sale Quotation Template"
+
     _columns = {
         'name': fields.char('Quotation Template', required=True),
         'website_description': fields.html('Description', translate=True),
@@ -39,9 +41,11 @@ class sale_quote_template(osv.osv):
         'number_of_days': fields.integer('Quotation Duration', help='Number of days for the validity date computation of the quotation'),
         'add_lines_in_quotes': fields.boolean('Add lines in Quotes')
     }
+
     _defaults = {
         'add_lines_in_quotes': True,
     }
+
     def open_template(self, cr, uid, quote_id, context=None):
         return {
             'type': 'ir.actions.act_url',
@@ -183,12 +187,9 @@ class sale_order(osv.osv):
             context['lang'] = self.pool['res.partner'].browse(cr, uid, partner, context).lang
 
         lines = [(5,)]
-        options = []
         quote_template = self.pool.get('sale.quote.template').browse(cr, uid, template_id, context=context)
-        date = False
-        if quote_template.number_of_days > 0:
-            date = (datetime.datetime.now() + datetime.timedelta(quote_template.number_of_days)).strftime(DEFAULT_SERVER_DATE_FORMAT)
 
+        options = []
         for option in quote_template.options:
             options.append((0, 0, {
                 'product_id': option.product_id.id,
@@ -199,6 +200,9 @@ class sale_order(osv.osv):
                 'discount': option.discount,
                 'website_description': option.website_description,
             }))
+        date = False
+        if quote_template.number_of_days > 0:
+            date = (datetime.datetime.now() + datetime.timedelta(quote_template.number_of_days)).strftime(DEFAULT_SERVER_DATE_FORMAT)
         order_data = {'order_line': lines, 'website_description': quote_template.website_description, 'note': quote_template.note, 'options': options, 'validity_date': date}
         if not quote_template.add_lines_in_quotes:
             return {'value': order_data}
