@@ -2,7 +2,7 @@
 import werkzeug
 
 from openerp import SUPERUSER_ID
-from openerp import http
+from openerp import http, addons
 from openerp import tools
 from openerp.http import request
 from openerp.tools.translate import _
@@ -985,10 +985,15 @@ class website_sale(http.Controller):
 
     @http.route(['/website_sale/menu/products'], type='json', auth="public", website=True)
     def get_products(self, values=None):
-        import pudb
-        pudb.set_trace()
-        template = request.website.get_template('website_sale.shop_menu_link')
-        if template.active:
-            template.write({'active': False})
+        products = request.env['product.product'].search_read([], limit=5, order='write_date desc')
+        return products
 
-        return ["apple", "orange", "pear"]
+
+class Website_extension(addons.website.controllers.main.Website):
+    @http.route()
+    def save_menu(self, view_id, value, xpath, **kwargs):
+        if request.env['ir.ui.view'].search_count([('name', '=', 'shop menu link')]):
+            template = request.website.get_template('website_sale.shop_menu_link')
+            if template.active:
+                template.write({'active': False})
+        super(Website_extension, self).save_menu(view_id, value, xpath, **kwargs)

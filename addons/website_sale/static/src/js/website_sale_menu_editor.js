@@ -49,7 +49,7 @@
                 ul.addClass('s_products');
                 el.after(ul);
                 $.each(products, function(){
-                    ul.append("<li ><a href='/page/homepage'><span>" + this + "</span></a></li>");
+                    ul.append("<li ><a href='/page/homepage'><span>" + this.name + " "+ this.write_date + "</span></a></li>");
                 });
                 el.remove();
             });

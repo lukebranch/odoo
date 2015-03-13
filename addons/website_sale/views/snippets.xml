@@ -3,7 +3,7 @@
 <data>
 
 <template name="5 Products" id="s_menu_products">
-    <li class="s_menu_products"><span>5 best products</span></li>
+    <li class="s_menu_products"><span>5 latest products</span></li>
 </template>
 
 <template id="website_sale" inherit_id="website.snippets" name="Snippet Ecommerce">

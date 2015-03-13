@@ -1454,7 +1454,7 @@
 
 <!-- Add the shop menu -->
 
-<template id="shop_menu_link" inherit_id="website.submenu">
+<template id="shop_menu_link" inherit_id="website.submenu" name="shop menu link">
   <xpath expr="./ul" position="inside">
     <li class="s_menu_parent"><a href="/shop">Shop</a></li>
   </xpath>

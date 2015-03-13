@@ -36,8 +36,8 @@
 
         transform_menu_dropdown: function(el){
             var self = this;
-            el.find('.o_editable').removeClass('o_editable o_is_inline_editable');
-            el.find("[data-oe-field]").removeAttr("data-oe-type data-oe-expression data-oe-field data-oe-id data-oe-translate data-oe-model");
+            el.removeClass('o_editable o_is_inline_editable');
+            el.removeAttr("data-oe-xpath data-oe-type data-oe-expression data-oe-field data-oe-id data-oe-translate data-oe-model");
             el.not(":has(ul)").children('a').append('<span class="caret"></span>');
             el.not(":has(ul)").children('a').after('<ul class="dropdown-menu o_editable_menu" role="menu"></ul>');
             el.children('a').removeAttr('data-toggle class');

@@ -363,6 +363,7 @@ class Website(openerp.addons.web.controllers.main.Home):
         :param str xpath: valid xpath to the tag to replace
         """
         "website.submenu"
+        #verifier toutes les dépendences de vues et mettre à active = false les enfants.
         view = request.registry['ir.ui.view']
         view.save(request.cr, request.uid, view_id, value, xpath, context=request.context)
 
