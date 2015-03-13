@@ -1,34 +1,14 @@
 # -*- coding: utf-8 -*-
-##############################################################################
-#
-#    OpenERP, Open Source Management Solution
-#    Copyright (C) 2004-2010 Tiny SPRL (<http://tiny.be>).
-#
-#    This program is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU Affero General Public License as
-#    published by the Free Software Foundation, either version 3 of the
-#    License, or (at your option) any later version.
-#
-#    This program is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU Affero General Public License for more details.
-#
-#    You should have received a copy of the GNU Affero General Public License
-#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-##############################################################################
-
 
 {
     'name': 'Marketing Campaigns',
     'version': '1.1',
     'depends': ['marketing',
-                 'document',
-                 'mail',
-                 'decimal_precision'
-    ],
-    'author': 'OpenERP SA',
+                'document',
+                'mail',
+                'decimal_precision'
+                ],
+    'author': 'Odoo SA',
     'category': 'Marketing',
     'description': """
 This module provides leads automation through marketing campaigns (campaigns can in fact be defined on any resource, not just CRM Leads).
@@ -56,15 +36,15 @@ input segments, workflow.
     """,
     'website': 'https://www.odoo.com/page/lead-automation',
     'data': [
-        'res_config.xml',
-        'marketing_campaign_view.xml',
-        'marketing_campaign_data.xml',
-        'marketing_campaign_workflow.xml',
+        'views/res_config.xml',
+        'views/marketing_campaign_view.xml',
+        'views/marketing_campaign_data.xml',
+        'views/marketing_campaign_workflow.xml',
         'report/campaign_analysis_view.xml',
         'security/marketing_campaign_security.xml',
         'security/ir.model.access.csv'
     ],
-    'demo': ['marketing_campaign_demo.xml'],
+    'demo': ['data/marketing_campaign_demo.xml'],
     'test': ['test/marketing_campaign.yml'],
     'installable': True,
     'auto_install': False,

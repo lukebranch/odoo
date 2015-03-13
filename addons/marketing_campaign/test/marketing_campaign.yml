@@ -51,7 +51,7 @@
     work_item_id = self.browse(cr ,uid ,ids[0] ,context)
     assert work_item_id.res_name, 'Resource Name is not defined.'
     self.process(cr, uid, ids)
-    record = self.browse(cr, uid, ids)[0]
+    record = self.browse(cr, uid, ids)
     assert record.state == "done", "Follow-up item should be closed after process."
 -
   I check follow-up detail of second activity after process of first activity.
@@ -73,7 +73,7 @@
     ('campaign_id', '=', ref('marketing_campaign_openerppartnerchannel')), ('activity_id', '=', ref('marketing_campaign_activity_1'))])
     self.button_draft(cr, uid, ids, context=context)
     self.process(cr, uid, ids, context=context)
-    record = self.browse(cr, uid, ids[0], context=context)
+    record = self.browse(cr, uid, ids, context=context)
     assert record.state == "done", "Follow-up item should be closed after process."
 -
   I check follow-up detail of third activity after process of second activity.

@@ -1,5 +1,5 @@
-<?xml version="1.0"?>
-<openerp>
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
     <data noupdate="1">
 
         <record id="action_client_marketing_menu" model="ir.actions.client">
@@ -14,7 +14,6 @@
         </record>
 
     </data>
-    <data>
 
     <!-- Marketing Campaign -->
     
@@ -462,5 +461,4 @@
 
     <menuitem id="menu_action_marketing_campaign_workitem" parent="menu_marketing_campaign" action="action_marketing_campaign_workitem" sequence="10"/>
 
-    </data>
-</openerp>
+</odoo>
