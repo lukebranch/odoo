@@ -18,16 +18,37 @@ var _t = core._t;
 var _lt = core._lt;
 var QWeb = core.qweb;
 
+console.log($.fullCalendar.View.prototype.formatRange);
+$.fullCalendar.View.prototype.formatRange = function (range, formatStr, separator) {
+    var date1 = moment.parseZone(range.start);
+
+    var date2 = range.end;
+    if (!date2.hasTime()) { // all-day?
+        date2 = date2.clone().subtract(1); // convert to inclusive. last ms of previous day
+    }
+	date2 = moment.parseZone(date2);
+
+	var localeData = (date1.localeData || date1.lang).call(date1); // works with moment-pre-2.8
+
+	formatStr = localeData.longDateFormat(formatStr) || formatStr;
+
+	separator = separator || ' \u2014 ';
+
+    var format1 = date1.format(formatStr);
+    var format2 = date2.format(formatStr);
+    if (format1 === format2) {
+        return format1;
+    }
+    if (this.opt('isRTL')) {
+        return format2 + separator + format1;
+    } else {
+        return format1 + separator + format2;
+    }
+};
+
 function get_fc_defaultOptions() {
     var shortTimeformat = moment._locale._longDateFormat.LT;
     var dateFormat = time.strftime_to_moment_format(_t.database.parameters.date_format);
-
-    // adapt format for fullcalendar v1.
-    // see http://fullcalendar.io/docs1/utilities/formatDate/
-    var conversions = [['YYYY', 'yyyy'], ['YY', 'y'], ['DDDD', 'dddd'], ['DD', 'dd']];
-    _.each(conversions, function(conv) {
-        dateFormat = dateFormat.replace(conv[0], conv[1]);
-    });
 
     return {
         weekNumberTitle: _t("W"),
@@ -45,21 +66,23 @@ function get_fc_defaultOptions() {
         firstDay: moment._locale._week.dow,
         weekNumbers: true,
         axisFormat : shortTimeformat.replace(/:mm/,'(:mm)'),
-        timeFormat : {
-           // for agendaWeek and agendaDay               
-           agenda: shortTimeformat + '{ - ' + shortTimeformat + '}', // 5:00 - 6:30
-            // for all other views
-            '': shortTimeformat.replace(/:mm/,'(:mm)')  // 7pm
-        },
-        titleFormat: {
-            month: 'MMMM yyyy',
-            week: dateFormat + "{ '&#8212;'"+ dateFormat,
-            day: dateFormat,
-        },
-        columnFormat: {
-            month: 'ddd',
-            week: 'ddd ' + dateFormat,
-            day: 'dddd ' + dateFormat,
+        timeFormat : shortTimeformat.replace(/:mm/,'(:mm)'),  // 7pm
+        views: {
+            month: {
+                titleFormat: 'MMMM YYYY',
+                columnFormat: 'ddd'
+            },
+            week: {
+                titleFormat: dateFormat,
+                columnFormat: 'ddd ' + dateFormat
+            },
+            day: {
+                titleFormat: dateFormat,
+                columnFormat: 'dddd ' + dateFormat
+            },
+            agenda: {
+                timeFormat: shortTimeformat,
+            }
         },
         weekMode : 'liquid',
         aspectRatio: 1.8,
@@ -69,10 +92,6 @@ function get_fc_defaultOptions() {
 
 function is_virtual_id(id) {
     return typeof id === "string" && id.indexOf('-') >= 0;
-}
-
-function isNullOrUndef(value) {
-    return _.isUndefined(value) || _.isNull(value);
 }
 
 var CalendarView = View.extend({
@@ -90,8 +109,6 @@ var CalendarView = View.extend({
         this.view_id = view_id;
         this.view_type = 'calendar';
         this.color_map = {};
-        this.range_start = null;
-        this.range_stop = null;
         this.selected_filters = [];
 
         this.shown = $.Deferred();
@@ -155,27 +172,26 @@ var CalendarView = View.extend({
         //if quick_add = not specified in view, we use the default quick_create_instance
         //if quick_add = is NOT False and IS specified in view, we this one for quick_create_instance'   
 
-        this.quick_add_pop = (isNullOrUndef(attrs.quick_add) || _.str.toBoolElse(attrs.quick_add, true));
+
+        this.quick_add_pop = (attrs.quick_add == null || _.str.toBoolElse(attrs.quick_add, true));
         // The display format which will be used to display the event where fields are between "[" and "]"
-        if (!isNullOrUndef(attrs.display)) {
+        if (!(attrs.display == null)) {
             this.how_display_event = attrs.display; // String with [FIELD]
         }
 
         // If this field is set ot true, we don't open the event in form view, but in a popup with the view_id passed by this parameter
-        if (isNullOrUndef(attrs.event_open_popup) || !_.str.toBoolElse(attrs.event_open_popup, true)) {
+        if (attrs.event_open_popup == null || !_.str.toBoolElse(attrs.event_open_popup, true)) {
             this.open_popup_action = false;
         } else {
             this.open_popup_action = attrs.event_open_popup;
         }
         // If this field is set to true, we will use the calendar_friends model as filter and not the color field.
-        this.useContacts = (!isNullOrUndef(attrs.use_contacts) && _.str.toBool(attrs.use_contacts)) && (!isNullOrUndef(self.options.$sidebar));
-
+        this.useContacts = (!(attrs.use_contacts == null) && _.str.toBool(attrs.use_contacts)) && (!(self.options.$sidebar == null));
         // If this field is set ot true, we don't add itself as an attendee when we use attendee_people to add each attendee icon on an event
         // The color is the color of the attendee, so don't need to show again that it will be present
-        this.colorIsAttendee = (!(isNullOrUndef(attrs.color_is_attendee) || !_.str.toBoolElse(attrs.color_is_attendee, true))) && (!isNullOrUndef(self.options.$sidebar));
-
+        this.colorIsAttendee = (!(attrs.color_is_attendee == null || !_.str.toBoolElse(attrs.color_is_attendee, true))) && (!(self.options.$sidebar == null));
         // if we have not sidebar, (eg: Dashboard), we don't use the filter "coworkers"
-        if (isNullOrUndef(self.options.$sidebar)) {
+        if (self.options.$sidebar == null) {
             this.useContacts = false;
             this.colorIsAttendee = false;
             this.attendee_people = undefined;
@@ -196,19 +212,19 @@ var CalendarView = View.extend({
                     }
                 }            
         */
-        if (isNullOrUndef(attrs.avatar_model)) {
+        if (attrs.avatar_model == null) {
             this.avatar_model = null;
         } else {
             this.avatar_model = attrs.avatar_model;
         }
 
-        if (isNullOrUndef(attrs.avatar_title)) {
+        if (attrs.avatar_title == null) {
             this.avatar_title = this.avatar_model;
         } else {
             this.avatar_title = attrs.avatar_title;
         }
 
-        if (isNullOrUndef(attrs.avatar_filter)) {
+        if (attrs.avatar_filter == null) {
             this.avatar_filter = this.avatar_model;
         } else {
             this.avatar_filter = attrs.avatar_filter;
@@ -255,10 +271,9 @@ var CalendarView = View.extend({
         //Documentation here : http://arshaw.com/fullcalendar/docs/
         var self = this;
         return  $.extend({}, get_fc_defaultOptions(), {
-            
-            defaultView: (this.mode == "month")?"month":
-                (this.mode == "week"?"agendaWeek":
-                 (this.mode == "day"?"agendaDay":"month")),
+            defaultView: this.mode == "week" ? "agendaWeek"
+                       : this.mode == "day" ? "agendaDay"
+                       : "month",
             header: {
                 left: 'prev,next today',
                 center: 'title',
@@ -270,32 +285,23 @@ var CalendarView = View.extend({
             droppable: true,
 
             // callbacks
-
-            eventDrop: function (event, _day_delta, _minute_delta, _all_day, _revertFunc) {
+            eventDrop: function (event) {
                 var data = self.get_event_data(event);
                 self.proxy('update_record')(event._id, data); // we don't revert the event, but update it.
             },
-            eventResize: function (event, _day_delta, _minute_delta, _revertFunc) {
+            eventResize: function (event) {
                 var data = self.get_event_data(event);
                 self.proxy('update_record')(event._id, data);
             },
-            eventRender: function (event, element, view) {
-                element.find('.fc-event-title').html(event.title);
-            },
-            eventAfterRender: function (event, element, view) {
-                if ((view.name !== 'month') && (((event.end-event.start)/60000)<=30)) {
-                    //if duration is too small, we see the html code of img
-                    var current_title = $(element.find('.fc-event-time')).text();
-                    var new_title = current_title.substr(0,current_title.indexOf("<img")>0?current_title.indexOf("<img"):current_title.length);
-                    element.find('.fc-event-time').html(new_title);
-                }
+            eventRender: function (event, $element, view) {
+                $element.find('.fc-title').html(event.title);
             },
             eventClick: function (event) { self.open_event(event._id,event.title); },
-            select: function (start_date, end_date, all_day, _js_event, _view) {
+            select: function (start_date, end_date, event) {
                 var data_template = self.get_event_data({
                     start: start_date,
                     end: end_date,
-                    allDay: all_day,
+                    allDay: event && event.allDay,
                 });
                 self.open_quick_create(data_template);
 
@@ -353,7 +359,7 @@ var CalendarView = View.extend({
         return widgets.QuickCreate;
     },
     open_quick_create: function(data_template) {
-        if (!isNullOrUndef(this.quick)) {
+        if (!(this.quick == null)) {
             return this.quick.trigger('close');
         }
         var QuickCreate = this.get_quick_create_class();
@@ -606,10 +612,6 @@ var CalendarView = View.extend({
      * Transform fullcalendar event object to OpenERP Data object
      */
     get_event_data: function(event) {
-        var date_start_day;
-        var date_stop_day;
-        var diff_seconds;
-
         // Normalize event_end without changing fullcalendars event.
         var data = {
             name: event.title
@@ -617,37 +619,24 @@ var CalendarView = View.extend({
         
         var event_end = event.end;
         //Bug when we move an all_day event from week or day view, we don't have a dateend or duration...            
-        if (event_end === null) {
-            var m_date = moment(event.start).add(2, 'hours');
-            event_end = m_date.toDate();
+        if (event_end == null) {
+            event_end = moment(event.start).add(2, 'hours');
         }
 
+        var date_start_day = event.start;
+        var date_stop_day = event_end;
         if (event.allDay) {
-            // Sometimes fullcalendar doesn't give any event.end.
-            if (event_end === null || _.isUndefined(event_end)) {
-                event_end = new Date(event.start);
-            }
             if (this.all_day) {
-                date_start_day = new Date(Date.UTC(event.start.getFullYear(),event.start.getMonth(),event.start.getDate()));
-                date_stop_day = new Date(Date.UTC(event_end.getFullYear(),event_end.getMonth(),event_end.getDate()));                    
+                date_start_day = moment(event.start).utc().set({hour: 0, minute: 0, second: 0, millisecond: 0});
+                date_stop_day = moment(event_end).utc().set({hour: 0, minute: 0, second: 0, millisecond: 0});
+            } else {
+                date_start_day = moment(event.start).set({hour: 7, minute: 0, second: 0, millisecond: 0});
+                date_stop_day = moment(event_end).set({hour: 19, minute: 0, second: 0, millisecond: 0});
             }
-            else {
-                date_start_day = new Date(event.start.getFullYear(),event.start.getMonth(),event.start.getDate(),7);
-                date_stop_day = new Date(event_end.getFullYear(),event_end.getMonth(),event_end.getDate(),19);
-            }
-            data[this.date_start] = time.datetime_to_str(date_start_day);
-            if (this.date_stop) {
-                data[this.date_stop] = time.datetime_to_str(date_stop_day);
-            }
-            diff_seconds = Math.round((date_stop_day.getTime() - date_start_day.getTime()) / 1000);
-                            
         }
-        else {
-            data[this.date_start] = time.datetime_to_str(event.start);
-            if (this.date_stop) {
-                data[this.date_stop] = time.datetime_to_str(event_end);
-            }
-            diff_seconds = Math.round((event_end.getTime() - event.start.getTime()) / 1000);
+        data[this.date_start] = time.datetime_to_str(date_start_day.toDate());
+        if (this.date_stop) {
+            data[this.date_stop] = time.datetime_to_str(date_stop_day.toDate());
         }
 
         if (this.all_day) {
@@ -655,8 +644,7 @@ var CalendarView = View.extend({
         }
 
         if (this.date_delay) {
-            
-            data[this.date_delay] = diff_seconds / 3600;
+            data[this.date_delay] = date_stop_day.diff(date_start_day, 'seconds') / 3600;
         }
         return data;
     },
@@ -677,7 +665,7 @@ var CalendarView = View.extend({
             this.$calendar.fullCalendar('removeEventSource', this.event_source);
         }
         this.event_source = {
-            events: function(start, end, callback) {
+            events: function(start, end, _tz, callback) {
                 var current_event_source = self.event_source;
                 self.dataset.read_slice(_.keys(self.fields), {
                     offset: 0,
@@ -698,30 +686,25 @@ var CalendarView = View.extend({
                     }
                     
                     if (!self.useContacts) {  // If we use all peoples displayed in the current month as filter in sidebars
-                        var filter_item;
-                        
                         self.now_filter_ids = [];
 
-                        var color_field = self.fields[self.color_field];
                         _.each(events, function (e) {
                             var key,val = null;
                             if (self.color_field.type == "selection") {
                                 key = e[self.color_field];
                                 val = _.find( self.color_field.selection, function(name){ return name[0] === key;});
-                            }
-                            else {
+                            } else {
                                 key = e[self.color_field][0];
                                 val = e[self.color_field];
                             }
                             if (!self.all_filters[key]) {
-                                filter_item = {
+                                self.all_filters[key] = {
                                     value: key,
                                     label: val[1],
                                     color: self.get_color(key),
                                     avatar_model: (_.str.toBoolElse(self.avatar_filter, true) ? self.avatar_filter : false ),
                                     is_checked: true
                                 };
-                                self.all_filters[key] = filter_item;
                             }
                             if (! _.contains(self.now_filter_ids, key)) {
                                 self.now_filter_ids.push(key);
@@ -741,8 +724,7 @@ var CalendarView = View.extend({
                             });
                         }
                         
-                    }
-                    else { //WE USE CONTACT
+                    } else { //WE USE CONTACT
                         if (self.attendee_people !== undefined) {
                             //if we don't filter on 'Everybody's Calendar
                             if (!self.all_filters[-1] || !self.all_filters[-1].is_checked) {
@@ -789,22 +771,24 @@ var CalendarView = View.extend({
      * between given start, end dates.
      */
     get_range_domain: function(domain, start, end) {
-        var format = time.date_to_str;
-        
-        var extend_domain = [[this.date_start, '>=', format(start)],
-                 [this.date_start, '<=', format(end)]];
+        function format(m) { return m.format('YYYY-MM-DD'); }
 
+        // event starts during selected period
+        var extend_domain = [
+            '&',
+            [this.date_start, '>=', format(start)],
+            [this.date_start, '<', format(end)]
+        ];
+
+        // duration overlap
         if (this.date_stop) {
-            //add at start 
-            extend_domain.splice(0,0,'|','|','&');
-            //add at end 
+            extend_domain.unshift('|');
+            // add test for overlapping with period in any way: event starts
+            // before the end of the period and ends after its start
             extend_domain.push(
-                            '&',
-                            [this.date_start, '<=', format(start)],
-                            [this.date_stop, '>=', format(start)],
-                            '&',
-                            [this.date_start, '<=', format(end)],
-                            [this.date_stop, '>=', format(start)]
+                '&',
+                [this.date_start, '<', format(end)],
+                [this.date_stop, '>=', format(start)]
             );
             //final -> (A & B) | (C & D) | (E & F) ->  | | & A B & C D & E F
         }
@@ -837,17 +821,12 @@ var CalendarView = View.extend({
     open_event: function(id, title) {
         var self = this;
         if (! this.open_popup_action) {
-            var index = this.dataset.get_id_index(id);
-            this.dataset.index = index;
-            if (this.write_right) {
-                this.do_switch_view('form', null, { mode: "edit" });
-            } else {
-                this.do_switch_view('form', null, { mode: "view" });
-            }
+            this.dataset.select_id(id);
+            this.do_switch_view('form', null, { mode: this.write_right ? 'edit' : 'view' });
         }
         else {
             var pop = new form_common.FormOpenPopup(this);
-            var id_cast = parseInt(id).toString() == id ? parseInt(id) : id;
+            var id_cast = parseInt(id, 10).toString() == id ? parseInt(id, 10) : id;
             pop.show_element(this.dataset.model, id_cast, this.dataset.get_context(), {
                 title: _.str.sprintf(_t("View: %s"),title),
                 view_id: +this.open_popup_action,
@@ -900,7 +879,6 @@ var CalendarView = View.extend({
      * @param {id} id of the newly created record
      */
     quick_created: function (id) {
-
         /** Note:
          * it's of the most utter importance NOT to use inplace
          * modification on this.dataset.ids as reference to this
@@ -923,18 +901,12 @@ var CalendarView = View.extend({
     },
 
     remove_event: function(id) {
-        var self = this;
-        function do_it() {
-            return $.when(self.dataset.unlink([id])).then(function() {
-                self.$calendar.fullCalendar('removeEvents', id);
-            });
+        if (this.options.confirm_on_delete && !confirm(_t("Are you sure you want to delete this record ?"))) {
+            return
         }
-        if (this.options.confirm_on_delete) {
-            if (confirm(_t("Are you sure you want to delete this record ?"))) {
-                return do_it();
-            }
-        } else
-            return do_it();
+        return $.when(this.dataset.unlink([id])).then(function () {
+            this.$calendar.fullCalendar('removeEvents', id);
+        }.bind(this));
     },
 });
 
