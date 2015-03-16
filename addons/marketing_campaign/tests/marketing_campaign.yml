@@ -47,6 +47,7 @@
   !python {model: marketing.campaign.workitem}: |
     ids = self.search(cr, uid, [('segment_id', '=', ref('marketing_campaign_segment0')),
     ('campaign_id', '=', ref('marketing_campaign_openerppartnerchannel')), ('activity_id', '=', ref('marketing_campaign_activity_0'))])
+    print 'ids---------------------------',ids
     assert ids, 'Follow-up item is not created for first activity.'
     work_item_id = self.browse(cr ,uid ,ids[0] ,context)
     assert work_item_id.res_name, 'Resource Name is not defined.'
@@ -93,6 +94,7 @@
   !python {model: marketing.campaign.workitem}: |
     ids = self.search(cr, uid, [('segment_id', '=', ref('marketing_campaign_segment0')),
     ('campaign_id', '=', ref('marketing_campaign_openerppartnerchannel')), ('activity_id', '=', ref('marketing_campaign_activity_2'))])
+    print 'third_act----------------------------------------',ids
     self.button_draft(cr, uid, ids, context=context)
     self.process(cr, uid, ids, context=context)
     record = self.browse(cr, uid, ids[0], context=context)

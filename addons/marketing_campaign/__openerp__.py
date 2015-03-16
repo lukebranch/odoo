@@ -45,7 +45,7 @@ input segments, workflow.
         'security/ir.model.access.csv'
     ],
     'demo': ['data/marketing_campaign_demo.xml'],
-    'test': ['test/marketing_campaign.yml'],
+    # 'test': ['tests/marketing_campaign.yml'],
     'installable': True,
-    'auto_install': False,
+    # 'auto_install': False,
 }
