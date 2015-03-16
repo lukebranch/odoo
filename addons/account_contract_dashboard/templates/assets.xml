@@ -8,15 +8,6 @@
     </xpath>
 </template>
 
-<template id="account_contract_dashboard_frontend" inherit_id="website.assets_frontend" active="True">
-    <xpath expr="." position="inside">
-		<link href="/account_contract_dashboard/static/src/css/account_contract_dashboard.css" rel="stylesheet"/> 
-		<script type="text/javascript" src="/account_contract_dashboard/static/src/js/account_contract_dashboard.js"></script>
-		<link href="/web/static/lib/nvd3/nv.d3.css" rel="stylesheet"></link>
-		<script type="text/javascript" src="/web/static/lib/nvd3/d3.v3.js"></script>
-		<script type="text/javascript" src="/web/static/lib/nvd3/nv.d3.js"></script>
-    </xpath>
-</template>
               
 	</data>
 </openerp>

@@ -2,44 +2,42 @@
 <openerp>
   <data>
 
+  <template id="dashboard_options">
+    <div class="row mt32 mb32">
+      <form action="/account_contract_dashboard">
+        <div class="col-sm-12 text-right">
+          <div class="mb8">
+            <a t-att-class="'' if filtered_contract_template_ids else 'collapsed'" data-toggle="collapse" href="#collapse_filter_contracts">
+              Filter on contracts
+            </a>
+          </div>
+
+          <div role="tablist" aria-multiselectable="true">
+            <div id="collapse_filter_contracts" t-att-class="'panel-collapse collapse in' if filtered_contract_template_ids else 'panel-collapse collapse'" role="tabpanel">
+              <t t-foreach="contract_templates" t-as="template">
+                <div class="checkbox">
+                  <input type="checkbox" t-att-checked="'checked' if str(template.id) in filtered_contract_template_ids else ''" name="contract_template_filter" t-att-value="template.id"><t t-esc="template.name"/></input>
+                </div>
+              </t>
+            </div>
+          </div>
+          <div>
+            <input type="date" name="start_date" t-att-value="start_date"/> to <input type="date" name="end_date" t-att-value="end_date"/> <button class="btn btn-primary" type="submit">Update</button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <hr/>
+  </template>
+
   <template id="dashboard" name="Recurring Revenue Dashboard" page="True">
     <t t-name="account_contract_dashboard.dashboard"/>
     <t t-call="account_contract_dashboard.layout">
-    <div id="wrap" class="oe_structure oe_empty" style="background-color: #ebf1f4;">
+    <div id="wrap" class="oe_structure oe_empty" style="background-color: #F0EEEE;">
       <div class="container">
-          
-          <div class="row">              
-            <div class="col-sm-12 text-center">
-              <h1 class="text-muted ">Revenue KPIs</h1>
-            </div>
-          </div>
 
-          <hr/>
-
-          <div class="row mb32">
-            <form action="/account_contract_dashboard">
-              <div class="col-sm-4 text-left">
-                <div>
-                  <a t-att-class="'' if filtered_contract_template_ids else 'collapsed'" data-toggle="collapse" href="#collapse_filter_contracts">
-                    Filter on contracts
-                  </a>
-                </div>
-
-                <div role="tablist" aria-multiselectable="true">
-                  <div id="collapse_filter_contracts" t-att-class="'panel-collapse collapse in' if filtered_contract_template_ids else 'panel-collapse collapse'" role="tabpanel">
-                    <t t-foreach="contract_templates" t-as="template">
-                      <div class="checkbox">
-                        <input type="checkbox" t-att-checked="'checked' if str(template.id) in filtered_contract_template_ids else ''" name="contract_template_filter" t-att-value="template.id"><t t-esc="template.name"/></input>
-                      </div>
-                    </t>
-                  </div>
-                </div>
-              </div>
-              <div class="col-sm-8 text-right">
-                <input type="date" name="start_date" t-att-value="start_date"/> to <input type="date" name="end_date" t-att-value="end_date"/> <button class="btn btn-primary" type="submit">Update</button>
-              </div>
-            </form>
-          </div>
+        <t t-call="account_contract_dashboard.dashboard_options"/>
 
           <div class="row">
             <t t-foreach="all_stats" t-as="stat">
@@ -84,42 +82,18 @@
   <template id="detailed_dashboard" name="Detailed Dashboard" page="True">
     <t t-name="account_contract_dashboard.detailed_dashboard"/>
     <t t-call="account_contract_dashboard.layout">
-    <div id="wrap" class="oe_structure oe_empty" style="background-color: #ebf1f4;">
+    <div id="wrap" class="oe_structure oe_empty" style="background-color: #F0EEEE;">
       <div class="container">
           
-          <div class="row">              
+<!--           <div class="row">              
             <div class="col-sm-12 text-center">
               <h1 class="text-muted "><t t-esc="report_name"/></h1>
             </div>
           </div>
 
-          <hr/>
-
-          <div class="row mb32">
-            <form t-att-action="'/account_contract_dashboard/detailed/%s' % stat_type">
-              <div class="col-sm-4 text-left">
-                <div>
-                  <a t-att-href="'/account_contract_dashboard?%s' % href_post_args">Dashboard</a>
-                </div>
-                <a t-att-class="'' if filtered_contract_template_ids else 'collapsed'" data-toggle="collapse" href="#collapse_filter_contracts">
-                  Filter on contracts
-                </a>
-
-                <div role="tablist" aria-multiselectable="true">
-                  <div id="collapse_filter_contracts" t-att-class="'panel-collapse collapse in' if filtered_contract_template_ids else 'panel-collapse collapse'" role="tabpanel">
-                    <t t-foreach="contract_templates" t-as="template">
-                      <div class="checkbox">
-                        <input type="checkbox" t-att-checked="'checked' if str(template.id) in filtered_contract_template_ids else ''" name="contract_template_filter" t-att-value="template.id"><t t-esc="template.name"/></input>
-                      </div>
-                    </t>
-                  </div>
-                </div>
-              </div>
-              <div class="col-sm-8 text-right">
-                <input type="date" name="start_date" t-att-value="start_date"/> to <input type="date" name="end_date" t-att-value="end_date"/> <button class="btn btn-primary" type="submit">Update</button>
-              </div>
-            </form>
-          </div>
+          <hr/> -->
+          
+          <t t-call="account_contract_dashboard.dashboard_options"/>
 
           <div class="row box graph-detailed">
             <div class="col-sm-12">
@@ -207,20 +181,20 @@
   <template id="forecast" name="Metrics Forecasting" page="True">
     <t t-name="account_contract_dashboard.forecast"/>
     <t t-call="account_contract_dashboard.layout">
-    <div id="wrap" class="oe_structure oe_empty" style="background-color: #ebf1f4;">
+    <div id="wrap" class="oe_structure oe_empty" style="background-color: #F0EEEE;">
       <div class="container">
           
-          <div class="row">              
+<!--           <div class="row">
             <div class="col-sm-12 text-center">
               <h1 class="text-muted ">Metrics Forecasting</h1>
             </div>
           </div>
 
-          <hr/>
+          <hr/> -->
 
-          <div class="row mb32">
+<!--           <div class="row mb32">
             <a href="/account_contract_dashboard">Dashboard</a>
-          </div>
+          </div> -->
 
           <div class="row box">
             <h3 class="text-center mt32 mb32" id="revenue_forecast_summary"></h3>
@@ -342,8 +316,13 @@
       <html>
           <head>
               <meta charset="utf-8"/>
-            <t t-call-assets="web.assets_common"/>
-            <t t-call-assets="website.assets_frontend"/>
+              <t t-call-assets="web.assets_common"/>
+              <t t-call-assets="website.assets_frontend"/>
+              <link href="/account_contract_dashboard/static/src/css/account_contract_dashboard.css" rel="stylesheet"/> 
+              <script type="text/javascript" src="/account_contract_dashboard/static/src/js/account_contract_dashboard.js"></script>
+              <link href="/web/static/lib/nvd3/nv.d3.css" rel="stylesheet"></link>
+              <script type="text/javascript" src="/web/static/lib/nvd3/d3.v3.js"></script>
+              <script type="text/javascript" src="/web/static/lib/nvd3/nv.d3.js"></script>
           </head>
           <body>
               <main>

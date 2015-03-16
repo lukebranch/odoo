@@ -15,18 +15,20 @@
         </field>
     </record>
 
-<!--     <record id="action_contract_dashboard_report" model="ir.actions.act_url">
-        <field name="name">MRR Analysis</field>
-        <field name="url">/account_contract_dashboard</field>
-        <field name="target">self</field>
-    </record> -->
-    <record id="action_contract_dashboard_report" model="ir.actions.client">
-        <field name="name">MRR Analysis</field>
-        <field name="tag">account_contract_dashboard</field>
-        <!-- <field name="context">{'statement_ids': [active_id]}</field> -->
+    <menuitem id="action_contract_dashboard_report" name="MRR Analysis" parent="account.menu_finance_reporting" sequence="25"/>
+
+
+    <record id="action_contract_dashboard_report_main" model="ir.actions.client">
+        <field name="name">Revenue KPIs</field>
+        <field name="tag">account_contract_dashboard_main</field>
     </record>
 
-    <menuitem action="action_contract_dashboard_report" id="menu_action_contract_dashboard_report"
-          parent="account.menu_finance_reporting" name="MRR Analysis"/>
+    <record id="action_contract_dashboard_report_forecast" model="ir.actions.client">
+        <field name="name">Metrics Forecasting</field>
+        <field name="tag">account_contract_dashboard_forecast</field>
+    </record>
+
+    <menuitem action="action_contract_dashboard_report_main" id="menu_action_contract_dashboard_report_main" parent="action_contract_dashboard_report" name="Revenue KPIs"/>
+    <menuitem action="action_contract_dashboard_report_forecast" id="menu_action_contract_dashboard_report_forecast" parent="action_contract_dashboard_report" name="Forecast"/>
 </data>
 </openerp>

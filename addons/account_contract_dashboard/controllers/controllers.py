@@ -158,6 +158,8 @@ class AccountContractDashboard(http.Controller):
                     'churn': revenue_churn,
                     'projection_time': 12,
                 }
+
+        # If return both
         return {
             'currency': currency,
             'starting_mrr': mrr,
@@ -336,8 +338,6 @@ class AccountContractDashboard(http.Controller):
             ('date_invoice', '<=', end_date.strftime(DEFAULT_SERVER_DATE_FORMAT)),
         ]).mapped('invoice_line')
         non_recurring_invoice_line_ids = all_invoice_line_ids.filtered(lambda x: not x.asset_category_id)
-
-        # import pudb; pudb.set_trace()
 
         # Is this usefull ?
         all_invoice_line_ids = all_invoice_line_ids.filtered(self.get_filter_out_invoice())
