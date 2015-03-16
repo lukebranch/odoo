@@ -29,18 +29,18 @@ div.box {
   position: relative;
 }
 
-div.stat-box,div.forecast-box {
+div.stat-box, div.forecast-box {
   min-height: 140px;
 }
-div.stat-box:hover,div.forecast-box:hover {
+div.stat-box:hover, div.forecast-box:hover {
   background-color: silver;
 }
 
-div.stat-box,div.forecast-box .nvd3 .nv-groups path.nv-area {
+div.stat-box .nvd3 .nv-groups path.nv-area, div.forecast-box .nvd3 .nv-groups path.nv-area {
   fill-opacity: 0.2;
 }
 
-div.stat-box,div.forecast-box .nvd3 .nv-groups path.nv-line {
+div.stat-box .nvd3 .nv-groups path.nv-line, div.forecast-box .nvd3 .nv-groups path.nv-line {
   stroke-opacity: 0.8;
   stroke-width: 4px;
 }

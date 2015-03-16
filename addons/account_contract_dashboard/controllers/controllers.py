@@ -417,16 +417,12 @@ class AccountContractDashboard(http.Controller):
 
 
         def _calculate_logo_churn():
-            # [Baremetrics] (Cancelled Customers ÷ Previous Month's Active Customers) x 100
-            # [Wiki] (Number of employees resigned during the month / Average number of employees during the month) x 100
-            #   where Average number of employees during the month = (Total number of employees at the start of the month + Total number of employees at the end of the month) / 2.
+
             result = 0
+
             active_customers_today = recurring_invoice_line_ids.mapped('account_analytic_id')
-
             active_customers_1_month_ago = recurring_invoice_line_ids_1_month_ago.mapped('account_analytic_id')
-
             resigned_customers = active_customers_1_month_ago.filtered(lambda x: x not in active_customers_today)
-            # nb_avg_customers = (len(active_customers_1_month_ago) - len(active_customers_1_month_ago))/2.
 
             result = 0 if not active_customers_1_month_ago else len(resigned_customers)/float(len(active_customers_1_month_ago))
             return result
@@ -449,7 +445,6 @@ class AccountContractDashboard(http.Controller):
 
 
         elif stat_type == 'net_new_mrr' or stat_type == 'revenue_churn':
-
             new_mrr = 0
             expansion_mrr = 0
             churned_mrr = 0

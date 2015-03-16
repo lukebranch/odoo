@@ -28,7 +28,7 @@ In https://docs.google.com/a/openerp.com/file/d/0B5BDHVRYo-q5TUN4OXYxY1NkaEE/edi
 	--> either billing (all invoice)
 	--> either non-recurring + prorata of monthly recurrent*nb_months
 
-- add 2 boxes for forecast
+V add 2 boxes for forecast
 - filter : like odoo
 
 - marketing : faire la page de présentation sur odoo.com
