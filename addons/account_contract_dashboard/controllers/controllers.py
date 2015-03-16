@@ -23,6 +23,11 @@ stat_types = {
     'nb_contracts': {'name': 'Contracts', 'code': 'nb_contracts', 'dir': 'up', 'prior': 9, 'type': 'last', 'add_symbol': ''},
 }
 
+forecast_types = {
+    'mrr': {'name': 'Forecasted Annual MRR Growth', 'code': 'forecast_mrr', 'prior': 1},
+    'contracts': {'name': 'Forecasted Annual Contracts Growth', 'code': 'forecast_contracts', 'prior': 2},
+}
+
 
 def compute_rate(stat_type, old, new):
     direction = stat_types[stat_type]['dir']
@@ -51,6 +56,8 @@ class AccountContractDashboard(http.Controller):
     def account_contract_dashboard(self, **kw):
 
         all_stats = sorted([stat_types[x] for x in stat_types], key=lambda k: k['prior'])
+        all_forecasts = sorted([forecast_types[x] for x in forecast_types], key=lambda k: k['prior'])
+
         contract_templates = request.env['account.analytic.account'].search([('type', '=', 'template')])
 
         filtered_contract_template_ids = request.httprequest.args.getlist('contract_template_filter') if kw.get('contract_template_filter') else []
@@ -64,6 +71,7 @@ class AccountContractDashboard(http.Controller):
 
         return http.request.render('account_contract_dashboard.dashboard', {
             'all_stats': all_stats,
+            'all_forecast': all_forecasts,
             'contract_templates': contract_templates,
             'filtered_contract_template_ids': filtered_contract_template_ids,
             'start_date': start_date.strftime('%Y-%m-%d'),
@@ -121,7 +129,7 @@ class AccountContractDashboard(http.Controller):
         })
 
     @http.route('/account_contract_dashboard/get_default_values_forecast', type="json", auth='user', website=True)
-    def get_default_values_forecast(self):
+    def get_default_values_forecast(self, forecast_type=None):
 
         mrr = self.calculate_stat('mrr', date.today())
         net_new_mrr = self.calculate_stat('net_new_mrr', date.today())[3]
@@ -131,8 +139,25 @@ class AccountContractDashboard(http.Controller):
 
         currency = request.env['res.company'].search([])[0].currency_id.symbol
 
-        print(currency)
-
+        if forecast_type:
+            if forecast_type == 'forecast_mrr':
+                return {
+                    'currency': currency,
+                    'starting_value': mrr,
+                    'growth_linear': net_new_mrr,
+                    'growth_expon': 15,
+                    'churn': revenue_churn,
+                    'projection_time': 12,
+                }
+            else:
+                return {
+                    'currency': '',
+                    'starting_value': nb_contracts,
+                    'growth_linear': 0 if arpu == 0 else int(net_new_mrr/arpu),
+                    'growth_expon': 15,
+                    'churn': revenue_churn,
+                    'projection_time': 12,
+                }
         return {
             'currency': currency,
             'starting_mrr': mrr,

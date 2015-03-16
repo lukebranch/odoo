@@ -9,14 +9,16 @@
 
    // 1. MAIN DASHBOARD - Stat box with graph inside
 
-      openerp.website.if_dom_contains('div.stat-box', function() {
+      openerp.website.if_dom_contains('div.stat-box, div.forecast-box', function() {
 
           var QWeb = openerp.qweb;
           var website = openerp.website;
 
           openerp.account_contract_dashboard_boxes = {};
+
+          // Widget for stat
           
-          openerp.account_contract_dashboard_boxes.Box = openerp.Widget.extend({
+          openerp.account_contract_dashboard_boxes.StatBox = openerp.Widget.extend({
               init: function(box, start_date, end_date) {
                   this.box = box;
                   this.start_date = start_date;
@@ -55,7 +57,7 @@
                       self.perc = compute_numbers['perc'];
                       self.color = compute_numbers['color'];
 
-                      var box_content = openerp.qweb.render('account_contract_dashboard.boxContent', {
+                      var box_content = openerp.qweb.render('account_contract_dashboard.statBoxContent', {
                         'value': self.value,
                         'color': self.color,
                         'perc': self.perc,
@@ -68,6 +70,46 @@
               },
           });
 
+          // Widget for forecast
+
+          openerp.account_contract_dashboard_boxes.ForecastBox = openerp.Widget.extend({
+              init: function(box) {
+                  this.box = box;
+
+                  this.box_name = this.box.getAttribute("name");
+                  this.box_code = this.box.getAttribute("code");
+                  this.chart_div_id = 'chart_div_' + this.box_code;
+              },
+              start: function() {
+                  var self = this;
+
+                  var compute_numbers = function(){
+                      return openerp.jsonRpc('/account_contract_dashboard/get_default_values_forecast', 'call', {
+                          'forecast_type': self.box_code,
+                      });
+                  }
+
+                  $.when(compute_numbers())
+                  .done(function(compute_numbers){
+
+                    var compute_graph = calculateForecastValues(compute_numbers['starting_value'], compute_numbers['projection_time'], 'linear', compute_numbers['churn'], compute_numbers['growth_linear'], 0);
+
+                    self.value = compute_graph[compute_graph.length - 1][1];
+
+                    var box_content = openerp.qweb.render('account_contract_dashboard.forecastBoxContent', {
+                      'value': parseInt(self.value),
+                      'currency': compute_numbers['currency'],
+                      'chart_div_id': self.chart_div_id,
+                      'box_name': self.box_name,
+                    });
+                    self.box.innerHTML = box_content;
+                    loadChart_stat('#'+self.chart_div_id, self.box_code, false, compute_graph, false);
+                  });
+
+              },
+          });
+
+          // Launch widgets
 
           var start_date = $('input[type="date"][name="start_date"]').val();
           var end_date = $('input[type="date"][name="end_date"]').val();
@@ -76,7 +118,15 @@
               var self = $(this);
               var box = $('.stat-box')[i];
 
-              var box_widget = new openerp.account_contract_dashboard_boxes.Box(box, start_date, end_date);
+              var box_widget = new openerp.account_contract_dashboard_boxes.StatBox(box, start_date, end_date);
+              box_widget.start();
+          }
+
+          for (var i=0; i<$('.forecast-box').length; i++) {
+              var self = $(this);
+              var box = $('.forecast-box')[i];
+
+              var box_widget = new openerp.account_contract_dashboard_boxes.ForecastBox(box);
               box_widget.start();
           }
       });
@@ -214,7 +264,6 @@
               $('#revenue_churn').val(default_revenue_churn);
               $('#revenue_projection_time').val(default_projection_time);
 
-
               $('#starting_contracts').val(default_starting_contracts);
               $('#contracts_growth_linear').val(default_contracts_growth_linear);
               $('#contracts_growth_expon').val(default_contracts_growth_expon);
@@ -280,114 +329,97 @@
           
           function reloadChart(chart_type){
 
-            var values = calculateForecastValues(chart_type);
-
             if (chart_type == 1){
+              var values = calculateForecastValues(starting_mrr, revenue_projection_time, revenue_growth_type, revenue_churn, revenue_growth_linear, revenue_growth_expon);
               loadChart_forecast('#revenue_forecast_chart_div', values);
               $('#revenue_forecast_summary').replaceWith('<h3 class="text-center mt32 mb32" id="revenue_forecast_summary">In <span class="oBlue">'+revenue_projection_time+'</span> months with <span class="oBlue">' + (revenue_growth_type === 'linear' ? revenue_growth_linear + currency : revenue_growth_expon + '%') + ' ' + revenue_growth_type + '</span> growth and <span class="oRed">' + revenue_churn + '%</span> churn, your MRR will be <span class="oGreen">' + parseInt(values[values.length - 1][1]) + currency +'</span></h3>');
             }
             else {
+              var values = calculateForecastValues(starting_contracts, contracts_projection_time, contracts_growth_type, contracts_churn, contracts_growth_linear, contracts_growth_expon);
               loadChart_forecast('#contracts_forecast_chart_div', values);
               $('#contracts_forecast_summary').replaceWith('<h3 class="text-center mt32 mb32" id="contracts_forecast_summary">In <span class="oBlue">'+contracts_projection_time+'</span> months with <span class="oBlue">' + (contracts_growth_type === 'linear' ? contracts_growth_linear + ' contracts' : contracts_growth_expon + '%') + ' ' + contracts_growth_type + '</span> growth and <span class="oRed">' + contracts_churn + '%</span> churn, your contract base will be <span class="oGreen">' + parseInt(values[values.length - 1][1]) + '</span></h3>');
             }
 
           }
-
-          function calculateForecastValues(chart_type) {
-            var values = [];
-            var now = moment();
-            if (chart_type == 1){
-              var cur_value = starting_mrr;
-              for(var i = 1; i <= revenue_projection_time ; i++) {
-                var cur_date = moment().add(i, 'months');
-                if (revenue_growth_type === 'linear') {
-                  cur_value = cur_value*(1-revenue_churn/100) + revenue_growth_linear;
-                }
-                else {
-                  cur_value = cur_value*(1-revenue_churn/100)*(1+revenue_growth_expon/100);
-                }
-                values.push({
-                  '0': cur_date.format('L'),
-                  '1': cur_value,
-                });
-              }
-            }
-            else {
-              var cur_value = starting_contracts;
-              for(var i = 1; i <= contracts_projection_time ; i++) {
-                var cur_date = moment().add(i, 'months');
-                if (contracts_growth_type === 'linear') {
-                  cur_value = cur_value*(1-contracts_churn/100) + contracts_growth_linear;
-                }
-                else {
-                  cur_value = cur_value*(1-contracts_churn/100)*(1+contracts_growth_expon/100);
-                }
-                values.push({
-                  '0': cur_date.format('L'),
-                  '1': cur_value,
-                });
-              }
-            }
-            return values;
-          }
-
-
-          function loadChart_forecast(div_to_display, values){
-
-            $(div_to_display).empty();
-
-            var myData = [
-                {
-                  values: values,
-                  // key: key_name,
-                  color: '#2693d5',
-                  area: true
-                },  
-              ];
-
-            /*These lines are all chart setup.  Pick and choose which chart features you want to utilize. */
-            nv.addGraph(function() {
-              var chart = nv.models.lineChart()
-                            .interpolate("monotone")
-                            .x(function(d) { return getDate(d); })
-                            .y(function(d) { return getValue(d); });
-                chart
-                  .margin({left: 100})  //Adjust chart margins to give the x-axis some breathing room.
-                  .useInteractiveGuideline(true)  //We want nice looking tooltips and a guideline!
-                  .transitionDuration(350)  //how fast do you want the lines to transition?
-                  .showLegend(false)       //Show the legend, allowing users to turn on/off line series.
-                  .showYAxis(true)        //Show the y-axis
-                  .showXAxis(true)        //Show the x-axis
-                ;
-
-              var tick_values = getPrunedTickValues(myData[0]['values'], 10);
-
-              chart.xAxis
-                    .tickFormat(function(d) { return d3.time.format("%m/%d/%y")(new Date(d)); })
-                    .tickValues(_.map(tick_values, function(d) { return getDate(d); }))
-                    .rotateLabels(55);
-
-              chart.yAxis     //Chart y-axis settings
-                  // .axisLabel(key_name)
-                  .tickFormat(d3.format('.02f'));
-
-              var svg = d3.select(div_to_display)    //Select the <svg> element you want to render the chart in.   
-                  .append("svg");
-              
-              svg.attr("height", '20em');
-
-              svg
-                  .datum(myData)         //Populate the <svg> element with chart data...
-                  .call(chart);          //Finally, render the chart!
-
-              //Update the chart when window resizes.
-              nv.utils.windowResize(function() { chart.update() });
-              return chart;
-            });
-          };
       });
 
 
+      function calculateForecastValues(starting_value, projection_time, growth_type, churn, growth_linear, growth_expon) {
+        var values = [];
+        var now = moment();
+        var cur_value = starting_value;
+        
+        for(var i = 1; i <= projection_time ; i++) {
+          var cur_date = moment().add(i, 'months');
+          if (growth_type === 'linear') {
+            cur_value = cur_value*(1-churn/100) + growth_linear;
+          }
+          else {
+            cur_value = cur_value*(1-churn/100)*(1+growth_expon/100);
+          }
+          values.push({
+            '0': cur_date.format('L'),
+            '1': cur_value,
+          });
+        }
+
+        return values;
+      }
+
+
+      function loadChart_forecast(div_to_display, values){
+
+        $(div_to_display).empty();
+
+        var myData = [
+            {
+              values: values,
+              // key: key_name,
+              color: '#2693d5',
+              area: true
+            },  
+          ];
+
+        /*These lines are all chart setup.  Pick and choose which chart features you want to utilize. */
+        nv.addGraph(function() {
+          var chart = nv.models.lineChart()
+                        .interpolate("monotone")
+                        .x(function(d) { return getDate(d); })
+                        .y(function(d) { return getValue(d); });
+            chart
+              .margin({left: 100})  //Adjust chart margins to give the x-axis some breathing room.
+              .useInteractiveGuideline(true)  //We want nice looking tooltips and a guideline!
+              .transitionDuration(350)  //how fast do you want the lines to transition?
+              .showLegend(false)       //Show the legend, allowing users to turn on/off line series.
+              .showYAxis(true)        //Show the y-axis
+              .showXAxis(true)        //Show the x-axis
+            ;
+
+          var tick_values = getPrunedTickValues(myData[0]['values'], 10);
+
+          chart.xAxis
+                .tickFormat(function(d) { return d3.time.format("%m/%d/%y")(new Date(d)); })
+                .tickValues(_.map(tick_values, function(d) { return getDate(d); }))
+                .rotateLabels(55);
+
+          chart.yAxis     //Chart y-axis settings
+              // .axisLabel(key_name)
+              .tickFormat(d3.format('.02f'));
+
+          var svg = d3.select(div_to_display)    //Select the <svg> element you want to render the chart in.   
+              .append("svg");
+          
+          svg.attr("height", '20em');
+
+          svg
+              .datum(myData)         //Populate the <svg> element with chart data...
+              .call(chart);          //Finally, render the chart!
+
+          //Update the chart when window resizes.
+          nv.utils.windowResize(function() { chart.update() });
+          return chart;
+        });
+      }
 
 
       function loadChart_stat(div_to_display, stat_type, key_name, result, show_legend){

@@ -60,6 +60,22 @@
                 </a>
               </div>
             </t>
+
+            <t t-foreach="all_forecast" t-as="forecast">
+              <div class="col-sm-6">
+                <a class="fill-div" href="account_contract_dashboard/forecast">
+                  <div class="box forecast-box" t-att-name="forecast['name']" t-att-code="forecast['code']">
+                    <div class="loading">
+                      <i class="fa fa-spin fa-spinner fa-pulse" style="font-size: 3em;"></i>
+                      <!-- <div id="big-circle">
+                        <div id="little-circle">
+                        </div>
+                      </div> -->
+                    </div>
+                  </div>
+                </a>
+              </div>
+            </t>
           </div>
 
       </div>
