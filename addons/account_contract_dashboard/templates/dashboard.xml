@@ -330,14 +330,8 @@
       <html>
           <head>
               <meta charset="utf-8"/>
-
               <t t-call="web.assets_common"/>
               <t t-call="website.assets_frontend"/>
-              <link property="" href="/account_contract_dashboard/static/src/css/account_contract_dashboard.css" rel="stylesheet" type="text/less"/> 
-              <script type="text/javascript" src="/account_contract_dashboard/static/src/js/account_contract_dashboard.js"></script>
-              <link href="/web/static/lib/nvd3/nv.d3.css" rel="stylesheet" type="text/css"></link>
-              <script src="/web/static/lib/nvd3/d3.v3.js"></script>
-              <script src="/web/static/lib/nvd3/nv.d3.js"></script>
           </head>
           <body>
               <main>
