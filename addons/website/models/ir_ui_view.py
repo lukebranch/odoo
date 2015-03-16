@@ -269,11 +269,13 @@ class view(osv.osv):
             context=dict(context or {}, active_test=False))
         done = set()
         result = []
+        check = []
         for v in views:
             if not user_groups.issuperset(v.groups_id):
                 continue
             if full or (v.customize_show and v.inherit_id.id != theme_view_id):
-                if v.inherit_id not in done:
+                check.append(v.name)
+                if v.inherit_id not in done and v.inherit_id.name not in check:
                     result.append({
                         'name': v.inherit_id.name,
                         'id': v.id,
@@ -292,6 +294,11 @@ class view(osv.osv):
                     'active': v.active,
                 })
         return result
+
+    def toggle_options(self, cr, uid, ids, context=None):
+        view_ids = self.search(cr, uid, [('inherit_id', 'child_of', ids), ('active', '=', True)], context=context)
+        ids = view_ids if view_ids and len(view_ids) else ids
+        self.toggle(cr, uid, ids, context=context)
 
     def get_view_translations(self, cr, uid, xml_id, lang, field=['id', 'res_id', 'value', 'state', 'gengo_translation'], context=None):
         views = self.customize_template_get(cr, uid, xml_id, full=True, context=context)

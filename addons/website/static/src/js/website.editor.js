@@ -1179,7 +1179,7 @@ var EditorBarCustomize = Widget.extend({
         var view_id = $(event.currentTarget).data('view-id');
         return ajax.jsonRpc('/web/dataset/call_kw', 'call', {
             model: 'ir.ui.view',
-            method: 'toggle',
+            method: 'toggle_options',
             args: [],
             kwargs: {
                 ids: [parseInt(view_id, 10)],
