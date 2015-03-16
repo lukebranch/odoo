@@ -103,6 +103,7 @@ website.ready().done(function () {
                 popover:   { fixed: true },
             },
             {
+                waitFor:   '.modal:has(#mobile-viewport):visible',
                 element:   '.modal:has(#mobile-viewport) button[data-dismiss=modal]',
                 placement: 'right',
                 title:     _t("Check Mobile Preview"),
@@ -110,7 +111,7 @@ website.ready().done(function () {
                 popover:   { fixed: true },
             },
             {
-                waitFor:   '.modal:has(#mobile-viewport) button[data-dismiss=modal]:not(:visible)',
+                waitNot:   '.modal-open:has(#mobile-viewport):visible',
                 element:   'button.btn-danger.js_publish_btn',
                 placement: 'top',
                 title:     _t("Publishing status"),
