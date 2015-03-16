@@ -2823,7 +2823,7 @@ class stock_inventory_line(osv.osv):
             product = self.pool.get('product.product').browse(cr, uid, product_id, context=context)
             if not company_id:
                 company_id = self.pool.get('res.users').browse(cr, uid, uid, context=context).company_id.id
-            dom = [('company_id', '=', company_id), ('location_id', 'child_of', location_id), ('lot_id', '=', prod_lot_id),
+            dom = [('company_id', '=', company_id), ('location_id', '=', location_id), ('lot_id', '=', prod_lot_id),
                         ('product_id','=', product_id), ('owner_id', '=', partner_id), ('package_id', '=', package_id)]
             quants = quant_obj.search(cr, uid, dom, context=context)
             th_qty = sum([x.qty for x in quant_obj.browse(cr, uid, quants, context=context)])
