@@ -234,6 +234,8 @@
                     <field name="ref"/>
                     <field name="product_id"/>
                     <field name="create_date"/>
+                    <field name="available_qty"/>
+                    <field name="reserved_qty"/>
                 </tree>
             </field>
         </record>

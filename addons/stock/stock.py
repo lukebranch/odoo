@@ -1563,7 +1563,6 @@ class stock_picking(osv.osv):
                 answer['filter_loc'] = stock_location_obj._name_get(cr, uid, location, context=None)
                 answer['filter_loc_id'] = matching_location_ids[0]
                 return answer
-            
         return answer
 
 
@@ -1571,12 +1570,48 @@ class stock_production_lot(osv.osv):
     _name = 'stock.production.lot'
     _inherit = ['mail.thread']
     _description = 'Lot/Serial'
+
+    def _check_lot_quantity(self, cr, uid, ids, field_name, arg, context=None):
+        res = dict.fromkeys(ids, False)
+        location_id = context.get('location_id')
+        for lot in self.browse(cr, uid, ids, context=context):
+            res[lot.id] = {
+                'available_qty': 0.0,
+                'reserved_qty': 0.0,
+            }
+            for quant in lot.quant_ids:
+                if quant.location_id.usage == 'internal':
+                    if quant.reservation_id:
+                        res[lot.id]['reserved_qty'] += quant.qty
+                    else:
+                        res[lot.id]['available_qty'] += quant.qty
+        return res
+
+    def _get_lot_quant(self, cr, uid, ids, context=None):
+        result = {}
+        for quant in self.pool.get('stock.quant').browse(cr, uid, ids, context=context):
+            if quant.lot_id:
+                result[quant.lot_id.id] = True
+        return result.keys()
+
     _columns = {
         'name': fields.char('Serial Number', required=True, help="Unique Serial Number"),
         'ref': fields.char('Internal Reference', help="Internal reference number in case it differs from the manufacturer's serial number"),
         'product_id': fields.many2one('product.product', 'Product', required=True, domain=[('type', '<>', 'service')]),
         'quant_ids': fields.one2many('stock.quant', 'lot_id', 'Quants', readonly=True),
         'create_date': fields.datetime('Creation Date'),
+        'available_qty': fields.function(_check_lot_quantity, string='Available Quantity',
+            store={
+                'stock.production.lot': (lambda self, cr, uid, ids, c={}: ids, ['quants_ids'], 10),
+                'stock.quant': (_get_lot_quant, ['qty', 'reservation_id', 'location_id'], 10),
+            },
+            multi='lot_qty', help="The available quantity on lot."),
+        'reserved_qty': fields.function(_check_lot_quantity, string='Reserved Quantity',
+            store={
+                'stock.production.lot': (lambda self, cr, uid, ids, c={}: ids, ['quants_ids'], 10),
+                'stock.quant': (_get_lot_quant, ['qty', 'reservation_id', 'location_id'], 10),
+            },
+            multi='lot_qty', help="The reserve quantity on lot."),
     }
     _defaults = {
         'name': lambda x, y, z, c: x.pool.get('ir.sequence').next_by_code(y, z, 'stock.lot.serial'),
