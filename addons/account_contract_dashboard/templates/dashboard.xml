@@ -20,9 +20,6 @@
             <form action="/account_contract_dashboard">
               <div class="col-sm-4 text-left">
                 <div>
-                  <a href="/account_contract_dashboard/forecast">Forecast</a>
-                </div>
-                <div>
                   <a t-att-class="'' if filtered_contract_template_ids else 'collapsed'" data-toggle="collapse" href="#collapse_filter_contracts">
                     Filter on contracts
                   </a>
@@ -341,13 +338,12 @@
   </template>
 
 
-  <template id="account_contract_dashboard.layout" name="Account Contract Dashboard Layout">
-      &lt;!doctype html&gt;
+  <template id="account_contract_dashboard.layout" name="Account Contract Dashboard Layout">&lt;!DOCTYPE html&gt;
       <html>
           <head>
               <meta charset="utf-8"/>
-              <t t-call="web.assets_common"/>
-              <t t-call="website.assets_frontend"/>
+            <t t-call-assets="web.assets_common"/>
+            <t t-call-assets="website.assets_frontend"/>
           </head>
           <body>
               <main>

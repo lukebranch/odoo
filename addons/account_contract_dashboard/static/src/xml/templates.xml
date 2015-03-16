@@ -31,7 +31,7 @@
   </t>
 
   <t t-name="account_contract_dashboard.statBoxContent">
-    <div style="position: relative;">'
+    <div style="position: relative;">
       <h2 style="color: #2693d5;"><t t-esc="value"/></h2>
         <div class="trend">
           <h4 t-att-class="'mb0 ' + color"><t t-esc="perc"/>%</h4>
@@ -45,7 +45,7 @@
   </t>
 
   <t t-name="account_contract_dashboard.forecastBoxContent">
-    <div style="position: relative;">'
+    <div style="position: relative;">
       <h2 style="color: #2693d5;"><t t-esc="value"/><t t-esc="currency"/></h2>
     </div>
     <div class="graph-box" t-att-id="chart_div_id"></div>
