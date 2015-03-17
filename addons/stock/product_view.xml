@@ -230,6 +230,7 @@
                    <button class="oe_inline oe_stat_button" name="%(product_open_orderpoint)d" type="action" 
                         attrs="{'invisible':[('type', '=', 'service')]}" icon="fa-refresh" string="Reordering Rules"/>
                    <button class="oe_inline oe_stat_button" name="action_view_routes" string="Routes" type="object" icon="fa-cogs" attrs="{'invisible':[('type', '=', 'service')]}" />
+                   <button class="oe_inline oe_stat_button" name="action_view_lots" string="Lots" type="object" icon="fa-cogs" attrs="{'invisible':[('type', '=', 'service')]}" />
                 </xpath>
             </field>
         </record>
@@ -250,6 +251,7 @@
                    <button class="oe_inline oe_stat_button" name="action_view_orderpoints" type="object" 
                         attrs="{'invisible':[('type', '=', 'service')]}" icon="fa-refresh" string="Reordering Rules"/>
                    <button class="oe_inline oe_stat_button" name="action_view_routes" string="Routes" type="object" icon="fa-cogs" attrs="{'invisible':[('type', '=', 'service')]}" />
+                   <button class="oe_inline oe_stat_button" name="action_view_lots" string="Lots" type="object" icon="fa-cogs" attrs="{'invisible':[('type', '=', 'service')]}" />
                 </xpath>
             </field>
         </record>

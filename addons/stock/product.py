@@ -321,6 +321,17 @@ class product_product(osv.osv):
                         res['fields']['qty_available']['string'] = _('Produced Qty')
         return res
 
+    def action_view_lots(self, cr, uid, ids, context=None):
+        act_obj = self.pool.get('ir.actions.act_window')
+        mod_obj = self.pool.get('ir.model.data')
+        product_ids = []
+        for product in self.browse(cr, uid, ids, context=context):
+            product_ids.append(product.id)
+        result = mod_obj.xmlid_to_res_id(cr, uid, 'stock.view_production_lot_tree', raise_if_not_found=True)
+        result = act_obj.read(cr, uid, [result], context=context)[0]
+        result['domain'] = "[('product_id','in',[" + ','.join(map(str, product_ids)) + "])]"
+        return result
+
 
     def action_view_routes(self, cr, uid, ids, context=None):
         template_obj = self.pool.get("product.template")
@@ -420,6 +431,17 @@ class product_template(osv.osv):
     _defaults = {
         'sale_delay': 7,
     }
+
+    def action_view_lots(self, cr, uid, ids, context=None):
+        act_obj = self.pool.get('ir.actions.act_window')
+        mod_obj = self.pool.get('ir.model.data')
+        product_ids = []
+        for product in self.browse(cr, uid, ids, context=context):
+            product_ids += [p.id for p in product.product_variant_ids]
+        result = mod_obj.xmlid_to_res_id(cr, uid, 'stock.view_production_lot_tree', raise_if_not_found=True)
+        result = act_obj.read(cr, uid, [result], context=context)[0]
+        result['domain'] = "[('product_id','in',[" + ','.join(map(str, product_ids)) + "])]"
+        return result
 
     def action_view_routes(self, cr, uid, ids, context=None):
         route_obj = self.pool.get("stock.location.route")
