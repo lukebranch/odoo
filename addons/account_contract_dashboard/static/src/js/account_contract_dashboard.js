@@ -247,14 +247,14 @@
           openerp.jsonRpc('/account_contract_dashboard/get_default_values_forecast', 'call', {
           }).then(function(result){
 
-              default_starting_mrr = result['starting_mrr'];
-              default_revenue_growth_linear = result['revenue_growth_linear'];
-              default_revenue_growth_expon = result['revenue_growth_expon'];
-              default_revenue_churn = result['revenue_churn'];
-              default_starting_contracts = result['starting_contracts'];
-              default_contracts_growth_linear = result['contracts_growth_linear'];
-              default_contracts_growth_expon = result['contracts_growth_expon'];
-              default_contracts_churn = result['contracts_churn'];
+              default_starting_mrr = parseInt(result['starting_mrr']);
+              default_revenue_growth_linear = parseInt(result['revenue_growth_linear']);
+              default_revenue_growth_expon = parseInt(result['revenue_growth_expon']);
+              default_revenue_churn = parseInt(result['revenue_churn']);
+              default_starting_contracts = parseInt(result['starting_contracts']);
+              default_contracts_growth_linear = parseInt(result['contracts_growth_linear']);
+              default_contracts_growth_expon = parseInt(result['contracts_growth_expon']);
+              default_contracts_churn = parseInt(result['contracts_churn']);
               default_projection_time = result['projection_time'];
               currency = result['currency'];
 
@@ -271,8 +271,8 @@
               $('#contracts_projection_time').val(default_projection_time);
 
 
-              starting_mrr = parseFloat($('#starting_mrr').val());
-              $('#starting_mrr').change(function(){starting_mrr = parseFloat($('#starting_mrr').val()); reloadChart(1)});
+              starting_mrr = parseInt($('#starting_mrr').val());
+              $('#starting_mrr').change(function(){starting_mrr = parseInt($('#starting_mrr').val()); reloadChart(1)});
               revenue_growth_type = $("input:radio[name=revenue_growth_type]:checked").val();
               $('input:radio[name=revenue_growth_type]').change(function(){
                 revenue_growth_type = $("input:radio[name=revenue_growth_type]:checked").val();
@@ -286,17 +286,17 @@
                 }
                 reloadChart(1);
               });
-              revenue_growth_linear = parseFloat($('#revenue_growth_linear').val());
-              $('#revenue_growth_linear').change(function(){revenue_growth_linear = parseFloat($('#revenue_growth_linear').val()); reloadChart(1)});
-              revenue_growth_expon = parseFloat($('#revenue_growth_expon').val());
-              $('#revenue_growth_expon').change(function(){revenue_growth_expon = parseFloat($('#revenue_growth_expon').val()); reloadChart(1)});
-              revenue_churn = parseFloat($('#revenue_churn').val());
-              $('#revenue_churn').change(function(){revenue_churn = parseFloat($('#revenue_churn').val()); reloadChart(1)});
-              revenue_projection_time = parseFloat($('#revenue_projection_time').val());
-              $('#revenue_projection_time').change(function(){revenue_projection_time = parseFloat($('#revenue_projection_time').val()); reloadChart(1)});
+              revenue_growth_linear = parseInt($('#revenue_growth_linear').val());
+              $('#revenue_growth_linear').change(function(){revenue_growth_linear = parseInt($('#revenue_growth_linear').val()); reloadChart(1)});
+              revenue_growth_expon = parseInt($('#revenue_growth_expon').val());
+              $('#revenue_growth_expon').change(function(){revenue_growth_expon = parseInt($('#revenue_growth_expon').val()); reloadChart(1)});
+              revenue_churn = parseInt($('#revenue_churn').val());
+              $('#revenue_churn').change(function(){revenue_churn = parseInt($('#revenue_churn').val()); reloadChart(1)});
+              revenue_projection_time = parseInt($('#revenue_projection_time').val());
+              $('#revenue_projection_time').change(function(){revenue_projection_time = parseInt($('#revenue_projection_time').val()); reloadChart(1)});
 
-              starting_contracts = parseFloat($('#starting_contracts').val());
-              $('#starting_contracts').change(function(){starting_contracts = parseFloat($('#starting_contracts').val()); reloadChart(2)});
+              starting_contracts = parseInt($('#starting_contracts').val());
+              $('#starting_contracts').change(function(){starting_contracts = parseInt($('#starting_contracts').val()); reloadChart(2)});
               contracts_growth_type = $("input:radio[name=contracts_growth_type]:checked").val();
               $('input:radio[name=contracts_growth_type]').change(function(){
                 contracts_growth_type = $("input:radio[name=contracts_growth_type]:checked").val();
@@ -310,14 +310,14 @@
                 }
                 reloadChart(2);
               });
-              contracts_growth_linear = parseFloat($('#contracts_growth_linear').val());
-              $('#contracts_growth_linear').change(function(){contracts_growth_linear = parseFloat($('#contracts_growth_linear').val()); reloadChart(2)});
-              contracts_growth_expon = parseFloat($('#contracts_growth_expon').val());
-              $('#contracts_growth_expon').change(function(){contracts_growth_expon = parseFloat($('#contracts_growth_expon').val()); reloadChart(2)});
-              contracts_churn = parseFloat($('#contracts_churn').val());
-              $('#contracts_churn').change(function(){contracts_churn = parseFloat($('#contracts_churn').val()); reloadChart(2)});
-              contracts_projection_time = parseFloat($('#contracts_projection_time').val());
-              $('#contracts_projection_time').change(function(){contracts_projection_time = parseFloat($('#contracts_projection_time').val()); reloadChart(2)});
+              contracts_growth_linear = parseInt($('#contracts_growth_linear').val());
+              $('#contracts_growth_linear').change(function(){contracts_growth_linear = parseInt($('#contracts_growth_linear').val()); reloadChart(2)});
+              contracts_growth_expon = parseInt($('#contracts_growth_expon').val());
+              $('#contracts_growth_expon').change(function(){contracts_growth_expon = parseInt($('#contracts_growth_expon').val()); reloadChart(2)});
+              contracts_churn = parseInt($('#contracts_churn').val());
+              $('#contracts_churn').change(function(){contracts_churn = parseInt($('#contracts_churn').val()); reloadChart(2)});
+              contracts_projection_time = parseInt($('#contracts_projection_time').val());
+              $('#contracts_projection_time').change(function(){contracts_projection_time = parseInt($('#contracts_projection_time').val()); reloadChart(2)});
 
               reloadChart(1);
               reloadChart(2);

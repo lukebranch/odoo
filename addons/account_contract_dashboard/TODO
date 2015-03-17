@@ -13,6 +13,8 @@ V design : coller les graphes
 V le style des graphs baremetrics est plus joli (lignes plus grosses)
 V forecast
 V utiliser une client_action (voir chrome.js, "database_manager") pour intégrer la page au backend
+V add 2 boxes for forecast
+V filter : like odoo
 
 ####################################
 
@@ -27,9 +29,7 @@ In https://docs.google.com/a/openerp.com/file/d/0B5BDHVRYo-q5TUN4OXYxY1NkaEE/edi
 ? net revenue
 	--> either billing (all invoice)
 	--> either non-recurring + prorata of monthly recurrent*nb_months
-
-V add 2 boxes for forecast
-- filter : like odoo
+- post_message sur l'iframe --> poster les events au parent pour changer l'url
 
 - marketing : faire la page de présentation sur odoo.com
 - vérifier la formule du churn (revenue churn + mrr growth), see @ll
