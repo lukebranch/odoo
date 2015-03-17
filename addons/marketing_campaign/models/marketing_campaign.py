@@ -12,11 +12,10 @@ from openerp.tools.safe_eval import safe_eval as eval
 import re
 from openerp.addons.decimal_precision import decimal_precision as dp
 
-from openerp import api
 from openerp.report import render_report
 from openerp.tools.translate import _
 from openerp.exceptions import UserError
-from openerp import models, fields, api, _
+from openerp import _, api, fields, models
 
 _intervalTypes = {
     'hours': lambda interval: relativedelta(hours=interval),

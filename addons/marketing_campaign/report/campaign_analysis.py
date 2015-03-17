@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from openerp import tools
-from openerp import models, fields, api, _
+from openerp import _, api, fields, models
 from openerp.addons.decimal_precision import decimal_precision as dp
 
 
