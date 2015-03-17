@@ -508,7 +508,7 @@
                     </div>
                     <div class="col-md-9">
                         <div class="row">
-                            <div groups="base.group_website_publisher" t-ignore="true" class="css_editable_mode_hidden col-md-offset-11">
+                            <div t-ignore="true" class="css_editable_mode_hidden col-md-offset-11">
                               <a class="btn btn-info hidden-print" t-att-href="'/web#return_label=Website&amp;model=%s&amp;id=%s&amp;action=%s&amp;view_type=form' % (template._name, template.id, action)">Back</a>
                             </div>
                         </div>
