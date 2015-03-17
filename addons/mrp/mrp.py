@@ -939,6 +939,7 @@ class mrp_production(osv.osv):
                 if remaining_qty: # In case you need to make more than planned
                     #consumed more in wizard than previously planned
                     extra_move_id = stock_mov_obj.copy(cr, uid, produce_product.id, default={'product_uom_qty': remaining_qty,
+                                                                                             'group_id': product_product.move_dest_id.group_id.id,
                                                                                              'production_id': production_id}, context=context)
                     stock_mov_obj.action_confirm(cr, uid, [extra_move_id], context=context)
                     stock_mov_obj.action_done(cr, uid, [extra_move_id], context=context)
