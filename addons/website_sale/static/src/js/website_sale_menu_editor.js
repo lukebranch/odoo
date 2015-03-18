@@ -28,7 +28,7 @@
                 return openerp.jsonRpc('/website_sale/menu/products','get_products').then(function(results){
                     self.insert_products($el, results);
                     self._super = _super;
-                    self._super($el);
+                    return self._super($el);
                 });
             }else{
                 return this._super($el);

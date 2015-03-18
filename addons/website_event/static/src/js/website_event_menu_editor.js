@@ -28,7 +28,7 @@
                 return openerp.jsonRpc('/website_event/menu/events','get_events').then(function(results){
                     self.insert_events($el, results);
                     self._super = _super;
-                    self._super($el);
+                    return self._super($el);
                  });
             }else{
                 return this._super($el);

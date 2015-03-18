@@ -367,6 +367,7 @@ class Website(openerp.addons.web.controllers.main.Home):
         view = request.registry['ir.ui.view']
         #Take all the children view which add links in the menu and desactivate them to avoid duplication of links
         view.browse(request.cr, request.uid, view.search(request.cr, request.uid, [['inherit_id','=',view_id]])).write({'active': False})
+
         view.save(request.cr, request.uid, view_id, value, xpath, context=request.context)
 
 
