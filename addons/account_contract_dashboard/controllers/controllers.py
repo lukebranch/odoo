@@ -453,7 +453,7 @@ class AccountContractDashboard(http.Controller):
             net_new_mrr = 0
 
             # TODO: user filter instead : less search
-            invoice_lines_ids_starting_last_month = request.env['account.invoice.line'].search([
+            invoice_line_ids_starting_last_month = request.env['account.invoice.line'].search([
                 ('asset_category_id', '!=', None),
                 ('asset_start_date', '>', (date - relativedelta(months=+1)).strftime(DEFAULT_SERVER_DATE_FORMAT)),
                 ('asset_start_date', '<=', date.strftime(DEFAULT_SERVER_DATE_FORMAT)),
@@ -465,38 +465,59 @@ class AccountContractDashboard(http.Controller):
             ])
 
             # DOWN & CANCEL
-            for invoice_line in invoice_lines_ids_stopping_last_month:
+            for invoice in invoice_lines_ids_stopping_last_month.mapped('invoice_id'):
+
+                invoice_line_ids = invoice_lines_ids_stopping_last_month.filtered(lambda x: x.invoice_id == invoice)
+                invoice_line = invoice_line_ids[0]
+
+                if not invoice_line:
+                    continue
                 # Is there any invoice_line in the next 30 days for this contract ?
-                next_invoice_lines = request.env['account.invoice.line'].search([
+                next_invoice_line_ids = request.env['account.invoice.line'].search([
                     ('asset_category_id', '!=', None),
                     ('asset_start_date', '>=', invoice_line.asset_end_date),
                     ('asset_start_date', '<', (datetime.strptime(invoice_line.asset_end_date, DEFAULT_SERVER_DATE_FORMAT) + relativedelta(months=+1)).strftime(DEFAULT_SERVER_DATE_FORMAT)),
                     ('account_analytic_id', '=', invoice_line.account_analytic_id.id)
                 ])
-                if next_invoice_lines:
-                    next_invoice_line = next_invoice_lines[0]
-                    if next_invoice_line.mrr < invoice_line.mrr:
-                        churned_mrr += (invoice_line.mrr - next_invoice_line.mrr)
+                previous_mrr = sum(invoice_line_ids.mapped('mrr'))
+
+                if next_invoice_line_ids:
+                    # TODO: should we take into account the case where multiple invoice in the next 30 days ?
+                    next_mrr = sum(next_invoice_line_ids.mapped('mrr'))
+                    if next_mrr < previous_mrr:
+                        # DOWN
+                        churned_mrr += (previous_mrr - next_mrr)
                 else:
-                    churned_mrr += invoice_line.mrr
+                    # CANCEL
+                    churned_mrr += previous_mrr
 
             # UP & NEW
-            for invoice_line in invoice_lines_ids_starting_last_month:
+            for invoice in invoice_line_ids_starting_last_month.mapped('invoice_id'):
+
+                invoice_line_ids = invoice_line_ids_starting_last_month.filtered(lambda x: x.invoice_id == invoice)
+                invoice_line = invoice_line_ids[0]
+
+                if not invoice_line:
+                    continue
+
                 # Was there any invoice_line in the last 30 days for this contract ?
-                previous_invoice_lines = request.env['account.invoice.line'].search([
+                previous_invoice_line_ids = request.env['account.invoice.line'].search([
                     ('asset_category_id', '!=', None),
                     ('asset_end_date', '<=', invoice_line.asset_start_date),
                     ('asset_end_date', '>', (datetime.strptime(invoice_line.asset_start_date, DEFAULT_SERVER_DATE_FORMAT) - relativedelta(months=+1)).strftime(DEFAULT_SERVER_DATE_FORMAT)),
                     ('account_analytic_id', '=', invoice_line.account_analytic_id.id)
                 ])
-                if previous_invoice_lines:
-                    previous_invoice_lines = previous_invoice_lines[0]
-                    # if previous_invoice_lines.mrr > invoice_line.mrr:
-                    #     churned_mrr += (invoice_line.mrr - previous_invoice_lines.mrr)
-                    if previous_invoice_lines.mrr < invoice_line.mrr:
-                        expansion_mrr += (invoice_line.mrr - previous_invoice_lines.mrr)
+
+                next_mrr = sum(invoice_line_ids.mapped('mrr'))
+                if previous_invoice_line_ids:
+                    previous_mrr = sum(previous_invoice_line_ids.mapped('mrr'))
+
+                    if previous_mrr < next_mrr:
+                        # UP
+                        expansion_mrr += (next_mrr - previous_mrr)
                 else:
-                    new_mrr += invoice_line.mrr
+                    # NEW
+                    new_mrr += next_mrr
 
             net_new_mrr = new_mrr + expansion_mrr - churned_mrr
 
