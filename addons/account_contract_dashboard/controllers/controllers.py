@@ -77,6 +77,7 @@ class AccountContractDashboard(http.Controller):
             'start_date': start_date.strftime('%Y-%m-%d'),
             'end_date': end_date.strftime('%Y-%m-%d'),
             'href_post_args': href_post_args,
+            'find_res_id': request.env['ir.model.data'].xmlid_to_res_id,
         })
 
     @http.route('/account_contract_dashboard/detailed/<string:stat_type>', auth='user', website=True)

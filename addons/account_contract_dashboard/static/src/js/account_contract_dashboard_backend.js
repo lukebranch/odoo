@@ -6,7 +6,6 @@ openerp.account_contract_dashboard = function (instance) {
             this._super(parent);
             var self = this;
             window.addEventListener("message", function(e) {
-                debugger;
                 parent.getParent().menu.menu_click(e.data['menu-id'])
                 // parent.getParent().menu.open_menu(e.data['menu-id'])
                 // parent.getParent().on_menu_action({action_id: e.data['action-id']})
@@ -27,8 +26,8 @@ openerp.account_contract_dashboard = function (instance) {
         },
         do_action: function(e){
             window.parent.postMessage({
-                'action-id': e.target.getAttribute('action-id'),
-                'menu-id': e.target.getAttribute('menu-id')
+                'action-id': e.currentTarget.getAttribute('action-id'),
+                'menu-id': e.currentTarget.getAttribute('menu-id')
             }, '*');
         },
     });
