@@ -4,20 +4,32 @@ openerp.account_contract_dashboard = function (instance) {
         tagName: 'iframe',
         init: function(parent) {
             this._super(parent);
+            var self = this;
+            window.addEventListener("message", function(e) {
+                debugger;
+                parent.getParent().menu.menu_click(e.data['menu-id'])
+                // parent.getParent().menu.open_menu(e.data['menu-id'])
+                // parent.getParent().on_menu_action({action_id: e.data['action-id']})
+            }, false);
         },
         start: function() {
             var self = this;
             self._super();
             self.$el.attr({'name': 'iframe_backend', 'style': 'height: 100%; width: 100%; border: 0;', 'src': '/account_contract_dashboard'});
-            self.$el.contents().find('body').delegate('submit', 'form', function(e) {
-                debugger;
-                self.do_action(e);
-            });
+            
+            self.$el.on("load", function () {
+                self.bind_events();
+            })
+        },
+        bind_events: function(){
+            var self = this;
+            self.$el.contents().find('#button-to-backend').click(self.do_action);
         },
         do_action: function(e){
-            console.log('coucou');
-            console.log(e);
-            console.log(this.$el.parent());
+            window.parent.postMessage({
+                'action-id': e.target.getAttribute('action-id'),
+                'menu-id': e.target.getAttribute('menu-id')
+            }, '*');
         },
     });
 

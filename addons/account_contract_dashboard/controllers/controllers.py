@@ -117,6 +117,7 @@ class AccountContractDashboard(http.Controller):
             'currency': '€',
             'rate': compute_rate,
             'href_post_args': href_post_args,
+            'find_res_id': request.env['ir.model.data'].xmlid_to_res_id,
         })
 
     @http.route('/account_contract_dashboard/forecast', auth='user', website=True)

@@ -30,5 +30,17 @@
 
     <menuitem action="action_contract_dashboard_report_main" id="menu_action_contract_dashboard_report_main" parent="action_contract_dashboard_report" name="Revenue KPIs"/>
     <menuitem action="action_contract_dashboard_report_forecast" id="menu_action_contract_dashboard_report_forecast" parent="action_contract_dashboard_report" name="Forecast"/>
+
+
+    <record id="action_analytic_entries_report" model="ir.actions.act_window">
+        <field name="name">Analytic Entries Analysis</field>
+        <field name="res_model">analytic.entries.report</field>
+        <field name="view_type">form</field>
+        <field name="view_mode">pivot,graph</field>
+        <field name="search_view_id" ref="account.view_analytic_entries_report_search"/>
+        <field name="context">{'search_default_Account':1, 'group_by': 'product_id'}</field>
+        <field name="help">From this view, have an analysis of your different analytic entries following the analytic account you defined matching your business need. Use the tool search to analyse information about analytic entries generated in the system.</field>
+    </record>
+
 </data>
 </openerp>

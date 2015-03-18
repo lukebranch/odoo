@@ -39,12 +39,6 @@
 
         <t t-call="account_contract_dashboard.dashboard_options"/>
 
-        <div>
-          <form action="http://localhost:8069/web" method="post" target="iframe_backend">
-            <input type="submit" value="link to backend" />
-          </form>
-        </div>
-
           <div class="row">
             <t t-foreach="all_stats" t-as="stat">
               <div class="col-sm-4">
@@ -96,6 +90,15 @@
           <hr/> -->
           
           <t t-call="account_contract_dashboard.dashboard_options"/>
+
+<!--           <div>
+            <form t-att-action='"/web#view_type=pivot&amp;model=account.invoice.report&amp;action="+str(find_res_id("account_asset.action_asset_revenue_report"))' method="post" target="_parent">
+              <button class="btn btn-primary" type="submit">Invoice Analysis</button>
+            </form>
+          </div> -->
+
+          <button id="button-to-backend" class="btn btn-primary" t-att-action-id="find_res_id('account_contract_dashboard.action_analytic_entries_report')" t-att-menu-id="find_res_id('account.menu_action_analytic_entries_report')">Detailed Analysis</button>
+
 
           <div class="row box graph-detailed">
             <div class="col-sm-12">
