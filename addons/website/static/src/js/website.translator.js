@@ -7,6 +7,7 @@
     }
 
     var website = openerp.website;
+    var web_editor = openerp.web_editor;
     web_editor.add_template_file('/website/static/src/xml/website.translator.xml');
     var nodialog = 'website_translator_nodialog';
 
@@ -14,22 +15,23 @@
         do_not_translate : ['-','*','!'],
         start: function () {
             var self = this;
+            var res = this._super();
+            var $edit_button = this.$("button[data-action=edit]");
+            $edit_button.removeClass("hidden");
+
             this.initial_content = {};
-            return this._super.apply(this, arguments).then(function () {
-                var $edit_button = $("button[data-action=edit]");
-                $edit_button.removeClass("hidden");
 
-                if(website.no_editor) {
-                    $edit_button.removeProp('disabled');
-                } else {
-                    $edit_button.parent().after(openerp.qweb.render('website.TranslatorAdditionalButtons'));
-                    $('a[data-action=edit_master]').on('click', self, function(ev) {
-                        self.edit_master(ev);
-                    });
-                }
+            if(website.no_editor) {
+                $edit_button.removeProp('disabled');
+            } else {
+                $edit_button.parent().after(openerp.qweb.render('website.TranslatorAdditionalButtons'));
+                $('a[data-action=edit_master]').on('click', self, function(ev) {
+                    self.edit_master(ev);
+                });
+            }
 
-                $('.js_hide_on_translate').hide();
-            });
+            $('.js_hide_on_translate').hide();
+            return res;
         },
         edit: function () {
             var self = this;
@@ -43,7 +45,7 @@
                     self.translate().then(function () {
                         mysuper.call(self, true);
                         if(self.gengo_translate){
-                            self.translation_gengo_display()
+                            self.translation_gengo_display();
                         }
                     });
                 });
@@ -51,7 +53,7 @@
                 this.translate().then(function () {
                     mysuper.call(self);
                     if(self.gengo_translate){
-                        self.translation_gengo_display()
+                        self.translation_gengo_display();
                     }
                 });
             }
@@ -201,7 +203,7 @@
         },
     });
 
-    website.RTE.include({
+    web_editor.RTE.include({
         start: function () {
             this._super.apply(this, arguments);
             this.$el.hide();

@@ -112,22 +112,4 @@
     </table>
 </template>
 
-<template id="language_selector">
-    <ul class="list-inline js_language_selector mt16" t-if="editable and translatable and len(languages) &gt; 1">
-        <li t-foreach="languages" t-as="lg">
-            <a t-att-href="url_for(request.httprequest.path + '?' + keep_query(), lang=lg[0])"
-               t-att-data-default-lang="editable and lg[0] == default_lang_code and 'true' or None">
-                <t t-esc="lg[1].split('/').pop()"/>
-            </a>
-        </li>
-        <li groups="base.group_system">
-            <t t-set="url_return" t-value="url_for('', '[lang]') + '?' + keep_query()"/>
-            <a t-attf-href="/web#action=base.action_view_base_language_install&amp;url_return=#{url_return}">
-                <i class="fa fa-plus-circle"/>
-                Add a language...
-            </a>
-        </li>
-    </ul>
-</template>
-
 </openerp>

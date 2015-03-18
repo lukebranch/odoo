@@ -1,7 +1,11 @@
 (function () {
     'use strict';
 
-var web_editor = openerp.web_editor || (openerp.web_editor = {});
+if (openerp.web_editor) {
+    return;
+}
+
+var web_editor = openerp.web_editor = {};
 openerp.web_editor_ = web_editor;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////

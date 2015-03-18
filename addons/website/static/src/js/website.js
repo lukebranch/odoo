@@ -251,12 +251,7 @@
 
     web_editor.add_template_file('/website/static/src/xml/website.xml');
 
-    website.dom_ready = $.Deferred();
-    $(document).ready(function () {
-        website.dom_ready.resolve();
-        // fix for ie
-        if($.fn.placeholder) $('input, textarea').placeholder();
-    });
+    website.dom_ready = web_editor.dom_ready;
 
     /**
      * Execute a function if the dom contains at least one element matched
@@ -281,9 +276,7 @@
      */
     website.ready = function() {
         if (!all_ready) {
-            all_ready = website.dom_ready.then(function () {
-                return templates_def;
-            }).then(function () {
+            all_ready = web_editor.ready().then(function () {
                 // display button if they are at least one editable zone in the page (check the branding)
                 if ($('[data-oe-model]').size()) {
                     $("#oe_editzone").show();
@@ -292,15 +285,17 @@
                 if ($('html').data('website-id')) {
                     website.id = $('html').data('website-id');
                     website.session = new openerp.Session();
-                    return openerp.jsonRpc('/website/translations', 'call', {'lang': website.get_context().lang})
-                    .then(function(trans) {
-                        openerp._t.database.set_bundle(trans);});
+                    return openerp.jsonRpc('/website/translations', 'call', {
+                            'lang': website.get_context().lang
+                        }).then(function(trans) {
+                            openerp._t.database.set_bundle(trans);
+                        });
                 }
             }).then(function () {
                 var templates = openerp.qweb.templates;
                 var keys = _.keys(templates);
                 for (var i = 0; i < keys.length; i++){
-                    treat_node(templates[keys[i]]);
+                    translate_node(templates[keys[i]]);
                 }
             }).then(function () {
                 website.topBar = new website.TopBar();
@@ -310,16 +305,16 @@
         return all_ready;
     };
 
-    function treat_node(node){
+    function translate_node(node){
         if(node.nodeType === 3) {
             if(node.nodeValue.match(/\S/)){
                 node.nodeValue = openerp._t($.trim(node.nodeValue));
             }
         }
         else if(node.nodeType === 1 && node.hasChildNodes()) {
-            _.each(node.childNodes, function(subnode) {treat_node(subnode);});
+            _.each(node.childNodes, function(subnode) {translate_node(subnode);});
         }
-    };
+    }
 
     website.inject_tour = function() {
         // if a tour is active inject tour js
@@ -368,6 +363,10 @@
             this.setElement(target);
             return this.start();
         },
+        edit: function () {
+            console.log("pppppp");
+            return this._super();
+        }
     });
 
     return website;

@@ -55,9 +55,10 @@ web_editor.EditorBar = openerp.Widget.extend({
         'click button[data-action=save]': 'save',
         'click a[data-action=cancel]': 'cancel',
     },
-    init: function() {
+    init: function(parent) {
         var self = this;
         var res = this._super.apply(this, arguments);
+        this.parent = parent;
         this.rte = new web_editor.RTE(this);
         this.rte.on('rte:ready', this, function () {
             self.trigger('rte:ready');

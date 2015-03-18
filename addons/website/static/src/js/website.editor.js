@@ -11,7 +11,7 @@
      */
     website.TopBar.include({
         events: {
-            'click [data-action="edit"]': 'on_edit',
+            'click [data-action="edit"]': 'edit',
         },
         start: function () {
             var self = this;
@@ -32,7 +32,7 @@
 
             return this._super();
         },
-        on_edit: function () {
+        edit: function () {
             if (web_editor.no_editor) {
                 var help_text = $(document.documentElement).data('editable-no-editor');
                 this.$('[data-action="edit"]').parent()
@@ -41,8 +41,8 @@
                     .attr('title', help_text);
             } else {
                 this.$('button[data-action=edit]').prop('disabled', true);
-                this.$el.addClass("hidden");
-                web_editor.editor_bar = new web_editor.EditorBar();
+                this.$el.hide();
+                web_editor.editor_bar = new web_editor.EditorBar(this);
                 web_editor.editor_bar.prependTo(document.body);
             }
         }
