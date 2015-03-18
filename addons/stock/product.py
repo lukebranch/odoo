@@ -327,7 +327,7 @@ class product_product(osv.osv):
         product_ids = []
         for product in self.browse(cr, uid, ids, context=context):
             product_ids.append(product.id)
-        result = mod_obj.xmlid_to_res_id(cr, uid, 'stock.view_production_lot_tree', raise_if_not_found=True)
+        result = mod_obj.xmlid_to_res_id(cr, uid, 'stock.action_production_lot_form', raise_if_not_found=True)
         result = act_obj.read(cr, uid, [result], context=context)[0]
         result['domain'] = "[('product_id','in',[" + ','.join(map(str, product_ids)) + "])]"
         return result
@@ -438,7 +438,7 @@ class product_template(osv.osv):
         product_ids = []
         for product in self.browse(cr, uid, ids, context=context):
             product_ids += [p.id for p in product.product_variant_ids]
-        result = mod_obj.xmlid_to_res_id(cr, uid, 'stock.view_production_lot_tree', raise_if_not_found=True)
+        result = mod_obj.xmlid_to_res_id(cr, uid, 'stock.action_production_lot_form', raise_if_not_found=True)
         result = act_obj.read(cr, uid, [result], context=context)[0]
         result['domain'] = "[('product_id','in',[" + ','.join(map(str, product_ids)) + "])]"
         return result
