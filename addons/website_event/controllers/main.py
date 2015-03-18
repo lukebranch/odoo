@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 
 from openerp import http
-from openerp import tools, SUPERUSER_ID
+from openerp import tools, SUPERUSER_ID, addons
 from openerp.addons.website.models.website import slug
 from openerp.http import request
 from openerp.tools.translate import _
@@ -275,3 +275,16 @@ class website_event(http.Controller):
             'attendees': attendees,
             'event': event,
         })
+
+    #------------------------------------------------------
+    # Menu's snippets
+    #------------------------------------------------------
+
+    @http.route(['/website_event/menu/events'], type='json', auth="public", website=True)
+    def get_events(self, values=None):
+        Event = request.registry.get('event.event')
+        events = Event.search_read(request.cr, request.uid, [['website_published','=',True]], limit=5, order='write_date desc')
+        for event in events:
+            e = Event.browse(request.cr, request.uid, event['id'])
+            event['url'] = "/event/%s/register" % slug(e)
+        return events

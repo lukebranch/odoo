@@ -23,19 +23,13 @@
     website.EditorBar.include({
         saveElement: function($el){
             if($el.hasClass('top_menu') && $el.find('.s_menu_products').length > 0){
-                this.clean_menu($el);
                 var self = this;
+                var _super = this._super;
                 return openerp.jsonRpc('/website_sale/menu/products','get_products').then(function(results){
                     self.insert_products($el, results);
-                    var markup = $el.prop('outerHTML');
-                    console.log(markup);
-                    return openerp.jsonRpc('/website/save_menu', 'save_menu', {
-                        view_id: $el.data('oe-id'),
-                        value: markup,
-                        xpath: $el.data('oe-xpath') || null,
-                        context: website.get_context(),
-                    });
-                 });
+                    self._super = _super;
+                    self._super($el);
+                });
             }else{
                 return this._super($el);
             }
@@ -49,7 +43,7 @@
                 ul.addClass('s_products');
                 el.after(ul);
                 $.each(products, function(){
-                    ul.append("<li ><a href='/page/homepage'><span>" + this.name + " "+ this.write_date + "</span></a></li>");
+                    ul.append("<li ><a href='"+this.url+"'><span>" + this.name + "</span></a></li>");
                 });
                 el.remove();
             });

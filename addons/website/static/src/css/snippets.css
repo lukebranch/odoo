@@ -783,7 +783,7 @@ table.table_desc tr td:last-child {
 .oe_snippet.o_block_well .oe_snippet_thumbnail_img {
   background-image: url("/website/static/src/img/blocks/block_well.png");
 }
-.oe_snippetcan.o_block_quote .oe_snippet_thumbnail_img {
+.oe_snippet.o_block_quote .oe_snippet_thumbnail_img {
   background-image: url("/website/static/src/img/blocks/block_quote.png");
 }
 .oe_snippet.o_block_panel .oe_snippet_thumbnail_img {

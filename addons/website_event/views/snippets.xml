@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+<data>
+
+<template name="5 Events" id="s_menu_events">
+    <li class="s_menu_events"><span>5 latest events</span></li>
+</template>
+
+<template id="website_event" inherit_id="website.snippets" name="Snippet Event">
+
+    <xpath expr="//div[@id='snippet_options']" position="inside">
+        <div data-js="menu_events" 
+          data-selector=".s_menu_events"
+          data-drop-in=".o_column_list, .dropdown-menu"
+          data-no-check="true">
+        </div>
+    </xpath>
+
+    <xpath expr="//div[@id='snippet_menu']//div[@class='o_panel_body']" position="inside">
+      <t t-snippet="website_event.s_menu_events" t-thumbnail="/website/static/src/img/blocks/block_references.png"/>
+    </xpath>
+</template>
+</data>
+</openerp>

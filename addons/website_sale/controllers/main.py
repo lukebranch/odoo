@@ -985,15 +985,10 @@ class website_sale(http.Controller):
 
     @http.route(['/website_sale/menu/products'], type='json', auth="public", website=True)
     def get_products(self, values=None):
-        products = request.env['product.product'].search_read([], limit=5, order='write_date desc')
+        Product = request.registry.get('product.product')
+        products = Product.search_read(request.cr, request.uid, [['website_published','=',True]], limit=5, order='write_date desc')
+        for product in products:
+            p = Product.browse(request.cr, request.uid, product['id'])
+            product['url'] = "/shop/product/%s" % slug(p.product_tmpl_id)
         return products
 
-
-class Website_extension(addons.website.controllers.main.Website):
-    @http.route()
-    def save_menu(self, view_id, value, xpath, **kwargs):
-        if request.env['ir.ui.view'].search_count([('name', '=', 'shop menu link')]):
-            template = request.website.get_template('website_sale.shop_menu_link')
-            if template.active:
-                template.write({'active': False})
-        super(Website_extension, self).save_menu(view_id, value, xpath, **kwargs)

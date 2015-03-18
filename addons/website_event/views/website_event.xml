@@ -13,6 +13,7 @@
     <xpath expr="." position="inside">
         <script type="text/javascript" src="/website_event/static/src/js/website_event.editor.js"></script>
         <script type="text/javascript" src="/website_event/static/src/js/website.tour.event.js"></script>
+        <script type="text/javascript" src="/website_event/static/src/js/website_event_menu_editor.js"></script>
     </xpath>
 </template>
 
@@ -606,5 +607,15 @@
          <li><a href="#" data-action="new_event">New Event</a></li>
     </xpath>
 </template>
+
+<!-- Add the event menu -->
+
+<template id="event_menu_link" inherit_id="website.submenu" name="event menu link">
+  <xpath expr="./ul" position="inside">
+    <li class="s_menu_parent"><a href="/event">Events</a></li>
+  </xpath>
+</template>
+
+
 </data>
 </openerp>
