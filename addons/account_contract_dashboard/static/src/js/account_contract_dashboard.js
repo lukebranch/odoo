@@ -432,11 +432,12 @@
                 area: true
               },  
             ];
-
+          debugger;
           /*These lines are all chart setup.  Pick and choose which chart features you want to utilize. */
           nv.addGraph(function() {
             var chart = nv.models.lineChart()
                           .interpolate("monotone")
+                          .forceY([getMinY(result)])
                           .x(function(d) { return getDate(d); })
                           .y(function(d) { return getValue(d); });
             if (show_legend){
@@ -575,7 +576,12 @@
       
 
   });
-
+  function getMinY(l) {
+      var min = Math.min.apply(Math,l.map(function(o){return o[1];}));
+      var max = Math.max.apply(Math,l.map(function(o){return o[1];}));
+      console.log('min : ' + min + ' & max : ' + max);
+      return Math.max(0, min - (max-min)/2);
+  }
   function getDate(d) { return new Date(d[0]); }
   function getValue(d) { return d[1]; }
   function getPrunedTickValues(ticks, nb_desired_ticks) {
