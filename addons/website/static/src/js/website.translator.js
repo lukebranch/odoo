@@ -211,24 +211,23 @@
         save: function () {
             var self = this;
             var keys = {};
-            var trans = {};
+            var trans = [];
             this.find('.o_translatable_text.o_dirty').each(function () {
                 var content = self.getInitialContent(this);
                 if (keys[content]) return;
                 keys[content] = true;
 
-                var oeTranslationViewId = this.getAttribute('data-oe-translation-view-id');
-                if (!trans[oeTranslationViewId]) {
-                    trans[oeTranslationViewId] = [];
-                }
-                trans[oeTranslationViewId].push({
+                var oeTranslationViewId = this.getAttribute('data-oe-translation-view-id') | 0;
+                trans.push({
                     'initial_content':  content,
                     'new_content':      _.str.trim($(this).text()),
+                    'model':            'ir.ui.view',
+                    'id':               oeTranslationViewId,
+                    'field':            'arch',
                     'translation_id':   (this.getAttribute('data-oe-translation-id') | 0) || null
                 });
             });
 
-            var field_trans = [];
             this.find('.o_translatable_field.o_dirty').each(function () {
                 var $node = $(this).closest("[data-oe-type]");
 
@@ -236,17 +235,18 @@
                 if (keys[content]) return;
                 keys[content] = true;
 
-                field_trans.push({
+                trans.push({
                     'initial_content':  content,
-                    'new_content':  _.str.trim($(this).text()),
-                    'model':        $node.attr('data-oe-model') || null,
-                    'id':           ($node.attr('data-oe-id') | 0) || null,
-                    'field':        $node.attr('data-oe-field') || null,
+                    'new_content':      _.str.trim($(this).text()),
+                    'model':            $node.attr('data-oe-model') || null,
+                    'id':               ($node.attr('data-oe-id') | 0) || null,
+                    'field':            $node.attr('data-oe-field') || null,
+                    'translation_id':   ($node.attr('data-oe-translation-id') | 0) || null
                 });
             });
-            
+
             console.log("TO DO translate for t-field and for html field");
-            console.log(field_trans);
+            console.log(trans);
 
             return openerp.jsonRpc('/website/set_translations', 'call', {
                 'data': trans,

@@ -232,39 +232,49 @@ class Website(openerp.addons.web.controllers.main.Home):
     @http.route('/website/set_translations', type='json', auth='public', website=True)
     def set_translations(self, data, lang):
         irt = request.registry.get('ir.translation')
-        for view_id, trans in data.items():
-            view_id = int(view_id)
-            for t in trans:
-                initial_content = t['initial_content'].strip()
-                new_content = t['new_content'].strip()
-                tid = t['translation_id']
-                if not tid:
-                    old_trans = irt.search_read(
-                        request.cr, request.uid,
-                        [
-                            ('type', '=', 'view'),
-                            ('res_id', '=', view_id),
-                            ('lang', '=', lang),
-                            ('src', '=', initial_content),
-                        ])
-                    if old_trans:
-                        tid = old_trans[0]['id']
-                if tid:
-                    vals = {'value': new_content}
-                    irt.write(request.cr, request.uid, [tid], vals)
+        for trans in data:
+            initial_content = trans['initial_content'].strip()
+            new_content = trans['new_content'].strip()
+            tid = trans['translation_id']
+            if not tid:
+                domain = [
+                    ('res_id', '=', trans['id']),
+                    ('lang', '=', lang),
+                    ('src', '=', initial_content)]
+                if trans['model'] == 'ir.ui.view':
+                    domain += [
+                        ('type', '=', 'view'),
+                        ('name', '=', "website")]
                 else:
-                    new_trans = {
-                        'name': 'website',
-                        'res_id': view_id,
-                        'lang': lang,
-                        'type': 'view',
-                        'source': initial_content,
-                        'value': new_content,
-                    }
-                    if t.get('gengo_translation'):
-                        new_trans['gengo_translation'] = t.get('gengo_translation')
-                        new_trans['gengo_comment'] = t.get('gengo_comment')
-                    irt.create(request.cr, request.uid, new_trans)
+                    domain += [
+                        ('type', '=', 'model'),
+                        ('name', '=', "%s,%s" % (trans['model'], trans['field']))]
+
+                old_trans = irt.search_read(request.cr, request.uid, domain)
+                if old_trans:
+                    tid = old_trans[0]['id']
+
+            if tid:
+                vals = {'value': new_content}
+                irt.write(request.cr, request.uid, [tid], vals)
+            else:
+                new_trans = {
+                    'res_id': trans['id'],
+                    'lang': lang,
+                    'source': initial_content,
+                    'value': new_content,
+                }
+                if trans['model'] == 'ir.ui.view':
+                    new_trans['type'] = 'view'
+                    new_trans['name'] = 'website'
+                else:
+                    new_trans['type'] = 'model'
+                    new_trans['name'] = "%s,%s" % (trans['model'], trans['field'])
+
+                if trans.get('gengo_translation'):
+                    new_trans['gengo_translation'] = trans.get('gengo_translation')
+                    new_trans['gengo_comment'] = trans.get('gengo_comment')
+                irt.create(request.cr, request.uid, new_trans)
         return True
 
     @http.route('/website/translations', type='json', auth="public", website=True)
