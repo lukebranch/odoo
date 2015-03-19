@@ -78,7 +78,7 @@ $('.oe_website_sale').each(function () {
             $(this).closest('form').submit();
         }
     });
-    $('form.js_attributes input, form.js_attributes select', oe_website_sale).on('change', function () {
+    $('form.js_attributes input, form.js_attributes select', oe_website_sale).on('change', function (event) {
         if (!event.isDefaultPrevented()) {
             $(this).closest("form").submit();
         }
