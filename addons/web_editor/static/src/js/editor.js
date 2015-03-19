@@ -75,7 +75,7 @@ web_editor.EditorBar = openerp.Widget.extend({
         this.display_placeholder();
 
         this.rte.on('change', this, this.proxy('rte_changed'));
-        this.rte.appendTo(this.$('.nav.js_editor_placeholder'));
+        this.rte.start();
         this.rte.start_edition();
 
         var flag = false;
@@ -125,6 +125,12 @@ web_editor.EditorBar = openerp.Widget.extend({
             .removeClass('o_dirty oe_carlos_danger o_is_inline_editable')
             .map(function () {
                 var $el = $(this);
+
+                $el.find('[class]').filter(function () {
+                    if (!this.className.match(/\S/)) {
+                        this.removeAttribute("class");
+                    }
+                });
 
                 // remove multi edition
                 var key =  $el.data('oe-model')+":"+$el.data('oe-id')+":"+$el.data('oe-field')+":"+$el.data('oe-type')+":"+$el.data('oe-expression');

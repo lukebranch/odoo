@@ -130,9 +130,12 @@ class ManyToOne(orm.AbstractModel):
             qweb_context, context=context)
         many2one = getattr(record, field_name)
         if many2one:
-            return itertools.chain(attrs, [
-                    ('data-oe-many2one-id', many2one.id),
-                    ('data-oe-many2one-model', many2one._name)])
+            data = [('data-oe-many2one-id', many2one.id),
+                    ('data-oe-many2one-model', many2one._name)]
+            field = many2one._fields.get("name")
+            if field:
+                attrs += [('data-oe-translate', 1 if getattr(field, 'translate', False) else 0)]
+            return itertools.chain(attrs, data)
         else:
             return attrs
 

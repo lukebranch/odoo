@@ -1,8 +1,6 @@
 <templates id="template" xml:space="preserve">
     <t t-name="web_editor.editorbar">
         <div id="web_editor-top-edit" class="navbar navbar-inverse navbar-fixed-top hidden-xs">
-            <ul class="nav navbar-nav js_editor_placeholder" style="position: absolute; left: 180px;">
-            </ul>
             <form class="navbar-form text-muted">
                 <button type="button" data-action="save"
                         class="btn btn-primary btn-xs">Save</button>

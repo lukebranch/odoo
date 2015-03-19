@@ -73,11 +73,15 @@ $('.oe_website_sale').each(function () {
         return false;
     });
 
-    $('.oe_website_sale .a-submit, #comment .a-submit').off('click').on('click', function () {
-        $(this).closest('form').submit();
+    $('.oe_website_sale .a-submit, #comment .a-submit').off('click').on('click', function (event) {
+        if (!event.isDefaultPrevented()) {
+            $(this).closest('form').submit();
+        }
     });
     $('form.js_attributes input, form.js_attributes select', oe_website_sale).on('change', function () {
-        $(this).closest("form").submit();
+        if (!event.isDefaultPrevented()) {
+            $(this).closest("form").submit();
+        }
     });
 
     // change price when they are variants

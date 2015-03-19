@@ -227,26 +227,26 @@ table.editorbar-panel td.selected {
   padding: 4px;
 }
 
-.oe_translatable_text {
+.o_translatable_text {
   outline: 1px solid black;
 }
 
-.oe_translatable_field {
+.o_translatable_field {
   outline: 1px dashed black;
 }
 
-.oe_translatable_text.oe_dirty, .oe_translatable_field.oe_dirty {
+.o_translatable_text.o_dirty, .o_translatable_field.o_dirty {
   outline-color: red;
 }
 
-.oe_translatable_text.oe_dirty:empty {
+.o_translatable_text.o_dirty:empty {
   padding: 0 10px;
 }
 
-.oe_translatable_todo {
+.o_translatable_todo {
   background: #ffffb6;
 }
-.oe_translatable_todo:hover {
+.o_translatable_todo:hover {
   background: inherit;
   cursor: text;
 }

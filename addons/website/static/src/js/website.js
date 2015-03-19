@@ -22,12 +22,12 @@
     /* ----------------------------------------------------
        Helpers
        ---------------------------------------------------- */
-    website.get_context = function (dict) {
+    var get_context = web_editor.get_context;
+    web_editor.get_context = website.get_context = function (dict) {
         var html = document.documentElement;
         return _.extend({
-            lang: html.getAttribute('lang').replace('-', '_'),
-            website_id: html.getAttribute('data-website-id')|0
-        }, dict);
+            'website_id': html.getAttribute('data-website-id')|0
+        }, get_context(dict), dict);
     };
 
     website.parseQS = function (qs) {
@@ -362,10 +362,6 @@
         attachTo: function(target) {
             this.setElement(target);
             return this.start();
-        },
-        edit: function () {
-            console.log("pppppp");
-            return this._super();
         }
     });
 

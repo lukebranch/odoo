@@ -7,7 +7,7 @@
         start_animation: function (reload) {},
     });
 
-    snippet.dummy = function () {};
+    snippet.dummy = function () {return true;};
 
     web_editor.add_template_file('/web_editor/static/src/xml/snippets.xml');
 
