@@ -4,13 +4,6 @@
         <record id="forum_help" model="forum.forum">
             <field name="name">Help</field>
         </record>
-
-        <record id="menu_questions" model="website.menu">
-            <field name="name">Forum</field>
-            <field name="url" eval="'/forum/'+str(ref('website_forum.forum_help'))"/>
-            <field name="parent_id" ref="website.main_menu"/>
-            <field name="sequence" type="int">35</field>
-        </record>
     </data>
     <data>
         <function model="ir.config_parameter" name="set_param" eval="('auth_signup.allow_uninvited', True)" />

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<templates id="template" xml:space="preserve">
+    <!-- menu template -->
+    <t t-name="website_blog.menu_blog_posts">
+        <li class="s_menu_blog_posts"><span> 5 latest blog posts</span></li>
+    </t>
+    <t t-name="website_blog.menu_blogs">
+        <li class="s_menu_blogs"><span> 5 latest blogs</span></li>
+    </t>
+</templates>

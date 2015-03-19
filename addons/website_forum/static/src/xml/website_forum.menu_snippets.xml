@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<templates id="template" xml:space="preserve">
+    <!-- menu template -->
+    <t t-name="website_forum.menu_forum_posts">
+        <li class="s_menu_forum_posts"><span> 5 latest forum questions</span></li>
+    </t>
+    <t t-name="website_forum.menu_forums">
+        <li class="s_menu_forums"><span> 5 latest forums</span></li>
+    </t>
+</templates>

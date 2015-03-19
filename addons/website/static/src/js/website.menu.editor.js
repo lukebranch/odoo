@@ -58,7 +58,6 @@
             if($el.hasClass('top_menu')){
                 this.clean_menu($el);
                 var markup = $el.prop('outerHTML');
-
                 return openerp.jsonRpc('/website/save_menu', 'save_menu', {
                     view_id: $el.data('oe-id'),
                     value: markup,

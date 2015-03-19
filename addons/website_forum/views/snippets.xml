@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+<data>
+
+<template name="5 Forum Questions" id="s_menu_forum_posts">
+    <li class="s_menu_forum_posts"><span> 5 latest forum questions</span></li>
+</template>
+<template name="5 Forum" id="s_menu_forums">
+    <li class="s_menu_forums"><span> 5 latest forums</span></li>
+</template>
+<template id="website_forum" inherit_id="website.snippets" name="Snippet Forum">
+
+    <xpath expr="//div[@id='snippet_options']" position="inside">
+      <div data-js="menu_posts" 
+        data-selector=".s_menu_forum_posts"
+        data-drop-in=".o_column_list, .dropdown-menu"
+        data-no-check="true">
+      </div>
+    </xpath>
+    <xpath expr="//div[@id='snippet_options']" position="inside">
+        <div data-js="menu_forums" 
+          data-selector=".s_menu_forums"
+          data-drop-in=".o_column_list, .dropdown-menu"
+          data-no-check="true">
+        </div>
+    </xpath>
+
+    <xpath expr="//div[@id='snippet_menu']//div[@class='o_panel_body']" position="inside">
+      <t t-snippet="website_forum.s_menu_forums" t-thumbnail="/website/static/src/img/blocks/block_references.png"/>
+    </xpath>
+
+    <xpath expr="//div[@id='snippet_menu']//div[@class='o_panel_body']" position="inside">
+      <t t-snippet="website_forum.s_menu_forum_posts" t-thumbnail="/website/static/src/img/blocks/block_references.png"/>
+    </xpath>
+</template>
+</data>
+</openerp>

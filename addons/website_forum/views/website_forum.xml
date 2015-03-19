@@ -7,6 +7,7 @@
     <xpath expr="." position="inside">
         <script type="text/javascript" src="/website_forum/static/src/js/website_tour_forum.js"/>
         <script type="text/javascript" src="/website_forum/static/src/js/website_forum.editor.js"/>
+        <script type="text/javascript" src="/website_forum/static/src/js/website_forum_menu_editor.js"></script>
     </xpath>
 </template>
 
@@ -1318,6 +1319,14 @@
     <xpath expr="//ul[@id='oe_systray']/li/ul[@class='dropdown-menu oe_content_menu']" position="inside">
         <li><a href="#" data-action="new_forum">New Forum</a></li>
     </xpath>
+</template>
+
+<!-- Add the forum menu -->
+
+<template id="forum_menu_link" inherit_id="website.submenu" name="forum menu link">
+  <xpath expr="./ul" position="inside">
+    <li class="s_menu_parent"><a href="/forum/help-1">Forum</a></li>
+  </xpath>
 </template>
 
     </data>

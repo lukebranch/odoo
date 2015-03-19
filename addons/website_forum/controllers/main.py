@@ -630,3 +630,26 @@ class WebsiteForum(http.Controller):
         if not request.session.uid:
             return {'error': 'anonymous_user'}
         return post.unlink_comment(comment.id)[0]
+
+    #------------------------------------------------------
+    # Menu's snippets
+    #------------------------------------------------------
+
+    @http.route(['/website_forum/menu/forum_posts'], type='json', auth="public", website=True)
+    def get_forum_posts(self, values=None):
+        Post = request.registry.get('forum.post')
+        posts = Post.search_read(request.cr, request.uid, [['post_type','=','question'],['parent_id','=',None]], limit=5, order='write_date desc')
+        for post in posts:
+            p = Post.browse(request.cr, request.uid, post['id'])
+            post['url'] = "/forum/%s/question/%s" % (slug(p.forum_id), slug(p))
+        return posts
+
+    @http.route(['/website_forum/menu/forums'], type='json', auth="public", website=True)
+    def get_forums(self, values=None):
+        Forum = request.registry.get('forum.forum')
+        forums = Forum.search_read(request.cr, request.uid, [], limit=5, order='write_date desc')
+        for forum in forums:
+            f = Forum.browse(request.cr, request.uid, forum['id'])
+            forum['url'] = "/forum/%s" % slug(f)
+        return forums
+

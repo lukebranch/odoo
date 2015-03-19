@@ -368,3 +368,26 @@ class WebsiteBlog(http.Controller):
     @http.route('/blog/get_user/', type='json', auth="public", website=True)
     def get_user(self, **post):
         return [False if request.session.uid else True]
+
+    #------------------------------------------------------
+    # Menu's snippets
+    #------------------------------------------------------
+
+    @http.route(['/website_blog/menu/blog_posts'], type='json', auth="public", website=True)
+    def get_blog_posts(self, values=None):
+        Post = request.registry.get('blog.post')
+        posts = Post.search_read(request.cr, request.uid, [['website_published','=',True]], limit=5, order='write_date desc')
+        for post in posts:
+            p = Post.browse(request.cr, request.uid, post['id'])
+            post['url'] = "/blog/%s/post/%s" % (slug(p.blog_id), slug(p))
+        return posts
+
+    @http.route(['/website_blog/menu/blogs'], type='json', auth="public", website=True)
+    def get_blogs(self, values=None):
+        Blog = request.registry.get('blog.blog')
+        blogs = Blog.search_read(request.cr, request.uid, [], limit=5, order='write_date desc')
+        for blog in blogs:
+            b = Blog.browse(request.cr, request.uid, blog['id'])
+            blog['url'] = "/blog/%s" % slug(b)
+        return blogs
+

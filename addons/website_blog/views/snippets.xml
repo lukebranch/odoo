@@ -1,6 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <openerp>
 <data>
+
+<template name="5 Blog blog_posts" id="s_menu_blog_posts">
+    <li class="s_menu_blog_posts"><span> 5 latest blog posts</span></li>
+</template>
+<template name="5 Blogs" id="s_menu_blogs">
+    <li class="s_menu_blogs"><span> 5 latest blogs</span></li>
+</template>
 <template id="website_blog" inherit_id="website.snippets" name="Snippet Blog">
 
     <xpath expr="//div[@id='snippet_options']" position="inside">
@@ -13,6 +20,28 @@
         </div>
     </xpath>
 
+    <xpath expr="//div[@id='snippet_options']" position="inside">
+      <div data-js="menu_blog_posts" 
+        data-selector=".s_menu_blog_posts"
+        data-drop-in=".o_column_list, .dropdown-menu"
+        data-no-check="true">
+      </div>
+    </xpath>
+    <xpath expr="//div[@id='snippet_options']" position="inside">
+        <div data-js="menu_blogs" 
+          data-selector=".s_menu_blogs"
+          data-drop-in=".o_column_list, .dropdown-menu"
+          data-no-check="true">
+        </div>
+    </xpath>
+
+    <xpath expr="//div[@id='snippet_menu']//div[@class='o_panel_body']" position="inside">
+      <t t-snippet="website_blog.s_menu_blogs" t-thumbnail="/website/static/src/img/blocks/block_references.png"/>
+    </xpath>
+
+    <xpath expr="//div[@id='snippet_menu']//div[@class='o_panel_body']" position="inside">
+      <t t-snippet="website_blog.s_menu_blog_posts" t-thumbnail="/website/static/src/img/blocks/block_references.png"/>
+    </xpath>
 </template>
 </data>
 </openerp>
