@@ -2,7 +2,7 @@
 <openerp>
 <data>
 
-<template name="5 Blog blog_posts" id="s_menu_blog_posts">
+<template name="5 Blog posts" id="s_menu_blog_posts">
     <li class="s_menu_blog_posts"><span> 5 latest blog posts</span></li>
 </template>
 <template name="5 Blogs" id="s_menu_blogs">
