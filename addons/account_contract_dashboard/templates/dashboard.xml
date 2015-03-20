@@ -55,7 +55,7 @@
             <t t-foreach="all_forecast" t-as="forecast">
               <div class="col-sm-6">
                 <!-- <a class="fill-div" href="account_contract_dashboard/forecast"> -->
-                <a class="fill-div" href="#" id="button-to-backend" t-att-menu-id="find_res_id('account_contract_dashboard.menu_action_contract_dashboard_report_forecast')">
+                <a class="fill-div button-to-backend" href="#" t-att-menu-id="find_res_id('account_contract_dashboard.menu_action_contract_dashboard_report_forecast')">
                   <div class="box forecast-box" t-att-name="forecast['name']" t-att-code="forecast['code']">
                     <div class="loading">
                       <i class="fa fa-spin fa-spinner fa-pulse" style="font-size: 3em;"></i>
@@ -98,7 +98,7 @@
             </form>
           </div> -->
 
-          <button id="button-to-backend" class="btn btn-primary" t-att-action-id="find_res_id('account_contract_dashboard.action_analytic_entries_report')" t-att-menu-id="find_res_id('account.menu_action_analytic_entries_report')">Detailed Analysis</button>
+          <button class="btn btn-primary button-to-backend" t-att-action-id="find_res_id('account_contract_dashboard.action_analytic_entries_report')" t-att-menu-id="find_res_id('account.menu_action_analytic_entries_report')">Detailed Analysis</button>
 
 
           <div class="row box graph-detailed">

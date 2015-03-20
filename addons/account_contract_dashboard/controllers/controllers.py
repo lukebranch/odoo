@@ -44,7 +44,7 @@ def compute_rate(stat_type, old, new):
     return int(value), color
 
 
-def get_pruned_tick_values(ticks, start_date, end_date, nb_desired_ticks):
+def get_pruned_tick_values(ticks, nb_desired_ticks):
     nb_values = len(ticks)
     keep_one_of = max(1, floor(nb_values / float(nb_desired_ticks)))
 
@@ -223,7 +223,7 @@ class AccountContractDashboard(http.Controller):
         ticks = range(delta.days + 1)
 
         if not complete:
-            ticks = self.get_pruned_tick_values(ticks, start_date, end_date, nb_points)
+            ticks = get_pruned_tick_values(ticks, nb_points)
 
         results = []
 
@@ -257,7 +257,7 @@ class AccountContractDashboard(http.Controller):
         ticks = range(delta.days + 1)
 
         if not complete:
-            ticks = self.get_pruned_tick_values(ticks, start_date, end_date, nb_points)
+            ticks = get_pruned_tick_values(ticks, nb_points)
 
         results = [[], [], [], []]
 
