@@ -44,6 +44,15 @@ def compute_rate(stat_type, old, new):
     return int(value), color
 
 
+def get_pruned_tick_values(ticks, start_date, end_date, nb_desired_ticks):
+    nb_values = len(ticks)
+    keep_one_of = max(1, floor(nb_values / float(nb_desired_ticks)))
+
+    ticks = [x for x in ticks if x % keep_one_of == 0]
+
+    return ticks
+
+
 class AccountContractDashboard(http.Controller):
 
     def get_filter_contract_template(self, filtered_contract_template_ids):
@@ -207,14 +216,6 @@ class AccountContractDashboard(http.Controller):
     @http.route('/account_contract_dashboard/calculate_graph_stat', type="json", auth='user', website=True)
     def calculate_graph_stat(self, stat_type, start_date, end_date, filtered_contract_template_ids, complete=False, nb_points=30):
 
-        def get_pruned_tick_values(ticks, start_date, end_date, nb_desired_ticks):
-            nb_values = len(ticks)
-            keep_one_of = max(1, floor(nb_values / float(nb_desired_ticks)))
-
-            ticks = [x for x in ticks if x % keep_one_of == 0]
-
-            return ticks
-
         start_date = datetime.strptime(start_date, '%Y-%m-%d')
         end_date = datetime.strptime(end_date, '%Y-%m-%d')
 
@@ -222,7 +223,7 @@ class AccountContractDashboard(http.Controller):
         ticks = range(delta.days + 1)
 
         if not complete:
-            ticks = get_pruned_tick_values(ticks, start_date, end_date, nb_points)
+            ticks = self.get_pruned_tick_values(ticks, start_date, end_date, nb_points)
 
         results = []
 
@@ -246,16 +247,22 @@ class AccountContractDashboard(http.Controller):
     def calculate_graph_mrr_growth(self, start_date, end_date, filtered_contract_template_ids):
 
         # THIS IS ROLLING MONTH CALCULATION
+        complete = False
+        nb_points = 30
 
         start_date = datetime.strptime(start_date, '%Y-%m-%d')
         end_date = datetime.strptime(end_date, '%Y-%m-%d')
 
         delta = end_date - start_date
+        ticks = range(delta.days + 1)
+
+        if not complete:
+            ticks = self.get_pruned_tick_values(ticks, start_date, end_date, nb_points)
 
         results = [[], [], [], []]
 
         # Use request.env['account.invoice.line'].read_group([], '', groupby=['create_date:day']) instead
-        for i in range(delta.days + 1):
+        for i in ticks:
             date = start_date + timedelta(days=i)
 
             new_mrr, expansion_mrr, churned_mrr, net_new_mrr = self.calculate_stat('net_new_mrr', date, filtered_contract_template_ids=filtered_contract_template_ids)
