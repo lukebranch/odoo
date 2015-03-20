@@ -337,20 +337,8 @@
             'click [data-action="translate"]': 'translate',
         }),
         start: function () {
-            var self = this;
-            var res = this._super();
-            var $edit_button = this.$("button[data-action=edit]");
-            $edit_button.removeClass("hidden");
-
-            if(website.no_editor) {
-                $edit_button.removeProp('disabled');
-            } else {
-                $edit_button.attr("data-action", "translate");
-                $edit_button.parent().after(openerp.qweb.render('website.TranslatorAdditionalButtons'));
-            }
-
-            $('.js_hide_on_translate').hide();
-            return res;
+            this.$('button[data-action=translate]').prop('disabled', web_editor.no_editor);
+            return this._super();
         },
         translate: function () {
             var self = this;

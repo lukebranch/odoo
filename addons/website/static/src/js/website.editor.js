@@ -16,7 +16,7 @@
         start: function () {
             var self = this;
 
-            this.$('button[data-action=edit]').prop('disabled', !web_editor && !!web_editor.no_editor);
+            this.$('button[data-action=edit]').prop('disabled', web_editor.no_editor);
 
             $("#wrapwrap").on('click', '.o_editable, [data-oe-model]', function (event) {
                 var $this = $(event.srcElement);
