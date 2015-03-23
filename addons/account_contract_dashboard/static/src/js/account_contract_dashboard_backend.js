@@ -29,7 +29,9 @@ openerp.account_contract_dashboard = function (instance) {
         iframe_clicked: function(e){
             if (e.target.className && e.target.className.indexOf('button-to-backend') > 0){
                 var action_id = e.target.getAttribute('action-id');
-                this.do_action(action_id);
+                var menu_id = e.target.getAttribute('menu-id');
+                debugger;
+                this.do_action(action_id, {action_menu_id: menu_id});
             }
         }
     });
@@ -37,7 +39,7 @@ openerp.account_contract_dashboard = function (instance) {
     instance.web.account_contract_dashboard_forecast = instance.web.IframeBackend.extend({
         init: function(parent) {
             this._super(parent, '/account_contract_dashboard/forecast');
-        },
+        }
     });
 
     instance.web.client_actions.add("account_contract_dashboard_main", "instance.web.account_contract_dashboard_main");
