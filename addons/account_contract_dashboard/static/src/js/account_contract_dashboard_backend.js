@@ -9,12 +9,12 @@ openerp.account_contract_dashboard = function (instance) {
             this.url = url;
         },
         start: function() {
-            this.$el.attr({'style': 'height: 100%; width: 100%; border: 0;', 'src': this.url});
+            this.$el.css({height: '100%', width: '100%', border: 0});
+            this.$el.attr({src: this.url});
             this.$el.on("load", this.bind_events.bind(this));
             return this._super();
         },
         bind_events: function(){
-            var self = this;
             this.$el.contents().click(this.iframe_clicked.bind(this));
         },
         iframe_clicked: function(e){
