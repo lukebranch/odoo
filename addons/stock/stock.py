@@ -2333,10 +2333,8 @@ class stock_move(osv.osv):
     def _get_move_children(self, cr, uid, ids, context=None):
         if not ids:
             return []
-        ids = self.search(cr, uid, [('split_from','in',ids), ('state','in',('waiting', 'confirmed'))], context=context)
-        res = ids
-        res.extend(self._get_move_children(cr, uid, res, context=context))
-        return res
+        ids = self.search(cr, uid, [('split_from', 'in', ids), ('state', 'in', ('waiting', 'confirmed'))], context=context)
+        return ids + self._get_move_children(cr, uid, ids, context=context)
 
     def action_done(self, cr, uid, ids, context=None):
         """ Process completely the moves given as ids and if all moves are done, it will finish the picking.
@@ -2408,18 +2406,14 @@ class stock_move(osv.osv):
                 quant_obj.quants_move(cr, uid, quants, move, move.location_dest_id, lot_id=move.restrict_lot_id.id, owner_id=move.restrict_partner_id.id, context=context)
 
             # If the move has a destination, add it to the list to reserve
-            split_move_ids = []
             if move.move_dest_id:
+                if move.move_dest_id.state in ('waiting', 'confirmed'):
+                    move_dest_ids.add(move.move_dest_id.id)
                 split_move_ids = self._get_move_children(cr, uid, [move.move_dest_id.id], context=context)
-                move_ids = self.search(cr, uid, [('split_from', '=', move.move_dest_id.id),('state','in',('waiting', 'confirmed'))], context=context)
-            if move.move_dest_id and move.move_dest_id.state in ('waiting', 'confirmed') or split_move_ids:
                 for split_move in split_move_ids:
                     move_dest_ids.add(split_move)
-                move_dest_ids.add(move.move_dest_id.id)
-
             if move.procurement_id:
                 procurement_ids.append(move.procurement_id.id)
-
             #unreserve the quants and make them available for other operations/moves
             quant_obj.quants_unreserve(cr, uid, move, context=context)
         # Check the packages have been placed in the correct locations
