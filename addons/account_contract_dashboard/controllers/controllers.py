@@ -348,10 +348,11 @@ class AccountContractDashboard(http.Controller):
         ]
         if filtered_contract_template_ids:
             domain_all.append(('account_analytic_id.template_id', 'IN', filtered_contract_template_ids))
-        domain_non_recurring = domain.append(('asset_category_id', '=', False))
 
-        all_invoice_line_ids = request.env['account.invoice'].search(domain)
-        non_recurring_invoice_line_ids = request.env['account.invoice'].search(domain_non_recurring)
+        all_invoice_line_ids = request.env['account.invoice.line'].search(domain_all)
+        non_recurring_invoice_line_ids = request.env['account.invoice.line'].search(domain_all + [
+            ('asset_category_id', '=', False)
+        ])
 
         if stat_type == 'net_revenue':
             # TODO: use @MAT field instead of price_subtotal
@@ -388,17 +389,17 @@ class AccountContractDashboard(http.Controller):
             shared_domain.append('account_analytic_id.template_id', 'IN', filtered_contract_template_ids)
 
         recurring_invoice_line_ids = request.env['account.invoice.line'].search(
-            shared_domain.extend([
+            shared_domain + [
                 ('asset_start_date', '<=', date),
                 ('asset_end_date', '>=', date),
-            ])
+            ]
         )
 
         recurring_invoice_line_ids_1_month_ago = request.env['account.invoice.line'].search(
-            shared_domain.extend([
+            shared_domain + [
                 ('asset_start_date', '<=', date - relativedelta(months=+1)),
                 ('asset_end_date', '>=', date - relativedelta(months=+1)),
-            ])
+            ]
         )
 
         def _calculate_logo_churn():
@@ -423,16 +424,16 @@ class AccountContractDashboard(http.Controller):
 
             # TODO: user filter instead : less search
             invoice_line_ids_starting_last_month = request.env['account.invoice.line'].search(
-                shared_domain.extend([
+                shared_domain + [
                     ('asset_start_date', '>', (date - relativedelta(months=+1)).strftime(DEFAULT_SERVER_DATE_FORMAT)),
                     ('asset_start_date', '<=', date.strftime(DEFAULT_SERVER_DATE_FORMAT)),
-                ])
+                ]
             )
             invoice_lines_ids_stopping_last_month = request.env['account.invoice.line'].search(
-                shared_domain.extend([
+                shared_domain + [
                     ('asset_end_date', '>', (date - relativedelta(months=+1)).strftime(DEFAULT_SERVER_DATE_FORMAT)),
                     ('asset_end_date', '<=', date.strftime(DEFAULT_SERVER_DATE_FORMAT)),
-                ])
+                ]
             )
 
             # DOWN & CANCEL
@@ -445,11 +446,11 @@ class AccountContractDashboard(http.Controller):
                     continue
                 # Is there any invoice_line in the next 30 days for this contract ?
                 next_invoice_line_ids = request.env['account.invoice.line'].search(
-                    shared_domain.extend([
+                    shared_domain + [
                         ('asset_start_date', '>=', invoice_line.asset_end_date),
                         ('asset_start_date', '<', (datetime.strptime(invoice_line.asset_end_date, DEFAULT_SERVER_DATE_FORMAT) + relativedelta(months=+1)).strftime(DEFAULT_SERVER_DATE_FORMAT)),
                         ('account_analytic_id', '=', invoice_line.account_analytic_id.id)
-                    ])
+                    ]
                 )
                 previous_mrr = sum(invoice_line_ids.mapped('mrr'))
 
@@ -473,14 +474,11 @@ class AccountContractDashboard(http.Controller):
                     continue
 
                 # Was there any invoice_line in the last 30 days for this contract ?
-                previous_invoice_line_ids = request.env['account.invoice.line'].search(
-                    shared_domain.extend([
+                previous_invoice_line_ids = request.env['account.invoice.line'].search(shared_domain + [
                         ('asset_end_date', '<=', invoice_line.asset_start_date),
                         ('asset_end_date', '>', (datetime.strptime(invoice_line.asset_start_date, DEFAULT_SERVER_DATE_FORMAT) - relativedelta(months=+1)).strftime(DEFAULT_SERVER_DATE_FORMAT)),
-                        ('account_analytic_id', '=', invoice_line.account_analytic_id.id)
-                    ])
+                        ('account_analytic_id', '=', invoice_line.account_analytic_id.id)]
                 )
-
                 next_mrr = sum(invoice_line_ids.mapped('mrr'))
                 if previous_invoice_line_ids:
                     previous_mrr = sum(previous_invoice_line_ids.mapped('mrr'))
