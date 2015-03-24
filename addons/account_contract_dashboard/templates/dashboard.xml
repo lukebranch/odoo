@@ -4,7 +4,7 @@
 
   <template id="dashboard_options">
     <div class="row mt32 mb32">
-      <form action="/account_contract_dashboard">
+      <form t-att-action="form_action">
         <div class="col-sm-12 text-right">
           <div class="mb8">
             <a t-att-class="'' if filtered_contract_template_ids else 'collapsed'" data-toggle="collapse" href="#collapse_filter_contracts">
@@ -36,7 +36,7 @@
     <t t-call="account_contract_dashboard.layout">
     <div id="wrap" class="oe_structure oe_empty" style="background-color: #F0EEEE;">
       <div class="container">
-
+        <t t-set="form_action" t-value="'/account_contract_dashboard'"/>
         <t t-call="account_contract_dashboard.dashboard_options"/>
 
           <div class="row">
@@ -89,7 +89,7 @@
           </div>
 
           <hr/> -->
-          
+          <t t-set="form_action" t-value="'/account_contract_dashboard/detailed/%s' % stat_type"/>
           <t t-call="account_contract_dashboard.dashboard_options"/>
 
 <!--           <div>
