@@ -2972,6 +2972,7 @@ class BaseModel(object):
         cls = type(self)
         if cls._setup_done:
             return
+
         # 1. determine the proper fields of the model; duplicate them on cls to
         # avoid clashes with inheritance between different models
         for name in getattr(cls, '_fields', {}):
@@ -2981,7 +2982,6 @@ class BaseModel(object):
         cls._fields = {}
         cls._defaults = {}
         for attr, field in getmembers(cls, Field.__instancecheck__):
-            
             cls._add_field(attr, field.new())
 
         # add magic and custom fields
