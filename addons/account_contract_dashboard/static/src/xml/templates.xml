@@ -2,7 +2,6 @@
 
 <templates id="template" xml:space="preserve">
 
-
   <t t-name="account_contract_dashboard.statsByPlan">
     <div t-if="stats_by_plan.length > 0" class="row box">
       <table class="table table-striped">
@@ -27,6 +26,31 @@
           </tr>
         </t>
       </table>
+    </div>
+  </t>
+
+  <t t-name="account_contract_dashboard.statsHistory">
+    <div class="col-md-3 text-center">
+      <h4 class="text-muted smallCaps">Current</h4>
+      <h2><t t-esc="value_now"/><t t-esc="all_stats[stat_type]['add_symbol']"/></h2>
+    </div>
+
+
+    <div class="col-md-3 text-center">
+      <h4 class="text-muted smallCaps">1 month ago</h4>
+      <h2><t t-esc="stats_history['value_1_month_ago']['value_2']"/><t t-esc="all_stats[stat_type]['add_symbol']"/> <!-- <small t-if="not stats_history['value_1_month_ago']['value_2'] == 0" t-attf-class="#{rate(all_stats, stat_type, stats_history['value_1_month_ago']['value_2'], value_now['value_2'])[1]}"><t t-esc="rate(all_stats, stat_type, stats_history['value_1_month_ago']['value_2'], value_now['value_2'])[0]"/>%</small> --></h2>
+    </div>
+
+
+    <div class="col-md-3 text-center">
+      <h4 class="text-muted smallCaps">3 months ago</h4>
+      <h2><t t-esc="stats_history['value_3_months_ago']['value_2']"/><t t-esc="all_stats[stat_type]['add_symbol']"/> <!-- <small t-if="not stats_history['value_3_months_ago']['value_2'] == 0" t-attf-class="#{rate(all_stats, stat_type, stats_history['value_3_months_ago']['value_2'], value_now['value_2'])[1]}"><t t-esc="rate(all_stats, stat_type, stats_history['value_3_months_ago']['value_2'], value_now['value_2'])[0]"/>%</small> --></h2>
+    </div>
+
+
+    <div class="col-md-3 text-center">
+      <h4 class="text-muted smallCaps">12 months ago</h4>
+      <h2><t t-esc="stats_history['value_12_months_ago']['value_2']"/><t t-esc="all_stats[stat_type]['add_symbol']"/> <!-- <small t-if="not stats_history['value_12_months_ago']['value_2'] == 0" t-attf-class="#{rate(all_stats, stat_type, stats_history['value_12_months_ago']['value_2'], value_now['value_2'])[1]}"><t t-esc="rate(all_stats, stat_type, stats_history['value_12_months_ago']['value_2'], value_now['value_2'])[0]"/>%</small> --></h2>
     </div>
   </t>
 

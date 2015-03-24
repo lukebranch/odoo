@@ -131,7 +131,61 @@
           }
       });
 
-      // 2. STAT DASHBOARD - GRAPHS
+      // 2.1 STAT DASHBOARD - HISTORY
+      openerp.website.if_dom_contains('#stat-history-box', function() {
+                
+          var filtered_contract_template_ids = get_filtered_contract_templates();
+          var start_date = $('input[type="date"][name="start_date"]').val();
+          var end_date = $('input[type="date"][name="end_date"]').val();
+          var stat_type = $('input[type="hidden"][name="stat_type"]').val();
+
+          openerp.jsonRpc('/account_contract_dashboard/get_stats_history', 'call', {
+            'stat_type': stat_type,
+            'start_date': start_date,
+            'end_date': end_date,
+            'filtered_contract_template_ids': filtered_contract_template_ids,
+          }).then(function (result) {
+
+              // function compute_rate(stat_types, stat_type, old, new){
+              //     direction = stat_types[stat_type]['dir']
+              //     try:
+              //         value = round(100.0 * (new-old) / old, 2)
+              //     except ZeroDivisionError:
+              //         value = 0
+              //     color = 'oBlack'
+              //     if value && direction == 'up':
+              //         color = (value > 0) && 'oGreen' || 'oRed'
+              //     if value && direction != 'up':
+              //         color = (value < 0) && 'oGreen' || 'oRed'
+              //     return int(value), color
+              // }
+
+              debugger;
+
+              if (typeof result != 'undefined'){
+                  console.log(result[0])
+                  var html = openerp.qweb.render('account_contract_dashboard.statsHistory', {
+                    'stats_history': result[0],
+                    'stat_type': stat_type,
+                    'all_stats': result[1],
+                    // 'rate': compute_rate,
+                    'value_now': $('#value_now').attr('value'),
+                  });
+                  console.log(html)
+                  debugger;
+                  $('#stat-history-box').append(html);
+              }
+              else {
+                  $('#stat-history-box').html("<p></p>") 
+              }
+          });
+          $('#stats_by_plan').html('<div class="loading"><div id="big-circle"><div id="little-circle"></div></div></div>')        
+
+
+      });
+
+
+      // 2.2 STAT DASHBOARD - GRAPHS
 
       openerp.website.if_dom_contains('#stat_chart_div', function() {
 
@@ -157,7 +211,7 @@
           });
       });
 
-      // 3. STAT DASHBOARD - MRR GROWTH
+      // 2.3 STAT DASHBOARD - MRR GROWTH
 
       openerp.website.if_dom_contains('#mrr_growth_chart_div', function() {
 

@@ -101,9 +101,9 @@ class AccountContractDashboard(http.Controller):
         report_name = stat_types[stat_type]['name']
 
         value_now = self.calculate_stat_diff(stat_type, start_date - relativedelta(months=+1),  end_date - relativedelta(months=+1), start_date, end_date, filtered_contract_template_ids=filtered_contract_template_ids)
-        value_1_month_ago = self.calculate_stat_diff(stat_type, start_date - relativedelta(months=+2), end_date - relativedelta(months=+2), start_date - relativedelta(months=+1), end_date - relativedelta(months=+1), filtered_contract_template_ids=filtered_contract_template_ids)
-        value_3_months_ago = self.calculate_stat_diff(stat_type, start_date - relativedelta(months=+4), end_date - relativedelta(months=+4), start_date - relativedelta(months=+3), end_date - relativedelta(months=+3), filtered_contract_template_ids=filtered_contract_template_ids)
-        value_12_months_ago = self.calculate_stat_diff(stat_type, start_date - relativedelta(months=+13), end_date - relativedelta(months=+13), start_date - relativedelta(months=+12), end_date - relativedelta(months=+12), filtered_contract_template_ids=filtered_contract_template_ids)
+        # value_1_month_ago = self.calculate_stat_diff(stat_type, start_date - relativedelta(months=+2), end_date - relativedelta(months=+2), start_date - relativedelta(months=+1), end_date - relativedelta(months=+1), filtered_contract_template_ids=filtered_contract_template_ids)
+        # value_3_months_ago = self.calculate_stat_diff(stat_type, start_date - relativedelta(months=+4), end_date - relativedelta(months=+4), start_date - relativedelta(months=+3), end_date - relativedelta(months=+3), filtered_contract_template_ids=filtered_contract_template_ids)
+        # value_12_months_ago = self.calculate_stat_diff(stat_type, start_date - relativedelta(months=+13), end_date - relativedelta(months=+13), start_date - relativedelta(months=+12), end_date - relativedelta(months=+12), filtered_contract_template_ids=filtered_contract_template_ids)
 
         href_post_args = 'start_date=%s&end_date=%s&' % (start_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d'))
         for item in filtered_contract_template_ids:
@@ -119,9 +119,9 @@ class AccountContractDashboard(http.Controller):
             'start_date': start_date.strftime('%Y-%m-%d'),
             'end_date': end_date.strftime('%Y-%m-%d'),
             'value_now': value_now,
-            'value_1_month_ago': value_1_month_ago,
-            'value_3_months_ago': value_3_months_ago,
-            'value_12_months_ago': value_12_months_ago,
+            # 'value_1_month_ago': value_1_month_ago,
+            # 'value_3_months_ago': value_3_months_ago,
+            # 'value_12_months_ago': value_12_months_ago,
             'display_stats_by_plan': False if stat_type in ['nrr', 'arpu', 'logo_churn'] else True,
             'currency': '€',
             'rate': compute_rate,
@@ -182,6 +182,20 @@ class AccountContractDashboard(http.Controller):
             'contracts_churn': revenue_churn,
             'projection_time': 12,
         }
+
+    @http.route('/account_contract_dashboard/get_stats_history', type="json", auth='user', website=True)
+    def get_stats_history(self, stat_type, start_date, end_date, filtered_contract_template_ids=None):
+
+        start_date = datetime.strptime(start_date, '%Y-%m-%d')
+        end_date = datetime.strptime(end_date, '%Y-%m-%d')
+
+        results = {}
+
+        results['value_1_month_ago'] = self.calculate_stat_diff(stat_type, start_date - relativedelta(months=+1), end_date - relativedelta(months=+1), start_date - relativedelta(months=+1), end_date - relativedelta(months=+1), filtered_contract_template_ids=filtered_contract_template_ids)
+        results['value_3_months_ago'] = self.calculate_stat_diff(stat_type, start_date - relativedelta(months=+3), end_date - relativedelta(months=+3), start_date - relativedelta(months=+3), end_date - relativedelta(months=+3), filtered_contract_template_ids=filtered_contract_template_ids)
+        results['value_12_months_ago'] = self.calculate_stat_diff(stat_type, start_date - relativedelta(months=+12), end_date - relativedelta(months=+12), start_date - relativedelta(months=+12), end_date - relativedelta(months=+12), filtered_contract_template_ids=filtered_contract_template_ids)
+
+        return results, stat_types
 
     @http.route('/account_contract_dashboard/get_stats_by_plan', type="json", auth='user', website=True)
     def get_stats_by_plan(self, stat_type, start_date, end_date, filtered_contract_template_ids=None):
