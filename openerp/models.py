@@ -729,9 +729,9 @@ class BaseModel(object):
                 attrs['comodel_name'] = field['relation']
                 _rel1 = field['relation'].replace('.', '_')
                 _rel2 = field['model'].replace('.', '_')
-                attrs['relation'] = 'x_%s_%s_%s_rel' % (_rel1, _rel2, name)
-                attrs['column1'] = 'id1'
-                attrs['column2'] = 'id2'
+                attrs['relation'] = field.get('relation_table') or 'x_%s_%s_%s_rel' % (_rel1, _rel2, name)
+                attrs['column1'] = field.get('column1') or 'id1'
+                attrs['column2'] = field.get('column2') or 'id2'
                 attrs['domain'] = eval(field['domain']) if field['domain'] else None
             cls._add_field(name, Field.by_type[field['ttype']](**attrs))
 
@@ -2972,7 +2972,6 @@ class BaseModel(object):
         cls = type(self)
         if cls._setup_done:
             return
-
         # 1. determine the proper fields of the model; duplicate them on cls to
         # avoid clashes with inheritance between different models
         for name in getattr(cls, '_fields', {}):
@@ -2982,6 +2981,7 @@ class BaseModel(object):
         cls._fields = {}
         cls._defaults = {}
         for attr, field in getmembers(cls, Field.__instancecheck__):
+            
             cls._add_field(attr, field.new())
 
         # add magic and custom fields

@@ -278,6 +278,9 @@ class ir_model_fields(osv.osv):
                                                                            "structure of the serialization field, instead "
                                                                            "of having its own database column. This cannot be "
                                                                            "changed after creation."),
+        'relation_table': fields.char("Relation Table", help="Used for custom many2many fields to define a custom relation table name"),
+        'column1': fields.char("Column 1", help="Column referring to the record in this model table"),
+        'column2': fields.char("Column 2", help="Column referring to the record in the comodel table"),
     }
     _rec_name='field_description'
     _defaults = {
