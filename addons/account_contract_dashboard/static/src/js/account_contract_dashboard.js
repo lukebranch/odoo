@@ -185,13 +185,15 @@
       openerp.website.if_dom_contains('#stats_by_plan', function() {
                 
           var filtered_contract_template_ids = get_filtered_contract_templates();
+          var start_date = $('input[type="date"][name="start_date"]').val();
           var end_date = $('input[type="date"][name="end_date"]').val();
           var stat_type = $('input[type="hidden"][name="stat_type"]').val();
 
 
           openerp.jsonRpc('/account_contract_dashboard/get_stats_by_plan', 'call', {
             'stat_type': stat_type,
-            'date': end_date,
+            'start_date': start_date,
+            'end_date': end_date,
             'filtered_contract_template_ids': filtered_contract_template_ids,
           }).then(function (result) {
 

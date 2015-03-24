@@ -66,6 +66,8 @@ class AccountContractDashboard(http.Controller):
 
         contract_templates = request.env['account.analytic.account'].search([('type', '=', 'template')])
 
+        print(contract_templates)
+
         filtered_contract_template_ids = request.httprequest.args.getlist('contract_template_filter') if kw.get('contract_template_filter') else []
 
         start_date = datetime.strptime(kw.get('start_date'), '%Y-%m-%d') if kw.get('start_date') else default_start_date
@@ -182,7 +184,7 @@ class AccountContractDashboard(http.Controller):
         }
 
     @http.route('/account_contract_dashboard/get_stats_by_plan', type="json", auth='user', website=True)
-    def get_stats_by_plan(self, stat_type, date, filtered_contract_template_ids=None):
+    def get_stats_by_plan(self, stat_type, start_date, end_date, filtered_contract_template_ids=None):
 
         results = []
 
@@ -193,15 +195,15 @@ class AccountContractDashboard(http.Controller):
 
         for plan in plans:
             recurring_invoice_line_ids = request.env['account.invoice.line'].search([
-                ('asset_start_date', '<=', date),
-                ('asset_end_date', '>=', date),
+                ('asset_start_date', '<=', end_date),
+                ('asset_end_date', '>=', end_date),
                 ('asset_category_id', '!=', None),
-                ('account_analytic_id.template_id', '=', plan),
+                ('account_analytic_id.template_id', '=', plan.id),
             ])
-            if stat_types[stat_type]['type'] == 'sum':
-                value = self.calculate_stat(stat_type, date, plan=plan)
+            if stat_types[stat_type]['type'] == 'last':
+                value = self.calculate_stat(stat_type, end_date, plan=plan)
             elif stat_types[stat_type]['type'] == 'sum':
-                value = self.calculate_stat_aggregate(stat_type, date, plan=plan)
+                value = self.calculate_stat_aggregate(stat_type, start_date, end_date, plan=plan)
             results.append({
                 'name': plan.name,
                 'nb_customers': len(recurring_invoice_line_ids.mapped('account_analytic_id')),
@@ -347,7 +349,9 @@ class AccountContractDashboard(http.Controller):
             ('invoice_id.type', '=', 'out_invoice'),
         ]
         if filtered_contract_template_ids:
-            domain_all.append(('account_analytic_id.template_id', 'IN', filtered_contract_template_ids))
+            domain_all.append(('account_analytic_id.template_id', 'in', [int(ids) for ids in filtered_contract_template_ids]))
+        elif plan:
+            domain_all.append(('account_analytic_id.template_id', '=', plan.id))
 
         all_invoice_line_ids = request.env['account.invoice.line'].search(domain_all)
         non_recurring_invoice_line_ids = request.env['account.invoice.line'].search(domain_all + [
@@ -384,9 +388,9 @@ class AccountContractDashboard(http.Controller):
             ('asset_category_id', '!=', None)
         ]
         if plan:
-            shared_domain.append(('account_analytic_id.template_id', '=', plan))
+            shared_domain.append(('account_analytic_id.template_id', '=', plan.id))
         elif filtered_contract_template_ids:
-            shared_domain.append('account_analytic_id.template_id', 'IN', filtered_contract_template_ids)
+            shared_domain.append(('account_analytic_id.template_id', 'in', [int(ids) for ids in filtered_contract_template_ids]))
 
         recurring_invoice_line_ids = request.env['account.invoice.line'].search(
             shared_domain + [
