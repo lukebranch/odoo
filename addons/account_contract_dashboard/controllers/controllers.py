@@ -476,105 +476,6 @@ class AccountContractDashboard(http.Controller):
 
         results = [[], [], [], []]
 
-        # Use request.env['account.invoice.line'].read_group([], '', groupby=['create_date:day']) instead
-        # new_mrr = 0
-        # expansion_mrr = 0
-        # churned_mrr = 0
-        # net_new_mrr = 0
-
-        # # 1. NEW
-        # request.cr.execute("""
-        #     SELECT SUM(line.mrr) AS sum
-        #     FROM account_invoice_line AS line
-        #     WHERE (date %s BETWEEN line.asset_start_date AND line.asset_end_date) AND
-        #         NOT exists (
-        #         SELECT 1 from account_invoice_line ail
-        #         WHERE ail.account_analytic_id = line.account_analytic_id
-        #         AND (date %s - interval '30 day' BETWEEN ail.asset_start_date AND ail.asset_end_date)
-        #         )
-        # """, [date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), date.strftime(DEFAULT_SERVER_DATETIME_FORMAT)])
-        # sql_results = request.cr.dictfetchall()
-        # new_mrr = 0 if not sql_results or not sql_results[0]['sum'] else sql_results[0]['sum']
-
-        # # 2. EXPANSION
-
-        # # 3. CHURNED
-
-        # invoice_line_ids_starting_last_month = request.env['account.invoice.line'].search(
-        #     shared_domain + [
-        #         ('asset_start_date', '>', (date - relativedelta(months=+1)).strftime(DEFAULT_SERVER_DATE_FORMAT)),
-        #         ('asset_start_date', '<=', date.strftime(DEFAULT_SERVER_DATE_FORMAT)),
-        #     ]
-        # )
-        # invoice_lines_ids_stopping_last_month = request.env['account.invoice.line'].search(
-        #     shared_domain + [
-        #         ('asset_end_date', '>', (date - relativedelta(months=+1)).strftime(DEFAULT_SERVER_DATE_FORMAT)),
-        #         ('asset_end_date', '<=', date.strftime(DEFAULT_SERVER_DATE_FORMAT)),
-        #     ]
-        # )
-
-        # # DOWN & CANCEL
-        # for invoice in invoice_lines_ids_stopping_last_month.mapped('invoice_id'):
-
-        #     invoice_line_ids = invoice_lines_ids_stopping_last_month.filtered(lambda x: x.invoice_id == invoice)
-        #     invoice_line = invoice_line_ids[0]
-
-        #     if not invoice_line:
-        #         continue
-        #     # Is there any invoice_line in the next 30 days for this contract ?
-        #     next_invoice_line_ids = request.env['account.invoice.line'].search(
-        #         shared_domain + [
-        #             ('asset_start_date', '>=', invoice_line.asset_end_date),
-        #             ('asset_start_date', '<', (datetime.strptime(invoice_line.asset_end_date, DEFAULT_SERVER_DATE_FORMAT) + relativedelta(months=+1)).strftime(DEFAULT_SERVER_DATE_FORMAT)),
-        #             ('account_analytic_id', '=', invoice_line.account_analytic_id.id)
-        #         ]
-        #     )
-        #     previous_mrr = sum([x['mrr'] for x in invoice_line_ids.read(['mrr'])])
-
-        #     if next_invoice_line_ids:
-        #         next_mrr = sum([x['mrr'] for x in next_invoice_line_ids.read(['mrr'])])
-        #         if next_mrr < previous_mrr:
-        #             # DOWN
-        #             churned_mrr += (previous_mrr - next_mrr)
-        #     else:
-        #         # CANCEL
-        #         churned_mrr += previous_mrr
-
-        # # UP & NEW
-        # for invoice in invoice_line_ids_starting_last_month.mapped('invoice_id'):
-
-        #     invoice_line_ids = invoice_line_ids_starting_last_month.filtered(lambda x: x.invoice_id == invoice)
-        #     invoice_line = invoice_line_ids[0]
-
-        #     if not invoice_line:
-        #         continue
-
-        #     # Was there any invoice_line in the last 30 days for this contract ?
-        #     previous_invoice_line_ids = request.env['account.invoice.line'].search(shared_domain + [
-        #             ('asset_end_date', '<=', invoice_line.asset_start_date),
-        #             ('asset_end_date', '>', (datetime.strptime(invoice_line.asset_start_date, DEFAULT_SERVER_DATE_FORMAT) - relativedelta(months=+1)).strftime(DEFAULT_SERVER_DATE_FORMAT)),
-        #             ('account_analytic_id', '=', invoice_line.account_analytic_id.id)]
-        #     )
-        #     next_mrr = sum([x['mrr'] for x in invoice_line_ids.read(['mrr'])])
-        #     if previous_invoice_line_ids:
-        #         previous_mrr = sum([x['mrr'] for x in previous_invoice_line_ids.read(['mrr'])])
-
-        #         if previous_mrr < next_mrr:
-        #             # UP
-        #             expansion_mrr += (next_mrr - previous_mrr)
-        #     else:
-        #         # NEW
-        #         new_mrr += next_mrr
-
-        # net_new_mrr = new_mrr + expansion_mrr - churned_mrr
-
-        # if stat_type == 'net_new_mrr':
-        #     result = new_mrr, expansion_mrr, -churned_mrr, net_new_mrr
-        # elif stat_type == 'revenue_churn':
-        #     previous_month_mrr = _calculate_mrr((date - relativedelta(months=+1)))
-        #     result = 0 if previous_month_mrr == 0 else (churned_mrr - expansion_mrr)/float(previous_month_mrr)
-        #     result = 100*round(result, 3)
-
         for i in ticks:
             date = start_date + timedelta(days=i)
 
@@ -817,6 +718,145 @@ class AccountContractDashboard(http.Controller):
 
         elif stat_type == 'nb_contracts':
             result = _calculate_nb_contracts(date)
+
+        elif stat_type == 'net_new_mrr':
+            new_mrr = 0
+            expansion_mrr = 0
+            down_mrr = 0
+            cancel_mrr = 0
+            churned_mrr = 0
+            net_new_mrr = 0
+
+        # 1. NEW
+        request.cr.execute("""
+            SELECT SUM(line.mrr) AS sum
+            FROM account_invoice_line AS line
+            WHERE (date %s BETWEEN line.asset_start_date AND line.asset_end_date) AND
+                NOT exists (
+                SELECT 1 from account_invoice_line ail
+                WHERE ail.account_analytic_id = line.account_analytic_id
+                AND (date %s - interval '30 day' BETWEEN ail.asset_start_date AND ail.asset_end_date)
+                )
+        """, [date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), date.strftime(DEFAULT_SERVER_DATETIME_FORMAT)])
+        sql_results = request.cr.dictfetchall()
+        new_mrr = 0 if not sql_results or not sql_results[0]['sum'] else sql_results[0]['sum']
+
+        # 2. EXPANSION
+        # TODO
+        request.cr.execute("""
+            SELECT SUM(line.mrr) AS sum
+            FROM account_invoice_line AS line
+            WHERE (date %s BETWEEN line.asset_start_date AND line.asset_end_date) AND
+                NOT exists (
+                SELECT 1 from account_invoice_line ail
+                WHERE ail.account_analytic_id = line.account_analytic_id
+                AND (date %s - interval '30 day' BETWEEN ail.asset_start_date AND ail.asset_end_date)
+                )
+        """, [date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), date.strftime(DEFAULT_SERVER_DATETIME_FORMAT)])
+        sql_results = request.cr.dictfetchall()
+        expansion_mrr = 0 if not sql_results or not sql_results[0]['sum'] else sql_results[0]['sum']
+
+        # 3. DOWN
+        # TODO
+        request.cr.execute("""
+            SELECT SUM(line.mrr) AS sum
+            FROM account_invoice_line AS line
+            WHERE (date %s BETWEEN line.asset_start_date AND line.asset_end_date) AND
+                NOT exists (
+                SELECT 1 from account_invoice_line ail
+                WHERE ail.account_analytic_id = line.account_analytic_id
+                AND (date %s - interval '30 day' BETWEEN ail.asset_start_date AND ail.asset_end_date)
+                )
+        """, [date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), date.strftime(DEFAULT_SERVER_DATETIME_FORMAT)])
+        sql_results = request.cr.dictfetchall()
+        down_mrr = 0 if not sql_results or not sql_results[0]['sum'] else sql_results[0]['sum']
+
+        # 4. CHURNED
+        # TODO
+        request.cr.execute("""
+            SELECT SUM(line.mrr) AS sum
+            FROM account_invoice_line AS line
+            WHERE (date %s BETWEEN line.asset_start_date AND line.asset_end_date) AND
+                NOT exists (
+                SELECT 1 from account_invoice_line ail
+                WHERE ail.account_analytic_id = line.account_analytic_id
+                AND (date %s - interval '30 day' BETWEEN ail.asset_start_date AND ail.asset_end_date)
+                )
+        """, [date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), date.strftime(DEFAULT_SERVER_DATETIME_FORMAT)])
+        sql_results = request.cr.dictfetchall()
+        cancel_mrr = 0 if not sql_results or not sql_results[0]['sum'] else sql_results[0]['sum']
+
+        # invoice_line_ids_starting_last_month = request.env['account.invoice.line'].search(
+        #     shared_domain + [
+        #         ('asset_start_date', '>', (date - relativedelta(months=+1)).strftime(DEFAULT_SERVER_DATE_FORMAT)),
+        #         ('asset_start_date', '<=', date.strftime(DEFAULT_SERVER_DATE_FORMAT)),
+        #     ]
+        # )
+        # invoice_lines_ids_stopping_last_month = request.env['account.invoice.line'].search(
+        #     shared_domain + [
+        #         ('asset_end_date', '>', (date - relativedelta(months=+1)).strftime(DEFAULT_SERVER_DATE_FORMAT)),
+        #         ('asset_end_date', '<=', date.strftime(DEFAULT_SERVER_DATE_FORMAT)),
+        #     ]
+        # )
+
+        # # DOWN & CANCEL
+        # for invoice in invoice_lines_ids_stopping_last_month.mapped('invoice_id'):
+
+        #     invoice_line_ids = invoice_lines_ids_stopping_last_month.filtered(lambda x: x.invoice_id == invoice)
+        #     invoice_line = invoice_line_ids[0]
+
+        #     if not invoice_line:
+        #         continue
+        #     # Is there any invoice_line in the next 30 days for this contract ?
+        #     next_invoice_line_ids = request.env['account.invoice.line'].search(
+        #         shared_domain + [
+        #             ('asset_start_date', '>=', invoice_line.asset_end_date),
+        #             ('asset_start_date', '<', (datetime.strptime(invoice_line.asset_end_date, DEFAULT_SERVER_DATE_FORMAT) + relativedelta(months=+1)).strftime(DEFAULT_SERVER_DATE_FORMAT)),
+        #             ('account_analytic_id', '=', invoice_line.account_analytic_id.id)
+        #         ]
+        #     )
+        #     previous_mrr = sum([x['mrr'] for x in invoice_line_ids.read(['mrr'])])
+
+        #     if next_invoice_line_ids:
+        #         next_mrr = sum([x['mrr'] for x in next_invoice_line_ids.read(['mrr'])])
+        #         if next_mrr < previous_mrr:
+        #             # DOWN
+        #             churned_mrr += (previous_mrr - next_mrr)
+        #     else:
+        #         # CANCEL
+        #         churned_mrr += previous_mrr
+
+        # # UP & NEW
+        # for invoice in invoice_line_ids_starting_last_month.mapped('invoice_id'):
+
+        #     invoice_line_ids = invoice_line_ids_starting_last_month.filtered(lambda x: x.invoice_id == invoice)
+        #     invoice_line = invoice_line_ids[0]
+
+        #     if not invoice_line:
+        #         continue
+
+        #     # Was there any invoice_line in the last 30 days for this contract ?
+        #     previous_invoice_line_ids = request.env['account.invoice.line'].search(shared_domain + [
+        #             ('asset_end_date', '<=', invoice_line.asset_start_date),
+        #             ('asset_end_date', '>', (datetime.strptime(invoice_line.asset_start_date, DEFAULT_SERVER_DATE_FORMAT) - relativedelta(months=+1)).strftime(DEFAULT_SERVER_DATE_FORMAT)),
+        #             ('account_analytic_id', '=', invoice_line.account_analytic_id.id)]
+        #     )
+        #     next_mrr = sum([x['mrr'] for x in invoice_line_ids.read(['mrr'])])
+        #     if previous_invoice_line_ids:
+        #         previous_mrr = sum([x['mrr'] for x in previous_invoice_line_ids.read(['mrr'])])
+
+        #         if previous_mrr < next_mrr:
+        #             # UP
+        #             expansion_mrr += (next_mrr - previous_mrr)
+        #     else:
+        #         # NEW
+        #         new_mrr += next_mrr
+
+        churned_mrr = cancel_mrr + down_mrr
+
+        net_new_mrr = new_mrr + expansion_mrr - churned_mrr
+        result = new_mrr, expansion_mrr, -churned_mrr, net_new_mrr
+
         else:
             result = 0
 
