@@ -302,8 +302,6 @@ class AccountContractDashboard(http.Controller):
                     '1': k['sum'],
                 })
         elif stat_type == 'logo_churn':
-
-            start_time = time.time()
             request.cr.execute("""
                 SELECT s.a, COUNT(DISTINCT line.account_analytic_id) AS sum
                 FROM account_invoice_line AS line, generate_series(%s::timestamp, %s, '%s days') AS s(a)
@@ -321,18 +319,20 @@ class AccountContractDashboard(http.Controller):
                 ORDER BY s.a
             """, [start_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), end_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), keep_one_of])
             resigned_customers_by_day = request.cr.dictfetchall()
-            for k in range(len(active_customers_1_month_ago_by_day)):
+            for k in active_customers_1_month_ago_by_day:
+                nb_active_1_month_ago = k['sum']
+                # Find the corresponding nb_resigned at the same date
+                nb_resigned = next((d['sum'] for d in resigned_customers_by_day if k['a'] == d['a']), 0)
                 results.append({
-                    '0': active_customers_1_month_ago_by_day[k]['a'],
-                    '1': 0 if active_customers_1_month_ago_by_day[k]['sum'] == 0 else 100*resigned_customers_by_day[k]['sum']/float(active_customers_1_month_ago_by_day[k]['sum']),
+                    '0': k['a'],
+                    '1': 0 if not nb_active_1_month_ago else 100*nb_resigned/float(nb_active_1_month_ago),
                 })
         elif stat_type == 'ltv':
-
             start_time = time.time()
             request.cr.execute("""
                 SELECT s.a, COUNT(DISTINCT line.account_analytic_id) AS sum
                 FROM account_invoice_line AS line, generate_series(%s::timestamp, %s, '%s days') AS s(a)
-                WHERE line.asset_start_date <= s.a - interval '30 day' AND line.asset_end_date >= s.a - interval '30 day'
+                WHERE s.a - interval '30 day' BETWEEN line.asset_start_date AND line.asset_end_date
                 GROUP BY s.a
                 ORDER BY s.a
             """, [start_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), end_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), keep_one_of])
@@ -340,13 +340,8 @@ class AccountContractDashboard(http.Controller):
             request.cr.execute("""
                 SELECT s.a, COUNT(DISTINCT line.account_analytic_id) AS sum
                 FROM account_invoice_line AS line, generate_series(%s::timestamp, %s, '1 days') AS s(a)
-                WHERE
-                    line.asset_start_date <= s.a - interval '30 day' AND
-                    line.asset_end_date >= s.a - interval '30 day' AND
-                    NOT (
-                        line.asset_start_date <= s.a AND
-                        line.asset_end_date >= s.a
-                    )
+                WHERE (s.a - interval '30 day' BETWEEN line.asset_start_date AND line.asset_end_date) AND
+                    NOT (s.a BETWEEN line.asset_start_date AND line.asset_end_date)
                 GROUP BY s.a
                 ORDER BY s.a
             """, [start_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), end_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT)])
@@ -361,12 +356,17 @@ class AccountContractDashboard(http.Controller):
             """, [start_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), end_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), keep_one_of])
             arpu_by_day = request.cr.dictfetchall()
 
-            for k in range(len(active_customers_1_month_ago_by_day)):
-                logo_churn = 0 if active_customers_1_month_ago_by_day[k]['sum'] == 0 else resigned_customers_by_day[k]['sum']/float(active_customers_1_month_ago_by_day[k]['sum'])
-                avg_mrr_per_customer = arpu_by_day[k]['sum']
+            for k in active_customers_1_month_ago_by_day:
+                nb_active_1_month_ago = k['sum']
+                # Find the corresponding nb_resigned at the same date
+                nb_resigned = next((d['sum'] for d in resigned_customers_by_day if k['a'] == d['a']), 0)
+
+                logo_churn = 0 if not nb_active_1_month_ago else nb_resigned/float(nb_active_1_month_ago)
+
+                avg_mrr_per_customer = next((d['sum'] for d in arpu_by_day if k['a'] == d['a']), 0)
                 results.append({
-                    '0': active_customers_1_month_ago_by_day[k]['a'],
-                    '1': 0 if logo_churn == 0 else avg_mrr_per_customer / float(logo_churn),
+                    '0': k['a'],
+                    '1': 0 if not logo_churn else avg_mrr_per_customer / float(logo_churn),
                 })
         else:
             for i in ticks:
@@ -379,9 +379,6 @@ class AccountContractDashboard(http.Controller):
                     '0': str(date).split(' ')[0],
                     '1': value,
                 })
-
-                # METHOD OPTIMIZED : pass search in argument only if usefull
-                # TODO
 
         return stat_types[stat_type]['name'], results
 
@@ -545,27 +542,56 @@ class AccountContractDashboard(http.Controller):
             ]
         )
 
-        def _calculate_logo_churn():
+        def _get_nb_contracts(date):
+            request.cr.execute("""
+                SELECT COUNT(DISTINCT line.account_analytic_id) AS sum
+                FROM account_invoice_line AS line
+                WHERE date %s BETWEEN line.asset_start_date AND line.asset_end_date
+            """, [date.strftime(DEFAULT_SERVER_DATE_FORMAT)])
+            nb_contracts = request.cr.dictfetchall()
+            return 0 if not nb_contracts or not nb_contracts[0]['sum'] else nb_contracts[0]['sum']
 
-            active_customers_today = recurring_invoice_line_ids.read(['account_analytic_id'])
-            active_customers_1_month_ago = recurring_invoice_line_ids_1_month_ago.read(['account_analytic_id'])
-            resigned_customers = [x for x in active_customers_1_month_ago if x not in active_customers_today]
-            return 0 if not active_customers_1_month_ago else len(resigned_customers)/float(len(active_customers_1_month_ago))
+        def _get_mrr(date):
+            request.cr.execute("""
+                SELECT SUM(line.mrr) AS sum
+                FROM account_invoice_line AS line
+                WHERE date %s BETWEEN line.asset_start_date AND line.asset_end_date
+            """, [date.strftime(DEFAULT_SERVER_DATE_FORMAT)])
+            mrr = request.cr.dictfetchall()
+            return 0 if not mrr or not mrr[0]['sum'] else mrr[0]['sum']
+
+        def _calculate_logo_churn(date):
+            request.cr.execute("""
+                SELECT COUNT(DISTINCT line.account_analytic_id) AS sum
+                FROM account_invoice_line AS line
+                WHERE date %s - interval '30 day' BETWEEN line.asset_start_date AND line.asset_end_date
+            """, [date.strftime(DEFAULT_SERVER_DATETIME_FORMAT)])
+            sql_results = request.cr.dictfetchall()
+            active_customers_1_month_ago = 0 if not sql_results or not sql_results[0]['sum'] else sql_results[0]['sum']
+            request.cr.execute("""
+                SELECT COUNT(DISTINCT line.account_analytic_id) AS sum
+                FROM account_invoice_line AS line
+                WHERE (date %s - interval '30 day' BETWEEN line.asset_start_date AND line.asset_end_date) AND
+                    NOT (date %s BETWEEN line.asset_start_date AND line.asset_end_date)
+            """, [date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), date.strftime(DEFAULT_SERVER_DATETIME_FORMAT)])
+            sql_results = request.cr.dictfetchall()
+            resigned_customers = 0 if not sql_results or not sql_results[0]['sum'] else sql_results[0]['sum']
+
+            return 0 if not active_customers_1_month_ago else resigned_customers/float(active_customers_1_month_ago)
 
         result = 0
 
         if stat_type == 'mrr':
-            result = sum([x['mrr'] for x in recurring_invoice_line_ids.read(['mrr'])])
-
+            result = _get_mrr(date)
             result = int(result)
 
+        # TO IMPROVE
         elif stat_type == 'net_new_mrr' or stat_type == 'revenue_churn':
             new_mrr = 0
             expansion_mrr = 0
             churned_mrr = 0
             net_new_mrr = 0
 
-            # TODO: user filter instead : less search
             invoice_line_ids_starting_last_month = request.env['account.invoice.line'].search(
                 shared_domain + [
                     ('asset_start_date', '>', (date - relativedelta(months=+1)).strftime(DEFAULT_SERVER_DATE_FORMAT)),
@@ -598,7 +624,6 @@ class AccountContractDashboard(http.Controller):
                 previous_mrr = sum([x['mrr'] for x in invoice_line_ids.read(['mrr'])])
 
                 if next_invoice_line_ids:
-                    # TODO: should we take into account the case where multiple invoice in the next 30 days ?
                     next_mrr = sum([x['mrr'] for x in next_invoice_line_ids.read(['mrr'])])
                     if next_mrr < previous_mrr:
                         # DOWN
@@ -638,37 +663,35 @@ class AccountContractDashboard(http.Controller):
             if stat_type == 'net_new_mrr':
                 result = new_mrr, expansion_mrr, -churned_mrr, net_new_mrr
             elif stat_type == 'revenue_churn':
-                previous_month_mrr = sum([x['mrr'] for x in recurring_invoice_line_ids_1_month_ago.read(['mrr'])])
+                previous_month_mrr = _get_mrr((date - relativedelta(months=+1)))
                 result = 0 if previous_month_mrr == 0 else (churned_mrr - expansion_mrr)/float(previous_month_mrr)
                 result = 100*round(result, 3)
 
         elif stat_type == 'arpu':
-            data = recurring_invoice_line_ids.read(['mrr', 'account_analytic_id'])
-            mrr = sum([x['mrr'] for x in data])
-            customers = [x['account_analytic_id'] for x in data]
-            result = 0 if not customers else mrr/float(len(customers))
+            mrr = _get_mrr(date)
+            nb_customers = _get_nb_contracts(date)
+            result = 0 if not nb_customers else mrr/float(nb_customers)
             result = int(result)
 
         elif stat_type == 'arr':
-            result = sum([x['mrr']*12 for x in recurring_invoice_line_ids.read(['mrr'])])
+            result = 12*_get_mrr(date)
             result = int(result)
 
         elif stat_type == 'ltv':
             # LTV = Average Monthly Recurring Revenue Per Customer ÷ User Churn Rate
-            data = recurring_invoice_line_ids.read(['mrr', 'account_analytic_id'])
-            mrr = sum([x['mrr'] for x in data])
-            nb_contracts = len(recurring_invoice_line_ids.read(['account_analytic_id']))
+            mrr = _get_mrr(date)
+            nb_contracts = _get_nb_contracts(date)
             avg_mrr_per_customer = 0 if nb_contracts == 0 else mrr / float(nb_contracts)
-            logo_churn = _calculate_logo_churn()
+            logo_churn = _calculate_logo_churn(date)
             result = 0 if logo_churn == 0 else avg_mrr_per_customer/float(logo_churn)
             result = int(result)
 
         elif stat_type == 'logo_churn':
-            result = 100*_calculate_logo_churn()
+            result = 100*_calculate_logo_churn(date)
             result = round(result, 1)
 
         elif stat_type == 'nb_contracts':
-            result = len(recurring_invoice_line_ids.read(['account_analytic_id']))
+            result = _get_nb_contracts(date)
         else:
             result = 0
 

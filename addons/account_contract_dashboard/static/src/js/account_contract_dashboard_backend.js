@@ -30,7 +30,6 @@ openerp.account_contract_dashboard = function (instance) {
             if (e.target.className && e.target.className.indexOf('button-to-backend') > 0){
                 var action_id = e.target.getAttribute('action-id');
                 var menu_id = e.target.getAttribute('menu-id');
-                debugger;
                 this.do_action(action_id, {action_menu_id: menu_id});
             }
         }
