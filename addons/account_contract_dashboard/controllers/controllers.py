@@ -56,9 +56,6 @@ def get_pruned_tick_values(ticks, nb_desired_ticks):
 
 class AccountContractDashboard(http.Controller):
 
-    # def get_filter_contract_template(self, filtered_contract_template_ids):
-    #     return lambda x: str(x.account_analytic_id.template_id.id) in filtered_contract_template_ids
-
     @http.route('/account_contract_dashboard', auth='user', website=True)
     def account_contract_dashboard(self, **kw):
 
@@ -100,9 +97,6 @@ class AccountContractDashboard(http.Controller):
         report_name = stat_types[stat_type]['name']
 
         value_now = self.calculate_stat_diff(stat_type, start_date - relativedelta(months=+1),  end_date - relativedelta(months=+1), start_date, end_date, filtered_contract_template_ids=filtered_contract_template_ids)
-        # value_1_month_ago = self.calculate_stat_diff(stat_type, start_date - relativedelta(months=+2), end_date - relativedelta(months=+2), start_date - relativedelta(months=+1), end_date - relativedelta(months=+1), filtered_contract_template_ids=filtered_contract_template_ids)
-        # value_3_months_ago = self.calculate_stat_diff(stat_type, start_date - relativedelta(months=+4), end_date - relativedelta(months=+4), start_date - relativedelta(months=+3), end_date - relativedelta(months=+3), filtered_contract_template_ids=filtered_contract_template_ids)
-        # value_12_months_ago = self.calculate_stat_diff(stat_type, start_date - relativedelta(months=+13), end_date - relativedelta(months=+13), start_date - relativedelta(months=+12), end_date - relativedelta(months=+12), filtered_contract_template_ids=filtered_contract_template_ids)
 
         href_post_args = 'start_date=%s&end_date=%s&' % (start_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d'))
         for item in filtered_contract_template_ids:
@@ -245,7 +239,45 @@ class AccountContractDashboard(http.Controller):
 
         results = []
 
-        if stat_type == 'mrr':
+        if stat_type == 'net_revenue':
+            request.cr.execute("""
+                SELECT s.a, SUM(invoice.amount_total) AS sum
+                FROM account_invoice AS invoice, generate_series(%s::timestamp, %s, '%s days') AS s(a)
+                WHERE
+                    invoice.date_due = s.a AND
+                    invoice.type = 'out_invoice' AND
+                    invoice.state = 'paid'
+                GROUP BY s.a
+                ORDER BY s.a
+            """, [start_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), end_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), 1])
+            stat_by_day = request.cr.dictfetchall()
+            for k in stat_by_day:
+                results.append({
+                    '0': k['a'],
+                    '1': k['sum'],
+                })
+
+        elif stat_type == 'nrr':
+            request.cr.execute("""
+                SELECT s.a, SUM(line.price_subtotal) AS sum
+                FROM account_invoice_line AS line, account_invoice AS invoice, generate_series(%s::timestamp, %s, '%s days') AS s(a)
+                WHERE
+                    invoice.date_due = s.a AND
+                    line.asset_category_id IS NULL AND
+                    line.invoice_id = invoice.id AND
+                    invoice.type = 'out_invoice' AND
+                    invoice.state = 'paid'
+                GROUP BY s.a
+                ORDER BY s.a
+            """, [start_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), end_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), 1])
+            stat_by_day = request.cr.dictfetchall()
+            for k in stat_by_day:
+                results.append({
+                    '0': k['a'],
+                    '1': k['sum'],
+                })
+
+        elif stat_type == 'mrr':
             request.cr.execute("""
                 SELECT s.a, SUM(line.mrr)
                 FROM account_invoice_line AS line, generate_series(%s::timestamp, %s, '%s days') AS s(a)
@@ -259,6 +291,7 @@ class AccountContractDashboard(http.Controller):
                     '0': k['a'],
                     '1': k['sum'],
                 })
+
         elif stat_type == 'arr':
             request.cr.execute("""
                 SELECT s.a, 12*SUM(line.mrr) AS sum
@@ -273,6 +306,7 @@ class AccountContractDashboard(http.Controller):
                     '0': k['a'],
                     '1': k['sum'],
                 })
+
         elif stat_type == 'arpu':
             request.cr.execute("""
                 SELECT s.a, SUM(line.mrr)/COUNT(DISTINCT line.account_analytic_id) AS sum
@@ -287,6 +321,7 @@ class AccountContractDashboard(http.Controller):
                     '0': k['a'],
                     '1': k['sum'],
                 })
+
         elif stat_type == 'nb_contracts':
             request.cr.execute("""
                 SELECT s.a, COUNT(DISTINCT line.account_analytic_id) AS sum
@@ -301,6 +336,7 @@ class AccountContractDashboard(http.Controller):
                     '0': k['a'],
                     '1': k['sum'],
                 })
+
         elif stat_type == 'logo_churn':
             request.cr.execute("""
                 SELECT s.a, COUNT(DISTINCT line.account_analytic_id) AS sum
@@ -327,6 +363,7 @@ class AccountContractDashboard(http.Controller):
                     '0': k['a'],
                     '1': 0 if not nb_active_1_month_ago else 100*nb_resigned/float(nb_active_1_month_ago),
                 })
+
         elif stat_type == 'ltv':
             start_time = time.time()
             request.cr.execute("""
@@ -481,28 +518,31 @@ class AccountContractDashboard(http.Controller):
         if type(end_date) == str:
             end_date = datetime.strptime(end_date, '%Y-%m-%d')
 
-        domain_all = [
-            ('invoice_id.date_invoice', '>=', start_date.strftime(DEFAULT_SERVER_DATE_FORMAT)),
-            ('invoice_id.date_invoice', '<=', end_date.strftime(DEFAULT_SERVER_DATE_FORMAT)),
-            ('invoice_id.type', '=', 'out_invoice'),
-        ]
-        if filtered_contract_template_ids:
-            domain_all.append(('account_analytic_id.template_id', 'in', [int(ids) for ids in filtered_contract_template_ids]))
-        elif plan:
-            domain_all.append(('account_analytic_id.template_id', '=', plan.id))
-
-        all_invoice_line_ids = request.env['account.invoice.line'].search(domain_all)
-        non_recurring_invoice_line_ids = request.env['account.invoice.line'].search(domain_all + [
-            ('asset_category_id', '=', False)
-        ])
-
         if stat_type == 'net_revenue':
-            # TODO: use @MAT field instead of price_subtotal
-            result = int(sum([x['price_subtotal'] for x in all_invoice_line_ids.read(['price_subtotal'])]))
+            request.cr.execute("""
+                SELECT SUM(invoice.amount_total) AS sum
+                FROM account_invoice AS invoice
+                WHERE
+                    (invoice.date_due BETWEEN %s AND %s) AND
+                    invoice.type = 'out_invoice' AND
+                    invoice.state = 'paid'
+            """, [start_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), end_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT)])
+            sql_results = request.cr.dictfetchall()
+            result = 0 if not sql_results or not sql_results[0]['sum'] else int(sql_results[0]['sum'])
 
         elif stat_type == 'nrr':
-            # TODO: use @MAT field instead of price_subtotal
-            result = int(sum([x['price_subtotal'] for x in non_recurring_invoice_line_ids.read(['price_subtotal'])]))
+            request.cr.execute("""
+                SELECT SUM(line.price_subtotal) AS sum
+                FROM account_invoice_line AS line, account_invoice AS invoice
+                WHERE
+                    (invoice.date_due BETWEEN %s AND %s) AND
+                    line.asset_category_id IS NULL AND
+                    line.invoice_id = invoice.id AND
+                    invoice.type = 'out_invoice' AND
+                    invoice.state = 'paid'
+            """, [start_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), end_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT)])
+            sql_results = request.cr.dictfetchall()
+            result = 0 if not sql_results or not sql_results[0]['sum'] else int(sql_results[0]['sum'])
 
         return result
 
