@@ -350,7 +350,11 @@ class AccountContractDashboard(http.Controller):
                 SELECT s.a, COUNT(DISTINCT line.account_analytic_id) AS sum
                 FROM account_invoice_line AS line, generate_series(%s::timestamp, %s, '%s days') AS s(a)
                 WHERE (s.a - interval '30 day' BETWEEN line.asset_start_date AND line.asset_end_date) AND
-                    NOT (s.a BETWEEN line.asset_start_date AND line.asset_end_date)
+                    NOT exists (
+                    SELECT 1 from account_invoice_line ail
+                    WHERE ail.account_analytic_id = line.account_analytic_id
+                    AND (s.a BETWEEN ail.asset_start_date AND ail.asset_end_date)
+                    )
                 GROUP BY s.a
                 ORDER BY s.a
             """, [start_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), end_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), keep_one_of])
@@ -376,12 +380,16 @@ class AccountContractDashboard(http.Controller):
             active_customers_1_month_ago_by_day = request.cr.dictfetchall()
             request.cr.execute("""
                 SELECT s.a, COUNT(DISTINCT line.account_analytic_id) AS sum
-                FROM account_invoice_line AS line, generate_series(%s::timestamp, %s, '1 days') AS s(a)
+                FROM account_invoice_line AS line, generate_series(%s::timestamp, %s, '%s days') AS s(a)
                 WHERE (s.a - interval '30 day' BETWEEN line.asset_start_date AND line.asset_end_date) AND
-                    NOT (s.a BETWEEN line.asset_start_date AND line.asset_end_date)
+                    NOT exists (
+                    SELECT 1 from account_invoice_line ail
+                    WHERE ail.account_analytic_id = line.account_analytic_id
+                    AND (s.a BETWEEN ail.asset_start_date AND ail.asset_end_date)
+                    )
                 GROUP BY s.a
                 ORDER BY s.a
-            """, [start_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), end_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT)])
+            """, [start_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), end_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), keep_one_of])
             resigned_customers_by_day = request.cr.dictfetchall()
 
             request.cr.execute("""
@@ -612,7 +620,11 @@ class AccountContractDashboard(http.Controller):
                 SELECT COUNT(DISTINCT line.account_analytic_id) AS sum
                 FROM account_invoice_line AS line
                 WHERE (date %s - interval '30 day' BETWEEN line.asset_start_date AND line.asset_end_date) AND
-                    NOT (date %s BETWEEN line.asset_start_date AND line.asset_end_date)
+                    NOT exists (
+                    SELECT 1 from account_invoice_line ail
+                    WHERE ail.account_analytic_id = line.account_analytic_id
+                    AND (date %s BETWEEN ail.asset_start_date AND ail.asset_end_date)
+                    )
             """, [date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), date.strftime(DEFAULT_SERVER_DATETIME_FORMAT)])
             sql_results = request.cr.dictfetchall()
             resigned_customers = 0 if not sql_results or not sql_results[0]['sum'] else sql_results[0]['sum']
@@ -631,6 +643,21 @@ class AccountContractDashboard(http.Controller):
             expansion_mrr = 0
             churned_mrr = 0
             net_new_mrr = 0
+
+            request.cr.execute("""
+                SELECT COUNT(DISTINCT line.account_analytic_id) AS sum
+                FROM account_invoice_line AS line
+                WHERE (date %s - interval '30 day' BETWEEN line.asset_start_date AND line.asset_end_date) AND
+                    NOT exists (
+                    SELECT 1 from account_invoice_line ail
+                    WHERE ail.account_analytic_id = line.account_analytic_id
+                    AND (date %s BETWEEN ail.asset_start_date AND ail.asset_end_date)
+                    )
+            """, [date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), date.strftime(DEFAULT_SERVER_DATETIME_FORMAT)])
+            sql_results = request.cr.dictfetchall()
+            new_mrr = 0 if not sql_results or not sql_results[0]['sum'] else sql_results[0]['sum']
+
+
 
             invoice_line_ids_starting_last_month = request.env['account.invoice.line'].search(
                 shared_domain + [

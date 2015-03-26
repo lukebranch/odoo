@@ -160,10 +160,7 @@
               //     return int(value), color
               // }
 
-              debugger;
-
               if (typeof result != 'undefined'){
-                  console.log(result[0])
                   var html = openerp.qweb.render('account_contract_dashboard.statsHistory', {
                     'stats_history': result[0],
                     'stat_type': stat_type,
@@ -171,8 +168,6 @@
                     // 'rate': compute_rate,
                     'value_now': $('#value_now').attr('value'),
                   });
-                  console.log(html)
-                  debugger;
                   $('#stat-history-box').append(html);
               }
               else {
