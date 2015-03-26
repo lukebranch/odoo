@@ -249,7 +249,7 @@ class AccountContractDashboard(http.Controller):
             request.cr.execute("""
                 SELECT s.a, SUM(line.mrr)
                 FROM account_invoice_line AS line, generate_series(%s::timestamp, %s, '%s days') AS s(a)
-                WHERE line.asset_start_date <= s.a AND line.asset_end_date >= s.a
+                WHERE s.a BETWEEN line.asset_start_date AND line.asset_end_date
                 GROUP BY s.a
                 ORDER BY s.a
             """, [start_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), end_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), keep_one_of])
@@ -263,7 +263,7 @@ class AccountContractDashboard(http.Controller):
             request.cr.execute("""
                 SELECT s.a, 12*SUM(line.mrr) AS sum
                 FROM account_invoice_line AS line, generate_series(%s::timestamp, %s, '%s days') AS s(a)
-                WHERE line.asset_start_date <= s.a AND line.asset_end_date >= s.a
+                WHERE s.a BETWEEN line.asset_start_date AND line.asset_end_date
                 GROUP BY s.a
                 ORDER BY s.a
             """, [start_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), end_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), keep_one_of])
@@ -277,7 +277,7 @@ class AccountContractDashboard(http.Controller):
             request.cr.execute("""
                 SELECT s.a, SUM(line.mrr)/COUNT(DISTINCT line.account_analytic_id) AS sum
                 FROM account_invoice_line AS line, generate_series(%s::timestamp, %s, '%s days') AS s(a)
-                WHERE line.asset_start_date <= s.a AND line.asset_end_date >= s.a
+                WHERE s.a BETWEEN line.asset_start_date AND line.asset_end_date
                 GROUP BY s.a
                 ORDER BY s.a
             """, [start_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), end_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), keep_one_of])
@@ -291,7 +291,7 @@ class AccountContractDashboard(http.Controller):
             request.cr.execute("""
                 SELECT s.a, COUNT(DISTINCT line.account_analytic_id) AS sum
                 FROM account_invoice_line AS line, generate_series(%s::timestamp, %s, '%s days') AS s(a)
-                WHERE line.asset_start_date <= s.a AND line.asset_end_date >= s.a
+                WHERE s.a BETWEEN line.asset_start_date AND line.asset_end_date
                 GROUP BY s.a
                 ORDER BY s.a
             """, [start_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), end_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), keep_one_of])
@@ -307,7 +307,7 @@ class AccountContractDashboard(http.Controller):
             request.cr.execute("""
                 SELECT s.a, COUNT(DISTINCT line.account_analytic_id) AS sum
                 FROM account_invoice_line AS line, generate_series(%s::timestamp, %s, '%s days') AS s(a)
-                WHERE line.asset_start_date <= s.a - interval '30 day' AND line.asset_end_date >= s.a - interval '30 day'
+                WHERE s.a - interval '30 day' BETWEEN line.asset_start_date AND line.asset_end_date
                 GROUP BY s.a
                 ORDER BY s.a
             """, [start_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), end_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), keep_one_of])
@@ -315,13 +315,8 @@ class AccountContractDashboard(http.Controller):
             request.cr.execute("""
                 SELECT s.a, COUNT(DISTINCT line.account_analytic_id) AS sum
                 FROM account_invoice_line AS line, generate_series(%s::timestamp, %s, '%s days') AS s(a)
-                WHERE
-                    line.asset_start_date <= s.a - interval '30 day' AND
-                    line.asset_end_date >= s.a - interval '30 day' AND
-                    NOT (
-                        line.asset_start_date <= s.a AND
-                        line.asset_end_date >= s.a
-                    )
+                WHERE (s.a - interval '30 day' BETWEEN line.asset_start_date AND line.asset_end_date) AND
+                    NOT (s.a BETWEEN line.asset_start_date AND line.asset_end_date)
                 GROUP BY s.a
                 ORDER BY s.a
             """, [start_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), end_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), keep_one_of])
@@ -360,7 +355,7 @@ class AccountContractDashboard(http.Controller):
             request.cr.execute("""
                 SELECT s.a, SUM(line.mrr)/COUNT(DISTINCT line.account_analytic_id) AS sum
                 FROM account_invoice_line AS line, generate_series(%s::timestamp, %s, '%s days') AS s(a)
-                WHERE line.asset_start_date <= s.a AND line.asset_end_date >= s.a
+                WHERE s.a BETWEEN line.asset_start_date AND line.asset_end_date
                 GROUP BY s.a
                 ORDER BY s.a
             """, [start_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), end_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), keep_one_of])
