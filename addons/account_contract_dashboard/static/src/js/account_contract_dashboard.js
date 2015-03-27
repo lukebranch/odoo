@@ -146,27 +146,29 @@
             'filtered_contract_template_ids': filtered_contract_template_ids,
           }).then(function (result) {
 
-              // function compute_rate(stat_types, stat_type, old, new){
-              //     direction = stat_types[stat_type]['dir']
-              //     try:
-              //         value = round(100.0 * (new-old) / old, 2)
-              //     except ZeroDivisionError:
-              //         value = 0
-              //     color = 'oBlack'
-              //     if value && direction == 'up':
-              //         color = (value > 0) && 'oGreen' || 'oRed'
-              //     if value && direction != 'up':
-              //         color = (value < 0) && 'oGreen' || 'oRed'
-              //     return int(value), color
-              // }
+              function compute_rate(stat_types, stat_type, old_value, new_value){
+                  var direction = stat_types[stat_type]['dir']
+                  var value = 0
+                  var color = 'oBlack'
+                  debugger;
+
+                  if (old_value != 0) {value = 100.0 * (new_value-old_value) / old_value}
+                  if (value && direction == 'up'){
+                      color = (value > 0) && 'oGreen' || 'oRed'
+                  }
+                  if (value && direction != 'up'){
+                      color = (value < 0) && 'oGreen' || 'oRed'
+                  }
+                  return [parseInt(value), color]
+              }
 
               if (typeof result != 'undefined'){
                   var html = openerp.qweb.render('account_contract_dashboard.statsHistory', {
                     'stats_history': result[0],
                     'stat_type': stat_type,
                     'all_stats': result[1],
-                    // 'rate': compute_rate,
-                    'value_now': $('#value_now').attr('value'),
+                    'rate': compute_rate,
+                    'value_now': parseInt($('#value_now').attr('value')),
                   });
                   $('#stat-history-box').append(html);
               }
