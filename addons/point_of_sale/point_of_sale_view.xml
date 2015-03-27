@@ -698,6 +698,10 @@
                             <field name="iface_cashdrawer" />
                         </group>
                         <group string="Receipt" >
+
+                            <field name="kind_of_sheet" />
+                            <field name="line_per_sheet" />
+                            <field name="width" />
                             <field name="receipt_header" placeholder="A custom receipt header message"/>
                             <field name="receipt_footer" placeholder="A custom receipt footer message"/>
                         </group>

@@ -1169,10 +1169,47 @@ function openerp_pos_models(instance, module){ //module is instance.point_of_sal
         },
         // exports a JSON for receipt printing
         export_for_printing: function(){
-            var orderlines = [];
+            var self = this;
+            var nbr_lines = 0;
+            var nbr_tickets = 0;
+            var multi_orderlines = [[]];
+            var diff_line = 0;
+            console.log('nbr lines : ', nbr_lines);
+
             this.get('orderLines').each(function(orderline){
-                orderlines.push(orderline.export_for_printing());
+                orderline = orderline.export_for_printing();
+                var simple = (!orderline.discount && (orderline.unit_name == "Unit(s)") && (orderline.quantity == 1));
+                var line_per_orderline = 1;
+                
+                if(!simple) {
+                    console.log('not simple', orderline.discount, orderline.unit_name, orderline.quantity);
+                    line_per_orderline++;
+                    if(orderline.discount !== 0) {
+                        line_per_orderline++;
+                    }
+                }
+                else {
+                    console.log('simple');
+                }
+                console.log('line per order line', line_per_orderline);
+                diff_line = self.pos.config.line_per_sheet - nbr_lines;
+                if((self.pos.config.kind_of_sheet == 'slip') && (diff_line - line_per_orderline < 0)) {
+                    while(diff_line--) {
+                        multi_orderlines[nbr_tickets].push({empty:true});
+                    }
+                    nbr_lines = 0;
+                    multi_orderlines[++nbr_tickets] = [];
+                }
+                nbr_lines += line_per_orderline;
+                multi_orderlines[nbr_tickets].push(orderline);
             });
+
+            if(self.pos.config.kind_of_sheet == 'slip') {
+                diff_line = self.pos.config.line_per_sheet - nbr_lines;
+                while (nbr_lines && diff_line--) {
+                    multi_orderlines[nbr_tickets].push({empty:true});
+                }
+            }
 
             var paymentlines = [];
             this.get('paymentLines').each(function(paymentline){
@@ -1185,7 +1222,10 @@ function openerp_pos_models(instance, module){ //module is instance.point_of_sal
             var date = new Date();
 
             return {
-                orderlines: orderlines,
+                orderlines: null,
+                kind_of_sheet: self.pos.config.kind_of_sheet,
+                width: self.pos.config.width,
+                multi_orderlines: multi_orderlines,
                 paymentlines: paymentlines,
                 subtotal: this.getSubtotal(),
                 total_with_tax: this.getTotalTaxIncluded(),
@@ -1206,7 +1246,7 @@ function openerp_pos_models(instance, module){ //module is instance.point_of_sal
                     money: 2,
                     quantity: 3,
                 },
-                date: { 
+                date: {
                     year: date.getFullYear(), 
                     month: date.getMonth(), 
                     date: date.getDate(),       // day of the month 

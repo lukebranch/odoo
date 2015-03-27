@@ -34,6 +34,11 @@ _logger = logging.getLogger(__name__)
 
 class pos_config(osv.osv):
     _name = 'pos.config'
+    
+    KIND_OF_SHEET_SELECT = [
+        ('paper-roll', 'Paper Roll'),
+        ('slip', 'Slip'),
+    ]
 
     POS_CONFIG_STATE = [
         ('active', 'Active'),
@@ -91,6 +96,9 @@ class pos_config(osv.osv):
         'barcode_price':    fields.char('Price Barcodes',   size=64, help='The pattern that identifies a product with a barcode encoded price'),
         'barcode_weight':   fields.char('Weight Barcodes',  size=64, help='The pattern that identifies a product with a barcode encoded weight'),
         'barcode_discount': fields.char('Discount Barcodes',  size=64, help='The pattern that identifies a product with a barcode encoded discount'),
+        'kind_of_sheet':    fields.selection(KIND_OF_SHEET_SELECT, 'Kind Of Sheet', required=True, readonly=False),
+        'line_per_sheet':   fields.integer('Lines Per Sheet', help="Number of printable lines per sheet for slip sheet'"),
+        'width':            fields.integer('With', help="Width of the sheet'"),
     }
 
     def _check_cash_control(self, cr, uid, ids, context=None):
@@ -179,6 +187,9 @@ class pos_config(osv.osv):
         'barcode_weight':  '21xxxxxNNDDD', 
         'barcode_discount':'22xxxxxxxxNN', 
         'barcode_price':   '23xxxxxNNNDD', 
+        'line_per_sheet':  100,
+        'kind_of_sheet':   'paper-roll',
+        'width':           40,
     }
 
     def onchange_picking_type_id(self, cr, uid, ids, picking_type_id, context=None):
