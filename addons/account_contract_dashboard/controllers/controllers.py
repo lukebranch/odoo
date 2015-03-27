@@ -208,9 +208,9 @@ class AccountContractDashboard(http.Controller):
                 ('account_analytic_id.template_id', '=', plan.id),
             ])
             if stat_types[stat_type]['type'] == 'last':
-                value = self.calculate_stat(stat_type, end_date, plan=plan)
+                value = self.calculate_stat(stat_type, end_date, filtered_contract_template_ids=plan)
             elif stat_types[stat_type]['type'] == 'sum':
-                value = self.calculate_stat_aggregate(stat_type, start_date, end_date, plan=plan)
+                value = self.calculate_stat_aggregate(stat_type, start_date, end_date, filtered_contract_template_ids=plan)
             results.append({
                 'name': plan.name,
                 'nb_customers': len(recurring_invoice_line_ids.mapped('account_analytic_id')),
@@ -277,206 +277,206 @@ class AccountContractDashboard(http.Controller):
                     '1': k['sum'],
                 })
 
-        elif stat_type == 'mrr':
-            request.cr.execute("""
-                SELECT s.a, SUM(line.mrr)
-                FROM account_invoice_line AS line, account_invoice AS invoice, generate_series(%s::timestamp, %s, '%s days') AS s(a)
-                WHERE (s.a BETWEEN line.asset_start_date AND line.asset_end_date) AND
-                    invoice.id = line.invoice_id AND
-                    invoice.type IN ('out_invoice') AND
-                    invoice.state NOT IN ('draft', 'cancel')
-                GROUP BY s.a
-                ORDER BY s.a
-            """, [start_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), end_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), keep_one_of])
-            stat_by_day = request.cr.dictfetchall()
-            for k in stat_by_day:
-                results.append({
-                    '0': k['a'],
-                    '1': k['sum'],
-                })
+        # elif stat_type == 'mrr':
+        #     request.cr.execute("""
+        #         SELECT s.a, SUM(line.mrr)
+        #         FROM account_invoice_line AS line, account_invoice AS invoice, generate_series(%s::timestamp, %s, '%s days') AS s(a)
+        #         WHERE (s.a BETWEEN line.asset_start_date AND line.asset_end_date) AND
+        #             invoice.id = line.invoice_id AND
+        #             invoice.type IN ('out_invoice') AND
+        #             invoice.state NOT IN ('draft', 'cancel')
+        #         GROUP BY s.a
+        #         ORDER BY s.a
+        #     """, [start_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), end_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), keep_one_of])
+        #     stat_by_day = request.cr.dictfetchall()
+        #     for k in stat_by_day:
+        #         results.append({
+        #             '0': k['a'],
+        #             '1': k['sum'],
+        #         })
 
-        elif stat_type == 'arr':
-            request.cr.execute("""
-                SELECT s.a, 12*SUM(line.mrr) AS sum
-                FROM account_invoice_line AS line, account_invoice AS invoice, generate_series(%s::timestamp, %s, '%s days') AS s(a)
-                WHERE (s.a BETWEEN line.asset_start_date AND line.asset_end_date) AND
-                    invoice.id = line.invoice_id AND
-                    invoice.type IN ('out_invoice') AND
-                    invoice.state NOT IN ('draft', 'cancel')
-                GROUP BY s.a
-                ORDER BY s.a
-            """, [start_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), end_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), keep_one_of])
-            stat_by_day = request.cr.dictfetchall()
-            for k in stat_by_day:
-                results.append({
-                    '0': k['a'],
-                    '1': k['sum'],
-                })
+        # elif stat_type == 'arr':
+        #     request.cr.execute("""
+        #         SELECT s.a, 12*SUM(line.mrr) AS sum
+        #         FROM account_invoice_line AS line, account_invoice AS invoice, generate_series(%s::timestamp, %s, '%s days') AS s(a)
+        #         WHERE (s.a BETWEEN line.asset_start_date AND line.asset_end_date) AND
+        #             invoice.id = line.invoice_id AND
+        #             invoice.type IN ('out_invoice') AND
+        #             invoice.state NOT IN ('draft', 'cancel')
+        #         GROUP BY s.a
+        #         ORDER BY s.a
+        #     """, [start_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), end_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), keep_one_of])
+        #     stat_by_day = request.cr.dictfetchall()
+        #     for k in stat_by_day:
+        #         results.append({
+        #             '0': k['a'],
+        #             '1': k['sum'],
+        #         })
 
-        elif stat_type == 'arpu':
-            request.cr.execute("""
-                SELECT s.a, SUM(line.mrr)/COUNT(DISTINCT line.account_analytic_id) AS sum
-                FROM account_invoice_line AS line, account_invoice AS invoice, generate_series(%s::timestamp, %s, '%s days') AS s(a)
-                WHERE (s.a BETWEEN line.asset_start_date AND line.asset_end_date) AND
-                    invoice.id = line.invoice_id AND
-                    invoice.type IN ('out_invoice') AND
-                    invoice.state NOT IN ('draft', 'cancel')
-                GROUP BY s.a
-                ORDER BY s.a
-            """, [start_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), end_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), keep_one_of])
-            stat_by_day = request.cr.dictfetchall()
-            for k in stat_by_day:
-                results.append({
-                    '0': k['a'],
-                    '1': k['sum'],
-                })
+        # elif stat_type == 'arpu':
+        #     request.cr.execute("""
+        #         SELECT s.a, SUM(line.mrr)/COUNT(DISTINCT line.account_analytic_id) AS sum
+        #         FROM account_invoice_line AS line, account_invoice AS invoice, generate_series(%s::timestamp, %s, '%s days') AS s(a)
+        #         WHERE (s.a BETWEEN line.asset_start_date AND line.asset_end_date) AND
+        #             invoice.id = line.invoice_id AND
+        #             invoice.type IN ('out_invoice') AND
+        #             invoice.state NOT IN ('draft', 'cancel')
+        #         GROUP BY s.a
+        #         ORDER BY s.a
+        #     """, [start_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), end_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), keep_one_of])
+        #     stat_by_day = request.cr.dictfetchall()
+        #     for k in stat_by_day:
+        #         results.append({
+        #             '0': k['a'],
+        #             '1': k['sum'],
+        #         })
 
-        elif stat_type == 'nb_contracts':
-            request.cr.execute("""
-                SELECT s.a, COUNT(DISTINCT line.account_analytic_id) AS sum
-                FROM account_invoice_line AS line, account_invoice AS invoice, generate_series(%s::timestamp, %s, '%s days') AS s(a)
-                WHERE (s.a BETWEEN line.asset_start_date AND line.asset_end_date) AND
-                    invoice.id = line.invoice_id AND
-                    invoice.type IN ('out_invoice') AND
-                    invoice.state NOT IN ('draft', 'cancel')
-                GROUP BY s.a
-                ORDER BY s.a
-            """, [start_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), end_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), keep_one_of])
-            stat_by_day = request.cr.dictfetchall()
-            for k in stat_by_day:
-                results.append({
-                    '0': k['a'],
-                    '1': k['sum'],
-                })
+        # elif stat_type == 'nb_contracts':
+        #     request.cr.execute("""
+        #         SELECT s.a, COUNT(DISTINCT line.account_analytic_id) AS sum
+        #         FROM account_invoice_line AS line, account_invoice AS invoice, generate_series(%s::timestamp, %s, '%s days') AS s(a)
+        #         WHERE (s.a BETWEEN line.asset_start_date AND line.asset_end_date) AND
+        #             invoice.id = line.invoice_id AND
+        #             invoice.type IN ('out_invoice') AND
+        #             invoice.state NOT IN ('draft', 'cancel')
+        #         GROUP BY s.a
+        #         ORDER BY s.a
+        #     """, [start_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), end_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), keep_one_of])
+        #     stat_by_day = request.cr.dictfetchall()
+        #     for k in stat_by_day:
+        #         results.append({
+        #             '0': k['a'],
+        #             '1': k['sum'],
+        #         })
 
-        elif stat_type == 'logo_churn':
-            request.cr.execute("""
-                SELECT s.a, COUNT(DISTINCT line.account_analytic_id) AS sum
-                FROM account_invoice_line AS line, account_invoice AS invoice, generate_series(%s::timestamp, %s, '%s days') AS s(a)
-                WHERE (s.a - interval '1 months' BETWEEN line.asset_start_date AND line.asset_end_date) AND
-                    invoice.id = line.invoice_id AND
-                    invoice.type IN ('out_invoice') AND
-                    invoice.state NOT IN ('draft', 'cancel')
-                GROUP BY s.a
-                ORDER BY s.a
-            """, [start_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), end_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), keep_one_of])
-            active_customers_1_month_ago_by_day = request.cr.dictfetchall()
-            request.cr.execute("""
-                SELECT s.a, COUNT(DISTINCT line.account_analytic_id) AS sum
-                FROM account_invoice_line AS line, account_invoice AS invoice, generate_series(%s::timestamp, %s, '%s days') AS s(a)
-                WHERE (s.a - interval '1 months' BETWEEN line.asset_start_date AND line.asset_end_date) AND
-                    invoice.id = line.invoice_id AND
-                    invoice.type IN ('out_invoice') AND
-                    invoice.state NOT IN ('draft', 'cancel') AND
-                    NOT exists (
-                    SELECT 1 from account_invoice_line ail
-                    WHERE ail.account_analytic_id = line.account_analytic_id
-                    AND (s.a BETWEEN ail.asset_start_date AND ail.asset_end_date)
-                    )
-                GROUP BY s.a
-                ORDER BY s.a
-            """, [start_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), end_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), keep_one_of])
-            resigned_customers_by_day = request.cr.dictfetchall()
-            for k in active_customers_1_month_ago_by_day:
-                nb_active_1_month_ago = k['sum']
-                # Find the corresponding nb_resigned at the same date
-                nb_resigned = next((d['sum'] for d in resigned_customers_by_day if k['a'] == d['a']), 0)
-                results.append({
-                    '0': k['a'],
-                    '1': 0 if not nb_active_1_month_ago else 100*nb_resigned/float(nb_active_1_month_ago),
-                })
+        # elif stat_type == 'logo_churn':
+        #     request.cr.execute("""
+        #         SELECT s.a, COUNT(DISTINCT line.account_analytic_id) AS sum
+        #         FROM account_invoice_line AS line, account_invoice AS invoice, generate_series(%s::timestamp, %s, '%s days') AS s(a)
+        #         WHERE (s.a - interval '1 months' BETWEEN line.asset_start_date AND line.asset_end_date) AND
+        #             invoice.id = line.invoice_id AND
+        #             invoice.type IN ('out_invoice') AND
+        #             invoice.state NOT IN ('draft', 'cancel')
+        #         GROUP BY s.a
+        #         ORDER BY s.a
+        #     """, [start_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), end_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), keep_one_of])
+        #     active_customers_1_month_ago_by_day = request.cr.dictfetchall()
+        #     request.cr.execute("""
+        #         SELECT s.a, COUNT(DISTINCT line.account_analytic_id) AS sum
+        #         FROM account_invoice_line AS line, account_invoice AS invoice, generate_series(%s::timestamp, %s, '%s days') AS s(a)
+        #         WHERE (s.a - interval '1 months' BETWEEN line.asset_start_date AND line.asset_end_date) AND
+        #             invoice.id = line.invoice_id AND
+        #             invoice.type IN ('out_invoice') AND
+        #             invoice.state NOT IN ('draft', 'cancel') AND
+        #             NOT exists (
+        #             SELECT 1 from account_invoice_line ail
+        #             WHERE ail.account_analytic_id = line.account_analytic_id
+        #             AND (s.a BETWEEN ail.asset_start_date AND ail.asset_end_date)
+        #             )
+        #         GROUP BY s.a
+        #         ORDER BY s.a
+        #     """, [start_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), end_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), keep_one_of])
+        #     resigned_customers_by_day = request.cr.dictfetchall()
+        #     for k in active_customers_1_month_ago_by_day:
+        #         nb_active_1_month_ago = k['sum']
+        #         # Find the corresponding nb_resigned at the same date
+        #         nb_resigned = next((d['sum'] for d in resigned_customers_by_day if k['a'] == d['a']), 0)
+        #         results.append({
+        #             '0': k['a'],
+        #             '1': 0 if not nb_active_1_month_ago else 100*nb_resigned/float(nb_active_1_month_ago),
+        #         })
 
-        elif stat_type == 'revenue_churn':
-            request.cr.execute("""
-                SELECT s.a, SUM(line.mrr) AS sum
-                FROM account_invoice_line AS line, account_invoice AS invoice, generate_series(%s::timestamp, %s, '%s days') AS s(a)
-                WHERE (s.a - interval '1 months' BETWEEN line.asset_start_date AND line.asset_end_date) AND
-                    invoice.id = line.invoice_id AND
-                    invoice.type IN ('out_invoice') AND
-                    invoice.state NOT IN ('draft', 'cancel')
-                GROUP BY s.a
-                ORDER BY s.a
-            """, [start_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), end_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), keep_one_of])
-            mrr_1_month_ago_by_day = request.cr.dictfetchall()
-            request.cr.execute("""
-                SELECT s.a, SUM(line.mrr) AS sum
-                FROM account_invoice_line AS line, account_invoice AS invoice, generate_series(%s::timestamp, %s, '%s days') AS s(a)
-                WHERE (s.a - interval '1 months' BETWEEN line.asset_start_date AND line.asset_end_date) AND
-                    invoice.id = line.invoice_id AND
-                    invoice.type IN ('out_invoice') AND
-                    invoice.state NOT IN ('draft', 'cancel') AND
-                    NOT exists (
-                    SELECT 1 from account_invoice_line ail
-                    WHERE ail.account_analytic_id = line.account_analytic_id
-                    AND (s.a BETWEEN ail.asset_start_date AND ail.asset_end_date)
-                    )
-                GROUP BY s.a
-                ORDER BY s.a
-            """, [start_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), end_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), keep_one_of])
-            churned_mrr_by_day = request.cr.dictfetchall()
-            for k in mrr_1_month_ago_by_day:
-                mrr_1_month_ago = k['sum']
-                # Find the corresponding churned_mrr at the same date
-                churned_mrr = next((d['sum'] for d in churned_mrr_by_day if k['a'] == d['a']), 0)
-                results.append({
-                    '0': k['a'],
-                    '1': 0 if not mrr_1_month_ago else 100*churned_mrr/float(mrr_1_month_ago),
-                })
+        # elif stat_type == 'revenue_churn':
+        #     request.cr.execute("""
+        #         SELECT s.a, SUM(line.mrr) AS sum
+        #         FROM account_invoice_line AS line, account_invoice AS invoice, generate_series(%s::timestamp, %s, '%s days') AS s(a)
+        #         WHERE (s.a - interval '1 months' BETWEEN line.asset_start_date AND line.asset_end_date) AND
+        #             invoice.id = line.invoice_id AND
+        #             invoice.type IN ('out_invoice') AND
+        #             invoice.state NOT IN ('draft', 'cancel')
+        #         GROUP BY s.a
+        #         ORDER BY s.a
+        #     """, [start_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), end_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), keep_one_of])
+        #     mrr_1_month_ago_by_day = request.cr.dictfetchall()
+        #     request.cr.execute("""
+        #         SELECT s.a, SUM(line.mrr) AS sum
+        #         FROM account_invoice_line AS line, account_invoice AS invoice, generate_series(%s::timestamp, %s, '%s days') AS s(a)
+        #         WHERE (s.a - interval '1 months' BETWEEN line.asset_start_date AND line.asset_end_date) AND
+        #             invoice.id = line.invoice_id AND
+        #             invoice.type IN ('out_invoice') AND
+        #             invoice.state NOT IN ('draft', 'cancel') AND
+        #             NOT exists (
+        #             SELECT 1 from account_invoice_line ail
+        #             WHERE ail.account_analytic_id = line.account_analytic_id
+        #             AND (s.a BETWEEN ail.asset_start_date AND ail.asset_end_date)
+        #             )
+        #         GROUP BY s.a
+        #         ORDER BY s.a
+        #     """, [start_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), end_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), keep_one_of])
+        #     churned_mrr_by_day = request.cr.dictfetchall()
+        #     for k in mrr_1_month_ago_by_day:
+        #         mrr_1_month_ago = k['sum']
+        #         # Find the corresponding churned_mrr at the same date
+        #         churned_mrr = next((d['sum'] for d in churned_mrr_by_day if k['a'] == d['a']), 0)
+        #         results.append({
+        #             '0': k['a'],
+        #             '1': 0 if not mrr_1_month_ago else 100*churned_mrr/float(mrr_1_month_ago),
+        #         })
 
-        elif stat_type == 'ltv':
-            start_time = time.time()
-            request.cr.execute("""
-                SELECT s.a, COUNT(DISTINCT line.account_analytic_id) AS sum
-                FROM account_invoice_line AS line, account_invoice AS invoice, generate_series(%s::timestamp, %s, '%s days') AS s(a)
-                WHERE (s.a - interval '1 months' BETWEEN line.asset_start_date AND line.asset_end_date) AND
-                    invoice.id = line.invoice_id AND
-                    invoice.type IN ('out_invoice') AND
-                    invoice.state NOT IN ('draft', 'cancel')
-                GROUP BY s.a
-                ORDER BY s.a
-            """, [start_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), end_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), keep_one_of])
-            active_customers_1_month_ago_by_day = request.cr.dictfetchall()
-            request.cr.execute("""
-                SELECT s.a, COUNT(DISTINCT line.account_analytic_id) AS sum
-                FROM account_invoice_line AS line, account_invoice AS invoice, generate_series(%s::timestamp, %s, '%s days') AS s(a)
-                WHERE (s.a - interval '1 months' BETWEEN line.asset_start_date AND line.asset_end_date) AND
-                    invoice.id = line.invoice_id AND
-                    invoice.type IN ('out_invoice') AND
-                    invoice.state NOT IN ('draft', 'cancel') AND
-                    NOT exists (
-                    SELECT 1 from account_invoice_line ail
-                    WHERE ail.account_analytic_id = line.account_analytic_id
-                    AND (s.a BETWEEN ail.asset_start_date AND ail.asset_end_date)
-                    )
-                GROUP BY s.a
-                ORDER BY s.a
-            """, [start_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), end_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), keep_one_of])
-            resigned_customers_by_day = request.cr.dictfetchall()
+        # elif stat_type == 'ltv':
+        #     start_time = time.time()
+        #     request.cr.execute("""
+        #         SELECT s.a, COUNT(DISTINCT line.account_analytic_id) AS sum
+        #         FROM account_invoice_line AS line, account_invoice AS invoice, generate_series(%s::timestamp, %s, '%s days') AS s(a)
+        #         WHERE (s.a - interval '1 months' BETWEEN line.asset_start_date AND line.asset_end_date) AND
+        #             invoice.id = line.invoice_id AND
+        #             invoice.type IN ('out_invoice') AND
+        #             invoice.state NOT IN ('draft', 'cancel')
+        #         GROUP BY s.a
+        #         ORDER BY s.a
+        #     """, [start_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), end_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), keep_one_of])
+        #     active_customers_1_month_ago_by_day = request.cr.dictfetchall()
+        #     request.cr.execute("""
+        #         SELECT s.a, COUNT(DISTINCT line.account_analytic_id) AS sum
+        #         FROM account_invoice_line AS line, account_invoice AS invoice, generate_series(%s::timestamp, %s, '%s days') AS s(a)
+        #         WHERE (s.a - interval '1 months' BETWEEN line.asset_start_date AND line.asset_end_date) AND
+        #             invoice.id = line.invoice_id AND
+        #             invoice.type IN ('out_invoice') AND
+        #             invoice.state NOT IN ('draft', 'cancel') AND
+        #             NOT exists (
+        #             SELECT 1 from account_invoice_line ail
+        #             WHERE ail.account_analytic_id = line.account_analytic_id
+        #             AND (s.a BETWEEN ail.asset_start_date AND ail.asset_end_date)
+        #             )
+        #         GROUP BY s.a
+        #         ORDER BY s.a
+        #     """, [start_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), end_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), keep_one_of])
+        #     resigned_customers_by_day = request.cr.dictfetchall()
 
-            request.cr.execute("""
-                SELECT s.a, SUM(line.mrr)/COUNT(DISTINCT line.account_analytic_id) AS sum
-                FROM account_invoice_line AS line, account_invoice AS invoice, generate_series(%s::timestamp, %s, '%s days') AS s(a)
-                WHERE (s.a BETWEEN line.asset_start_date AND line.asset_end_date) AND
-                    invoice.id = line.invoice_id AND
-                    invoice.type IN ('out_invoice') AND
-                    invoice.state NOT IN ('draft', 'cancel')
-                GROUP BY s.a
-                ORDER BY s.a
-            """, [start_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), end_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), keep_one_of])
-            arpu_by_day = request.cr.dictfetchall()
+        #     request.cr.execute("""
+        #         SELECT s.a, SUM(line.mrr)/COUNT(DISTINCT line.account_analytic_id) AS sum
+        #         FROM account_invoice_line AS line, account_invoice AS invoice, generate_series(%s::timestamp, %s, '%s days') AS s(a)
+        #         WHERE (s.a BETWEEN line.asset_start_date AND line.asset_end_date) AND
+        #             invoice.id = line.invoice_id AND
+        #             invoice.type IN ('out_invoice') AND
+        #             invoice.state NOT IN ('draft', 'cancel')
+        #         GROUP BY s.a
+        #         ORDER BY s.a
+        #     """, [start_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), end_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), keep_one_of])
+        #     arpu_by_day = request.cr.dictfetchall()
 
-            for k in active_customers_1_month_ago_by_day:
-                nb_active_1_month_ago = k['sum']
-                # Find the corresponding nb_resigned at the same date
-                nb_resigned = next((d['sum'] for d in resigned_customers_by_day if k['a'] == d['a']), 0)
+        #     for k in active_customers_1_month_ago_by_day:
+        #         nb_active_1_month_ago = k['sum']
+        #         # Find the corresponding nb_resigned at the same date
+        #         nb_resigned = next((d['sum'] for d in resigned_customers_by_day if k['a'] == d['a']), 0)
 
-                logo_churn = 0 if not nb_active_1_month_ago else nb_resigned/float(nb_active_1_month_ago)
+        #         logo_churn = 0 if not nb_active_1_month_ago else nb_resigned/float(nb_active_1_month_ago)
 
-                avg_mrr_per_customer = next((d['sum'] for d in arpu_by_day if k['a'] == d['a']), 0)
-                results.append({
-                    '0': k['a'],
-                    '1': 0 if not logo_churn else avg_mrr_per_customer / float(logo_churn),
-                })
+        #         avg_mrr_per_customer = next((d['sum'] for d in arpu_by_day if k['a'] == d['a']), 0)
+        #         results.append({
+        #             '0': k['a'],
+        #             '1': 0 if not logo_churn else avg_mrr_per_customer / float(logo_churn),
+        #         })
         else:
             for i in ticks:
 
@@ -579,7 +579,7 @@ class AccountContractDashboard(http.Controller):
         }
         return result
 
-    def calculate_stat_aggregate(self, stat_type, start_date, end_date, plan=None, filtered_contract_template_ids=None):
+    def calculate_stat_aggregate(self, stat_type, start_date, end_date, filtered_contract_template_ids=None):
 
         result = 0
 
@@ -625,7 +625,7 @@ class AccountContractDashboard(http.Controller):
         # return result
 
     # @profile  # Used to estimate the cost of each line
-    def calculate_stat(self, stat_type, date, filtered_contract_template_ids=None, plan=None):
+    def calculate_stat(self, stat_type, date, filtered_contract_template_ids=None):
 
         if type(date) == str:
             date = datetime.strptime(date, '%Y-%m-%d')
@@ -667,11 +667,13 @@ class AccountContractDashboard(http.Controller):
         def _calculate_mrr(date):
             request.cr.execute("""
                 SELECT SUM(line.mrr) AS sum
-                FROM account_invoice_line AS line, account_invoice AS invoice
+                FROM account_invoice_line AS line, account_invoice AS invoice, account_analytic_account AS analytic_account
                 WHERE date %s BETWEEN line.asset_start_date AND line.asset_end_date AND
+                    line.account_analytic_id = analytic_account.id AND
                     invoice.id = line.invoice_id AND
                     invoice.type IN ('out_invoice') AND
                     invoice.state NOT IN ('draft', 'cancel')
+                    AND analytic_account.template_id IN (46)
             """, [date.strftime(DEFAULT_SERVER_DATE_FORMAT)])
             mrr = request.cr.dictfetchall()
             return 0 if not mrr or not mrr[0]['sum'] else mrr[0]['sum']
