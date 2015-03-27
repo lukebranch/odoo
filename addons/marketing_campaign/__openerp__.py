@@ -8,7 +8,7 @@
                 'mail',
                 'decimal_precision'
                 ],
-    'author': 'Odoo SA',
+    'author': 'Odoo S.A.',
     'category': 'Marketing',
     'description': """
 This module provides leads automation through marketing campaigns (campaigns can in fact be defined on any resource, not just CRM Leads).

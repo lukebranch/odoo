@@ -3,15 +3,14 @@
 import time
 import base64
 import itertools
+import re
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from operator import itemgetter
 from traceback import format_exception
 from sys import exc_info
 from openerp.tools.safe_eval import safe_eval as eval
-import re
 from openerp.addons.decimal_precision import decimal_precision as dp
-
 from openerp import _, api, fields, models
 from openerp.report import render_report
 from openerp.exceptions import UserError
@@ -30,7 +29,7 @@ class MarketingCampaign(models.Model):
     _name = "marketing.campaign"
     _description = "Marketing Campaign"
 
-    @api.multi
+    @api.one
     def _count_segments(self):
         res = {}
         try:
@@ -40,7 +39,7 @@ class MarketingCampaign(models.Model):
             pass
         return res
 
-    name = fields.Char(string='Name', required=True)
+    name = fields.Char('Name', required=True)
     object_id = fields.Many2one(comodel_name='ir.model', string='Resource', required=True,
                                 help="Choose the resource on which you want \
 this campaign to be run")
@@ -69,11 +68,11 @@ Normal - the campaign runs normally and automatically sends all emails and repor
                               ('running', 'Running'),
                               ('cancelled', 'Cancelled'),
                               ('done', 'Done')],
-                             'Status', copy=False, default='draft')
+                             string='Status', copy=False, default='draft')
     activity_ids = fields.One2many(comodel_name='marketing.campaign.activity',
                                    inverse_name='campaign_id', string='Activities')
     fixed_cost = fields.Float(
-        string='Fixed Cost', help="Fixed cost for running this campaign. You may also specify variable cost and revenue on each campaign activity. Cost and Revenue statistics are included in Campaign Reporting.", digits_compute=dp.get_precision('Product Price'))
+        'Fixed Cost', help="Fixed cost for running this campaign. You may also specify variable cost and revenue on each campaign activity. Cost and Revenue statistics are included in Campaign Reporting.", digits_compute=dp.get_precision('Product Price'))
     segment_ids = fields.One2many(
         comodel_name='marketing.campaign.segment', inverse_name='campaign_id', string='Segments', readonly=False)
     segments_count = fields.Integer(
@@ -110,14 +109,12 @@ Normal - the campaign runs normally and automatically sends all emails and repor
         if segment_ids:
             raise UserError(
                 _("The campaign cannot be marked as done before all segments are closed."))
-        self.write({'state': 'done'})
-        return True
+        return self.write({'state': 'done'})
 
     @api.multi
     def state_cancel_set(self):
         # TODO check that this campaign is not a subcampaign in running mode.
-        self.write({'state': 'cancelled'})
-        return True
+        return self.write({'state': 'cancelled'})
 
     # dead code
     def signal(self, cr, uid, model, res_id, signal, run_existing=True, context=None):
@@ -170,7 +167,6 @@ Normal - the campaign runs normally and automatically sends all emails and repor
     def copy(self, *args):
         raise UserError(_('Duplicating campaigns is not supported.'))
 
-    @api.one
     def _find_duplicate_workitems(self, record, campaign_rec):
         """Finds possible duplicates workitems for a record in this campaign, based on a uniqueness
            field.
@@ -200,15 +196,15 @@ class MarketingCampaignSegment(models.Model):
     _description = "Campaign Segment"
     _order = "name"
 
-    @api.multi
+    @api.one
     def _get_next_sync(self):
         # next auto sync date is same for all segments
-        sync_job = self.env['ir.model.data'].get_object(
-            'marketing_campaign', 'ir_cron_marketing_campaign_every_day')
+        sync_job = self.env.ref(
+            'marketing_campaign.ir_cron_marketing_campaign_every_day')
         for record in self:
             record.date_next_sync = sync_job.nextcall or False
 
-    name = fields.Char(string='Name', required=True)
+    name = fields.Char('Name', required=True)
     campaign_id = fields.Many2one(
         comodel_name='marketing.campaign', string='Campaign', required=True, select=1, ondelete="cascade")
     object_id = fields.Many2one(
@@ -240,26 +236,23 @@ class MarketingCampaignSegment(models.Model):
     date_next_sync = fields.Datetime(compute='_get_next_sync', string='Next Synchronization',
                                      help="Next time the synchronization job is scheduled to run automatically")
 
-    @api.multi
+    @api.one
+    @api.constrains('ir_filter_id', 'campaign_id')
     def _check_model(self):
-        for obj in self:
-            if not obj.ir_filter_id:
-                return True
-            if obj.campaign_id.object_id.model != obj.ir_filter_id.model_id:
-                return False
+        if not self.ir_filter_id:
+            return True
+        if self.campaign_id.object_id.model != self.ir_filter_id.model_id:
+            raise UserError(
+                _('Model of filter must be same as resource model of Campaign.'))
         return True
 
-    _constraints = [
-        (_check_model, 'Model of filter must be same as resource model of Campaign ', [
-         'ir_filter_id,campaign_id']),
-    ]
-
     @api.one
-    def onchange_campaign_id(self, campaign_id):
+    @api.onchange('campaign_id')
+    def onchange_campaign_id(self):
         res = {'domain': {'ir_filter_id': []}}
-        campaign_pool = self.env['marketing.campaign']
-        if campaign_id:
-            campaign = campaign_pool.browse(campaign_id)
+        if self.campaign_id.id:
+            campaign = self.env['marketing.campaign'].browse(
+                self.campaign_id.id)
             model_name = self.env['ir.model'].read(
                 [campaign.object_id.id], ['model'])
             if model_name:
@@ -271,30 +264,26 @@ class MarketingCampaignSegment(models.Model):
 
     @api.multi
     def state_running_set(self):
-        segment = self
         vals = {'state': 'running'}
-        if not segment.date_run:
-            vals['date_run'] = time.strftime('%Y-%m-%d %H:%M:%S')
-        self.write(vals)
-        return True
+        if not self.date_run:
+            vals['date_run'] = time.strftime(DT_FMT)
+        return self.write(vals)
 
     @api.multi
     def state_done_set(self):
-        wi_ids = self.env['marketing.campaign.workitem'].search(
+        workitem = self.env['marketing.campaign.workitem'].search(
             [('state', '=', 'todo'), ('segment_id', 'in', self.ids)])
-        wi_ids.env['marketing.campaign.workitem'].write({'state': 'cancelled'})
-        self.write(
-            {'state': 'done', 'date_done': time.strftime('%Y-%m-%d %H:%M:%S')})
-        return True
+        workitem.write({'state': 'cancelled'})
+        return self.write(
+            {'state': 'done', 'date_done': time.strftime(DT_FMT)})
 
     @api.multi
     def state_cancel_set(self):
-        wi_ids = self.env['marketing.campaign.workitem'].search(
+        workitem = self.env['marketing.campaign.workitem'].search(
             [('state', '=', 'todo'), ('segment_id', 'in', self.ids)])
-        wi_ids.env['marketing.campaign.workitem'].write({'state': 'cancelled'})
-        self.write(
-            {'state': 'cancelled', 'date_done': time.strftime('%Y-%m-%d %H:%M:%S')})
-        return True
+        workitem.write({'state': 'cancelled'})
+        return self.write(
+            {'state': 'cancelled', 'date_done': time.strftime(DT_FMT)})
 
     @api.multi
     def synchroniz(self, *args):
@@ -305,10 +294,10 @@ class MarketingCampaignSegment(models.Model):
     def process_segment(self):
         Workitems = self.env['marketing.campaign.workitem']
         Campaigns = self.env['marketing.campaign']
-        if not self:
+        if not self.ids:
             self = self.search([('state', '=', 'running')])
 
-        action_date = time.strftime('%Y-%m-%d %H:%M:%S')
+        action_date = time.strftime(DT_FMT)
         campaigns = set()
         for segment in self:
             if segment.campaign_id.state != 'running':
@@ -370,14 +359,14 @@ class MarketingCampaignActivity(models.Model):
         #('subcampaign', 'Sub-Campaign'),
     ]
 
-    name = fields.Char(string='Name', required=True)
+    name = fields.Char('Name', required=True)
     campaign_id = fields.Many2one(comodel_name='marketing.campaign', string='Campaign',
                                   required=True, ondelete='cascade', select=1)
     object_id = fields.Many2one(
         related='campaign_id.object_id', string='Object', readonly=True)
     start = fields.Boolean(
-        string='Start', help="This activity is launched when the campaign starts.", select=True)
-    condition = fields.Text(string='Condition', size=256, required=True, default='True',
+        'Start', help="This activity is launched when the campaign starts.", select=True)
+    condition = fields.Text('Condition', size=256, required=True, default='True',
                             help="Python expression to decide whether the activity can be executed, otherwise it will be deleted or cancelled."
                             "The expression may use the following [browsable] variables:\n"
                             "   - activity: the campaign activity\n"
@@ -405,11 +394,11 @@ class MarketingCampaignActivity(models.Model):
     from_ids = fields.One2many(comodel_name='marketing.campaign.transition',
                                inverse_name='activity_to_id',
                                string='Previous Activities')
-    variable_cost = fields.Float(string='Variable Cost', help="Set a variable cost if you consider that every campaign item that has reached this point has entailed a certain cost. You can get cost statistics in the Reporting section",
+    variable_cost = fields.Float('Variable Cost', help="Set a variable cost if you consider that every campaign item that has reached this point has entailed a certain cost. You can get cost statistics in the Reporting section",
                                  digits_compute=dp.get_precision('Product Price'))
-    revenue = fields.Float(string='Revenue', help="Set an expected revenue if you consider that every campaign item that has reached this point has generated a certain revenue. You can get revenue statistics in the Reporting section",
+    revenue = fields.Float('Revenue', help="Set an expected revenue if you consider that every campaign item that has reached this point has generated a certain revenue. You can get revenue statistics in the Reporting section",
                            digits_compute=dp.get_precision('Account'))
-    signal = fields.Char(string='Signal',
+    signal = fields.Char('Signal',
                          help='An activity with a signal can be called programmatically. Be careful, the workitem is always created when a signal is sent')
     keep_if_condition_not_met = fields.Boolean(string="Don't Delete Workitems",
                                                help="By activating this option, workitems that aren't executed because the condition is not met are marked as cancelled instead of being deleted.")
@@ -466,8 +455,7 @@ class MarketingCampaignActivity(models.Model):
             raise NotImplementedError(
                 'Method %r is not implemented on %r object.' % (method, self))
 
-        workitem_obj = self.env['marketing.campaign.workitem']
-        workitem = workitem_obj.browse(wi_id)
+        workitem = self.env['marketing.campaign.workitem'].browse(wi_id)
         return action(activity, workitem)
 
 
@@ -506,39 +494,32 @@ class MarketingCampaignTransition(models.Model):
     @api.multi
     def _delta(self):
         assert len(self.ids) == 1
-        transition = self
-        if transition.trigger != 'time':
+        if self.trigger != 'time':
             raise ValueError('Delta is only relevant for timed transition.')
-        return relativedelta(**{str(transition.interval_type): transition.interval_nbr})
+        return relativedelta(**{str(self.interval_type): self.interval_nbr})
 
-    name = fields.Char(compute=_get_name, string='Name', size=128)
+    name = fields.Char('Name', compute='_get_name', size=128)
     activity_from_id = fields.Many2one(
         comodel_name='marketing.campaign.activity', string='Previous Activity', select=1, required=True, ondelete="cascade")
     activity_to_id = fields.Many2one(
         comodel_name='marketing.campaign.activity', string='Next Activity', required=True, ondelete="cascade")
     interval_nbr = fields.Integer(
         string='Interval Value', required=True, default=1)
-    interval_type = fields.Selection(selection=_interval_units, string='Interval Unit',
-                                     required=True, default='days')
+    interval_type = fields.Selection(
+        selection=_interval_units, string='Interval Unit', required=True, default='days')
     trigger = fields.Selection([('auto', 'Automatic'),
                                 ('time', 'Time'),
                                 # fake plastic transition
                                 ('cosmetic', 'Cosmetic'),
-                                ],
-                               string='Trigger', required=True, default='time',
-                               help="How is the destination workitem triggered")
+                                ], 'Trigger', required=True, default='time', help="How is the destination workitem triggered")
 
-    @api.multi
+    @api.constrains('activity_from_id', 'activity_to_id')
     def _check_campaign(self):
         for obj in self:
             if obj.activity_from_id.campaign_id != obj.activity_to_id.campaign_id:
-                return False
+                raise UserError(
+                    _('The To/From Activity of transition must be of the same Campaign .'))
         return True
-
-    _constraints = [
-        (_check_campaign, 'The To/From Activity of transition must be of the same Campaign ',
-         ['activity_from_id,activity_to_id']),
-    ]
 
     _sql_constraints = [
         ('interval_positive', 'CHECK(interval_nbr >= 0)',
@@ -550,7 +531,7 @@ class MarketingCampaignWorkitem(models.Model):
     _name = "marketing.campaign.workitem"
     _description = "Campaign Workitem"
 
-    @api.multi
+    @api.one
     def _res_name_get(self):
         for wi in self:
             if not wi.res_id:
@@ -637,8 +618,7 @@ class MarketingCampaignWorkitem(models.Model):
             return False
 
         activity = self.activity_id
-        proxy = self.env[self.object_id.model]
-        object_id = proxy.browse(self.res_id)
+        object_id = self.env[self.object_id.model].browse(self.res_id)
 
         eval_context = {
             'activity': activity,
@@ -660,8 +640,8 @@ class MarketingCampaignWorkitem(models.Model):
                     return
             result = True
             if campaign_mode in ('manual', 'active'):
-                Activities = self.env['marketing.campaign.activity']
-                result = Activities.process(activity.id, self.id)
+                result = self.env['marketing.campaign.activity'].process(
+                    activity.id, self.id)
 
             values = dict(state='done')
             if not self.date:
@@ -723,11 +703,11 @@ class MarketingCampaignWorkitem(models.Model):
         return True
 
     @api.multi
-    def process_all(self, camp_ids=None):
+    def process_all(self):
         camp_obj = self.env['marketing.campaign']
-        if camp_ids is None:
-            camp_ids = camp_obj.search([('state', '=', 'running')])
-        for camp in camp_obj.browse(camp_ids):
+        if self.ids is None:
+            self.ids = camp_obj.search([('state', '=', 'running')])
+        for camp in camp_obj.browse(self.ids):
             if camp.mode == 'manual':
                 # manual states are not processed automatically
                 continue
@@ -736,20 +716,18 @@ class MarketingCampaignWorkitem(models.Model):
                     ('campaign_id', '=', camp.id), ('state', '=', 'todo'), ('date', '!=', False)]
                 if camp.mode in ('test_realtime', 'active'):
                     domain += [('date', '<=',
-                                time.strftime('%Y-%m-%d %H:%M:%S'))]
-                workitem_ids = self.search(domain)
-                if not workitem_ids.ids:
+                                time.strftime(DT_FMT))]
+                workitem = self.search(domain)
+                if not workitem.ids:
                     break
-                workitem_ids.process()
+                workitem.process()
         return True
 
     @api.multi
     def preview(self, *args):
         res = {}
-        wi_obj = self
-        if wi_obj.activity_id.type == 'email':
-            view_id = self.env['ir.model.data'].get_object_reference(
-                'mail', 'email_template_preview_form')
+        if self.activity_id.type == 'email':
+            view_id = self.env.ref('mail.email_template_preview_form')
             res = {
                 'name': _('Email Preview'),
                 'view_type': 'form',
@@ -757,23 +735,23 @@ class MarketingCampaignWorkitem(models.Model):
                 'res_model': 'email_template.preview',
                 'view_id': False,
                 'context': self.env.context,
-                'views': [(view_id and view_id[1] or 0, 'form')],
+                'views': [(view_id and view_id.id or 0, 'form')],
                 'type': 'ir.actions.act_window',
                 'target': 'new',
                 'nodestroy': True,
                 'context': "{'template_id':%d,'default_res_id':%d}" %
-                (wi_obj.activity_id.email_template_id.id,
-                 wi_obj.res_id)
+                (self.activity_id.email_template_id.id,
+                 self.res_id)
             }
 
-        elif wi_obj.activity_id.type == 'report':
+        elif self.activity_id.type == 'report':
             datas = {
-                'ids': [wi_obj.res_id],
-                'model': wi_obj.object_id.model
+                'ids': [self.res_id],
+                'model': self.object_id.model
             }
             res = {
                 'type': 'ir.actions.report.xml',
-                'report_name': wi_obj.activity_id.report_id.report_name,
+                'report_name': self.activity_id.report_id.report_name,
                 'datas': datas,
             }
         else:
