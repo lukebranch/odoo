@@ -1213,7 +1213,7 @@ var FieldBinaryFile = FieldBinary.extend({
     },
     on_clear: function() {
         this._super.apply(this, arguments);
-        this.$el.find('input').eq(0).val('');
+        this.$el.find('input').val('');
         this.set_filename('');
     }
 });
