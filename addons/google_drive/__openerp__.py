@@ -2,7 +2,7 @@
 {
     'name': 'Google Drive™ integration',
     'version': '0.2',
-    'author': 'Odoo SA',
+    'author': 'Odoo S.A.',
     'website': 'https://www.odoo.com',
     'category': 'Tools',
     'installable': True,

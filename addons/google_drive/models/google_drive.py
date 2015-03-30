@@ -1,17 +1,14 @@
 # -*- coding: utf-8 -*-
 import logging
-
-from openerp import SUPERUSER_ID
-# from openerp.osv import fields, osv
-from openerp import models, fields, api, _
-# from openerp.tools.translate import _
-from openerp.exceptions import UserError
-
 import werkzeug.urls
 import urllib2
 import json
 import re
+
 import openerp
+from openerp import SUPERUSER_ID
+from openerp import fields, models, api, _
+from openerp.exceptions import UserError
 
 _logger = logging.getLogger(__name__)
 
@@ -125,38 +122,33 @@ class config(models.Model):
                     pass
         return res
 
-    @api.one
-    def get_google_drive_config(self, res_model, res_id, context=None):
+    def get_google_drive_config(self, cr, uid, res_model, res_id, context=None):
         '''
-        Function called by the js, when no google doc are yet associated with
-        a record, with the aim to create one. It will first seek for
-         a google.docs.config associated with the model `res_model` to find out
-        what's the template of google doc to copy (this is usefull if you want
-        to start with a non-empty document, a type or a name different than the
-        default values). If no config is associated with the `res_model`, then
-        a blank text document with a default name is created.
+        Function called by the js, when no google doc are yet associated with a record, with the aim to create one. It
+        will first seek for a google.docs.config associated with the model `res_model` to find out what's the template
+        of google doc to copy (this is usefull if you want to start with a non-empty document, a type or a name
+        different than the default values). If no config is associated with the `res_model`, then a blank text document
+        with a default name is created.
           :param res_model: the object for which the google doc is created
-          :param ids: the list of ids of the objects for which the google doc
-           is created. This list is supposed to have a length of 1 element only
-           (batch processing is not supported in the code, though nothing really
-            prevent it)
+          :param ids: the list of ids of the objects for which the google doc is created. This list is supposed to have
+            a length of 1 element only (batch processing is not supported in the code, though nothing really prevent it)
           :return: the config id and config name
         '''
         if not res_id:
             raise UserError(_("Creating google drive may only be done by one at a time."))
         # check if a model is configured with a template
-        config_ids = self.search([('model_id', '=', res_model)])
+        config_ids = self.search(cr, uid, [('model_id', '=', res_model)], context=context)
+        print "+++++++++++++++++++", config_ids
         configs = []
-        for config in self.browse(config_ids):
+        for config in self.browse(cr, uid, config_ids, context=context):
             if config.filter_id:
                 if (config.filter_id.user_id and config.filter_id.user_id.id != uid):
                     #Private
                     continue
-                domain = [('id', 'in', [res_id])] + eval
-                (config.filter_id.domain)
+                domain = [('id', 'in', [res_id])] + eval(config.filter_id.domain)
                 local_context = context and context.copy() or {}
                 local_context.update(eval(config.filter_id.context))
-                google_doc_configs = self.env[config.filter_id.model_id].search(domain, context=local_context)
+                google_doc_configs = self.pool.get(config.filter_id.model_id).search(cr, uid, domain, context=local_context)
                 if google_doc_configs:
                     configs.append({'id': config.id, 'name': config.name})
             else:
