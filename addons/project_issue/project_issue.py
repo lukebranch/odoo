@@ -524,7 +524,7 @@ class account_analytic_account(osv.Model):
         return res
 
     def onchange_use_issues_or_task(self, cr, uid, ids, use_issues, use_tasks, context=None):
-        res= {'value': {'is_project': False}}
+        res = {'value': {'is_project': False}}
         if (use_issues or use_tasks):
             res['value']['is_project'] = True
         return res
