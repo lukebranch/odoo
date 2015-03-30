@@ -95,3 +95,12 @@ class account_config_settings(osv.osv_memory):
         if not module_purchase_analytic_plans:
             return {}
         return {'value': {'group_analytic_account_for_purchases': module_purchase_analytic_plans}}
+
+
+class stock_config_settings(osv.osv_memory):
+    _inherit = 'stock.config.settings'
+
+    def onchange_landed_costs(self, cr, uid, ids, module_landed_costs, context=None):
+        if module_landed_costs:
+            return {'value': {'group_costing_method': True, 'group_stock_inventory_valuation': True}}
+        return {}
