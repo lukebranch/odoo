@@ -11,21 +11,6 @@ class CampaignAnalysis(models.Model):
     _auto = False
     _rec_name = 'date'
 
-    def _total_cost(self, field_name, arg):
-        """
-            @param cr: the current row, from the database cursor,
-            @param uid: the current user’s ID for security checks,
-            @param ids: List of case and section Data’s IDs
-            @param context: A standard dictionary for contextual values
-        """
-        result = {}
-        for ca_obj in self:
-            wi_ids = self.env['marketing.campaign.workitem'].search(
-                [('segment_id.campaign_id', '=', ca_obj.campaign_id.id)])
-            total_cost = ca_obj.activity_id.variable_cost + \
-                ((ca_obj.campaign_id.fixed_cost or 1.00) / len(wi_ids))
-            result[ca_obj.id] = total_cost
-        return result
     res_id = fields.Integer(string='Resource', readonly=True)
     year = fields.Char(string='Execution Year', size=4, readonly=True)
     month = fields.Selection([('01', 'January'), ('02', 'February'),
@@ -47,8 +32,6 @@ class CampaignAnalysis(models.Model):
         comodel_name='res.partner', string='Partner', readonly=True)
     country_id = fields.Many2one(
         related='partner_id.country_id', relation='res.country', string='Country')
-    total_cost = fields.Float(
-        compute='_total_cost', string='Cost', digits_compute=dp.get_precision('Account'))
     revenue = fields.Float(
         'Revenue', readonly=True, digits_compute=dp.get_precision('Account'))
     count = fields.Integer(string='# of Actions', readonly=True)
