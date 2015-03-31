@@ -34,7 +34,7 @@ class CampaignAnalysis(models.Model):
                               ('07', 'July'), ('08',
                                                'August'), ('09', 'September'),
                               ('10', 'October'), ('11', 'November'), ('12', 'December')],
-                             'Execution Month', readonly=True)
+                             string='Execution Month', readonly=True)
     day = fields.Char(string='Execution Day', size=10, readonly=True)
     date = fields.Date(string='Execution Date', readonly=True, select=True)
     campaign_id = fields.Many2one(
@@ -50,7 +50,7 @@ class CampaignAnalysis(models.Model):
     total_cost = fields.Float(
         compute='_total_cost', string='Cost', digits_compute=dp.get_precision('Account'))
     revenue = fields.Float(
-        string='Revenue', readonly=True, digits_compute=dp.get_precision('Account'))
+        'Revenue', readonly=True, digits_compute=dp.get_precision('Account'))
     count = fields.Integer(string='# of Actions', readonly=True)
     state = fields.Selection([('todo', 'To Do'),
                               ('exception',
