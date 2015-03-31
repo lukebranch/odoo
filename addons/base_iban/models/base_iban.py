@@ -90,21 +90,11 @@ def _pretty_iban(iban_str):
 class ResPartnerBank(models.Model):
     _inherit = "res.partner.bank"
 
-    @api.model
-    def create(self, vals):
-        # overwrite to format the iban number correctly
-        if vals.get('state') == 'iban' and vals.get('acc_number'):
-            vals['acc_number'] = _format_iban(vals['acc_number'])
-            vals['acc_number'] = _pretty_iban(vals['acc_number'])
-        return super(ResPartnerBank, self).create(vals)
-
-    @api.multi
-    def write(self, vals):
-        # overwrite to format the iban number correctly
-        if vals.get('state') == 'iban' and vals.get('acc_number'):
-            vals['acc_number'] = _format_iban(vals['acc_number'])
-            vals['acc_number'] = _pretty_iban(vals['acc_number'])
-        return super(ResPartnerBank, self).write(vals)
+    @api.onchange('state', 'acc_number')
+    def onchange_state(self):
+        if self.state == 'iban':
+            self.acc_number = _format_iban(self.acc_number)
+            self.acc_number = _pretty_iban(self.acc_number)
 
     def is_iban_valid(self, iban):
         """ Check if IBAN is valid or not
