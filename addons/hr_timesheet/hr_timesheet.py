@@ -28,10 +28,12 @@ class hr_employee(models.Model):
 
     @api.model    
     def _get_default_analytic_journal(self):
+        #We need the "or ..." because we need an empty recordset of the right type, 'False' is not enough.
         return self.env.ref('hr_timesheet.analytic_journal', raise_if_not_found=False) or self.env['account.analytic.journal']
 
     @api.model
     def _get_default_employee_product(self):
+        #We need the "or ..." because we need an empty recordset of the right type, 'False' is not enough.
         return self.env.ref('product.product_product_consultant', raise_if_not_found=False) or self.env['account.analytic.journal']
 
     product_id = fields.Many2one('product.product', 'Product', help="If you want to reinvoice working time of employees, link this employee to a service to determinate the cost price of the job.", default=_get_default_employee_product)
@@ -124,10 +126,10 @@ class account_analytic_line(models.Model):
 
     @api.onchange('user_id')
     def V8_on_change_user_id(self):
-            new_values = self.on_change_user_id(self.user_id.id, self.is_timesheet)
-            if new_values.get("value", {}):
-                for key, value in new_values.iteritems():
-                    setattr(self,key,value)
+        new_values = self.on_change_user_id(self.user_id.id, self.is_timesheet)
+        if new_values.get("value", {}):
+            for key, value in new_values["value"].iteritems():
+                setattr(self,key,value)
 
     def on_change_user_id(self, cr, uid, ids, user_id, is_timesheet=False, context=None):
         if not is_timesheet or not user_id:
