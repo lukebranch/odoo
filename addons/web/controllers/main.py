@@ -684,12 +684,27 @@ class Database(http.Controller):
             'debug': request.debug,
         })
 
+    @http.route('/web/database/manager_old', type='http', auth="none")
+    def manager_old(self, **kw):
+        # TODO: migrate the webclient's database manager to server side views
+        request.session.logout()
+        return env.get_template("database_old_manager.html").render({
+            'modules': simplejson.dumps(module_boot()),
+        })
+
     @http.route('/web/database/manager', type='http', auth="none")
     def manager(self, **kw):
         # TODO: migrate the webclient's database manager to server side views
-        request.session.logout()
+        # request.session.logout()
+        # return env.get_template("database_manager.html").render({
+        #     'modules': simplejson.dumps(module_boot()),
+        # })
+        try:
+            dbs = http.db_list()
+        except openerp.exceptions.AccessDenied:
+            dbs = False
         return env.get_template("database_manager.html").render({
-            'modules': simplejson.dumps(module_boot()),
+            'databases': dbs,
         })
 
     @http.route('/web/database/get_list', type='json', auth="none")
@@ -727,15 +742,20 @@ class Database(http.Controller):
 
         return request.session.proxy("db").duplicate_database(*duplicate_attrs)
 
-    @http.route('/web/database/drop', type='json', auth="none")
+    @http.route('/web/database/drop', type='http', auth="none")
     def drop(self, fields):
+        import pudb
+        pudb.set_trace()
         password, db = operator.itemgetter(
-            'drop_pwd', 'drop_db')(
-                dict(map(operator.itemgetter('name', 'value'), fields)))
+           'drop_pwd', 'drop_db')(
+               dict(map(operator.itemgetter('name', 'value'), fields)))
+        
+        # password = kwargs['pwd']
+        # db = kwargs['db']
 
         try:
             if request.session.proxy("db").drop(password, db):
-                return True
+                return http.local_redirect('/web/database/manager')
             else:
                 return False
         except openerp.exceptions.AccessDenied:
