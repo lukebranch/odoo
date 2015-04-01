@@ -9,6 +9,7 @@ openerp.project_timesheet = function(openerp) {
 			this.session = new openerp.Session();
             this.session.session_reload().then(function(){
                 if(self.session.uid !== null){
+                    alert('You do have a session!');
                     // Set demo data in local storage. TO REMOVE LATER
                     var timestamp = (new Date()).getTime();
                     var test_data = [
@@ -35,9 +36,9 @@ openerp.project_timesheet = function(openerp) {
                         },
                     ];
                     // Comment or uncomment following lines to reset demo data
-                    if(localStorage.getItem("pt_data") === null){
+                    //if(localStorage.getItem("pt_data") === null){
                        localStorage.setItem("pt_data", JSON.stringify(test_data));
-                    }
+                    //}
 
                 	// Load (demo) data from local storage
                 	self.stored_data = JSON.parse(localStorage.getItem("pt_data"));
@@ -45,12 +46,18 @@ openerp.project_timesheet = function(openerp) {
                  	self.data = self.user_local_data.data;
                 }
                 else{
+                    alert("No session detected !");
                     //if default session, load it, else create new one?
                 }
 
              	//Load templates for widgets
             	self.load_template().then(function(){
 					self.build_widgets();
+                    if(self.session.uid !== null){
+                        self.sync_screen.sync(function(){
+                            self.activities_screen.renderElement();
+                        });
+                    }
 				});
             });
 		},
@@ -98,7 +105,7 @@ openerp.project_timesheet = function(openerp) {
             "click .pt_burger_menu_close" : "on_close_menu_by_click",
             "click .pt_drawer_menu_zone" : "on_close_menu_by_click",
             "touchstart .pt_drawer_menu,.pt_drawer_menu_zone" : "on_menu_touch_start",
-            "touchend .pt_drawer_menu,.pt_drawer_menu_zone" : "on_menu_touch_end",
+            "touchmove .pt_drawer_menu,.pt_drawer_menu_zone" : "on_touchmove",
             "click div.pt_activities_screen" : "on_screen_touch_start"
         },
 		init: function(parent){
@@ -144,20 +151,35 @@ openerp.project_timesheet = function(openerp) {
                 this.hide_drawer_menu();
             }
         },
-        on_menu_touch_start: function(event){
-            event.preventDefault();
-            var touch = event.originalEvent.touches[0];
-            this.initial_touch_X = touch.pageX;
-        },
-        on_menu_touch_end: function(event){
-            event.preventDefault();
-            var touch = event.originalEvent.touches[0];
-            var final_touch_X = touch.pageX;
-            var deltaX = this.initial_touch_X - final_touch_X;
-            if (deltaX > 5){
-                this.hide_drawer_menu();
+        on_touchmove: function(event){
+            var touch = undefined;
+            if (event.originalEvent.touches && event.originalEvent.touches[0]){
+                touch = event.originalEvent.touches[0];
             }
-            this.initial_touch_X = undefined;
+            else if (event.originalEvent.changedTouches && event.originalEvent.changedTouches[0]){
+                touch = event.originalEvent.changedTouches[0];
+            }
+            if(touch){
+                var final_touch_X = touch.pageX;
+                var deltaX = this.initial_touch_X - final_touch_X;
+                if (deltaX > 5){
+                    this.hide_drawer_menu();
+                }
+                this.initial_touch_X = undefined;
+            }
+
+        },
+        on_menu_touch_start: function(event){
+            console.log("touchstart")
+            var touch;
+            if (event.originalEvent.touches && event.originalEvent.touches[0]){
+                touch = event.originalEvent.touches[0];
+                this.initial_touch_X = touch.pageX;
+            }
+            else if (event.originalEvent.changedTouches && event.originalEvent.changedTouches[0]){
+                touch = event.originalEvent.changedTouches[0];
+                this.initial_touch_X = touch.pageX;
+            }
         },
         hide_drawer_menu: function(){
             var self = this;
@@ -731,6 +753,7 @@ openerp.project_timesheet = function(openerp) {
     		self.activity.task_id = selected_task.id;
         },
         on_change_project: function(event){
+            var self = this;
         	var selected_project = {
     			name : event.added.name,
     			id : event.added.id
@@ -744,6 +767,8 @@ openerp.project_timesheet = function(openerp) {
     		self.activity.project_id = selected_project.id;
             // If the project has been changed, we reset the task.
             self.activity.task_id = undefined;
+            self.renderElement();
+            self.initialize_project_selector();
             self.initialize_task_selector();
         },
         on_change_duration: function(event){
@@ -818,7 +843,7 @@ openerp.project_timesheet = function(openerp) {
                 project_id: undefined,
                 task_id: undefined,
                 desc:"/",
-                unit_amount: undefined,
+                unit_amount: 0,
                 date: (openerp.date_to_str(new Date()))
             };
 
@@ -854,7 +879,7 @@ openerp.project_timesheet = function(openerp) {
             this.sync();
             this.renderElement();
         },
-        sync: function(){
+        sync: function(callback){
             var self = this;
             var parent = this.getParent();
             var data = parent.data;
@@ -976,7 +1001,6 @@ openerp.project_timesheet = function(openerp) {
                             data.account_analytic_lines.splice(_.indexOf(data.account_analytic_lines, aal_to_remove), 1);
                         });
                     }
-                    self.renderElement();
                     // Set to_sync to false for further syncs.
                     _.each(data.account_analytic_lines, function(aal){
                         aal.to_sync = false;
@@ -988,6 +1012,7 @@ openerp.project_timesheet = function(openerp) {
                         task.to_sync = false;
                     });
                     parent.update_localStorage();
+                    callback();
                 });
             });   
         }

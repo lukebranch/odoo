@@ -265,11 +265,13 @@ class account_analytic_line(osv.osv):
         project_ids_list = list(set([int(tasks['datas'][x][2]) for x in range(len(tasks['datas'])) if len(tasks['datas'][x][2]) > 0]))
 
         #Projects
-        projects_ids = self.pool.get("project.project").search(cr, uid, [ '|' 
+        projects_ids = self.pool.get("project.project").search(cr, uid, [ '&'
+                                    , '|' 
                                     , '|'
                                     , ("id", "in" , project_ids_list) 
                                     , ("members", '=', uid)
-                                    , ("analytic_account_id" , "in" , account_ids_list) ])
+                                    , ("analytic_account_id" , "in" , account_ids_list)
+                                    , ('invoice_on_timesheets','=', True) ])
 
         projects_fields = ["id", "name", "analytic_account_id.id"]
         projects = self.pool.get("project.project").export_data(cr, uid, projects_ids, projects_fields)
