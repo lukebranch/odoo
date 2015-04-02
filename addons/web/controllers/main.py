@@ -701,10 +701,18 @@ class Database(http.Controller):
         # })
         try:
             dbs = http.db_list()
+
         except openerp.exceptions.AccessDenied:
             dbs = False
+        try:
+            list_lang = request.session.proxy("db").list_lang() or []
+        except Exception, e:
+            return {"error": e, "title": _("Languages")}
         return env.get_template("database_manager.html").render({
             'databases': dbs,
+            'debug': request.debug,
+            'list_lang': list_lang,
+            'error': kw['error'] if 'error' in kw else False,
         })
 
     @http.route('/web/database/get_list', type='json', auth="none")
@@ -718,17 +726,16 @@ class Database(http.Controller):
                 return [monodb]
             raise
 
-    @http.route('/web/database/create', type='json', auth="none")
-    def create(self, fields):
-        params = dict(map(operator.itemgetter('name', 'value'), fields))
+    @http.route('/web/database/create', type='http', auth="none")
+    def create(self, **post):
         db_created = request.session.proxy("db").create_database(
-            params['super_admin_pwd'],
-            params['db_name'],
-            bool(params.get('demo_data')),
-            params['db_lang'],
-            params['create_admin_pwd'])
+            post.get('master-pwd'),
+            post.get('db-name'),
+            bool(post.get('demo-data')),
+            post.get('lang'),
+            post.get('db-pwd'))
         if db_created:
-            request.session.authenticate(params['db_name'], 'admin', params['create_admin_pwd'])
+            request.session.authenticate(post.get('db-name'), 'admin', post.get('db-pwd'))
         return db_created
 
     @http.route('/web/database/duplicate', type='json', auth="none")
@@ -743,25 +750,18 @@ class Database(http.Controller):
         return request.session.proxy("db").duplicate_database(*duplicate_attrs)
 
     @http.route('/web/database/drop', type='http', auth="none")
-    def drop(self, fields):
-        import pudb
-        pudb.set_trace()
-        password, db = operator.itemgetter(
-           'drop_pwd', 'drop_db')(
-               dict(map(operator.itemgetter('name', 'value'), fields)))
-        
-        # password = kwargs['pwd']
-        # db = kwargs['db']
-
+    def drop(self, **post):
         try:
+            password = post.get('pwd')
+            db = post.get('db')
             if request.session.proxy("db").drop(password, db):
                 return http.local_redirect('/web/database/manager')
             else:
-                return False
+                return http.local_redirect('/web/database/manager',{'error':'unable_to_drop'})
         except openerp.exceptions.AccessDenied:
-            return {'error': 'AccessDenied', 'title': 'Drop Database'}
+            return http.local_redirect('/web/database/manager',{'error':'acces_denied'})
         except Exception:
-            return {'error': _('Could not drop database !'), 'title': _('Drop Database')}
+            return http.local_redirect('/web/database/manager',{'error':'unable_to_drop'})
 
     @http.route('/web/database/backup', type='http', auth="none")
     def backup(self, backup_db, backup_pwd, token, backup_format='zip'):

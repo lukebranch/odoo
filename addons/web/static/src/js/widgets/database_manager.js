@@ -135,7 +135,6 @@ var DataBaseManager = Widget.extend({
         if (!db || !confirm(_.str.sprintf(_t("Do you really want to delete the database: %s ?"), db))) {
             return;
         }
-        debugger;
         self.rpc("/web/database/drop", {'fields': fields}).done(function(result) {
             if (result.error) {
                 self.display_error(result);

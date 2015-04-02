@@ -14,12 +14,7 @@
         $(function() {
             $('.modal-pwd-admin').on('show.bs.modal', function(event){
                 var db = $(event.relatedTarget).data('db');
-                var action = $(event.relatedTarget).data('action');
                 $(this).find('#db').val(db);
-                if(action === "drop"){
-                    $(this).find('.modal-pwd-admin-title').text("Drop the database");       
-                    $(this).find('#form-pwd-admin').attr('action','/web/database/drop');
-                }
             });
         });
     </script>
@@ -33,10 +28,14 @@
             </div>
 
             <hr/>
-
+            {% if error == "acces_denied" %}
+                <div><span class="text-danger">Wrong password or you don't have the authorization</span></div>
+            {% elif error == "unable_to_drop"%}
+                <div><span class="text-danger">Unable to drop the database</span></div>
+            {% endif %}
+            {% if databases %}
             <div class="form-group field-db">
                 <label for="db" class="control-label">Manage database</label>
-                {% if databases %}
                     <ul class="list-group">
                         {% for db in databases %}
                             <li class="list-group-item">
@@ -45,18 +44,18 @@
                                     <a href="/web?db={{ db }}">
                                         <i class="fa fa-sign-in fa-fw"></i>
                                     </a>
-                                    <a href="#" data-toggle="modal" data-target=".modal-pwd-admin" data-action="drop" data-db="{{ db }}">
+                                    <a href="#" data-toggle="modal" data-target=".modal-pwd-admin" data-db="{{ db }}">
                                         <i class="fa fa-trash fa-fw"></i> 
                                     </a>
                                 </div>
                             </li>
                         {% endfor %}
                     </ul>
-                {% else %}
-                    <input type="text" name="db" id="db" class="form-control" required="required" autofocus="autofocus"/>
-                {% endif %}
             </div>
-
+            {% endif %}
+            <button type="button" data-toggle="modal" data-target=".modal-create-db" class="btn btn-primary create-database-btn" autocomplete="off">
+                Create Database
+            </button>
             {% if debug %}
                 <input type="hidden" name="debug" value=""/>
             {% endif %}
@@ -76,31 +75,88 @@
 
 
 <!-- Modal -->
-<div class="modal fade modal-pwd-admin" tabindex="-1" role="dialog">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h4 class="modal-title modal-pwd-admin-title"></h4>
+    <div class="modal fade modal-pwd-admin" role="dialog">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title">Drop the database</h4>
+          </div>
+          <form style="margin:10px;" id="form-pwd-admin" role="form" action="/web/database/drop" method="post">
+              <div class="modal-body">
+                    <div class="form-group">
+                        <label for="database" class="control-label">Database</label>
+                        <input type="text" name="db" id="db" class="form-control" required="required" readonly/>
+                    </div>
+                    <div class="form-group">
+                        <label for="password" class="control-label">Password</label>
+                        <input type="password" name="pwd" id="pwd" class="form-control" required="required" autofocus="autofocus"/>
+                    </div>
+              </div>
+              <div class="modal-footer">
+                <input type="submit" value="Continue" class="btn btn-primary pull-right"/>
+              </div>
+          </form>
+        </div>
       </div>
-      <form style="margin:10px;" id="form-pwd-admin" role="form" action="" method="post">
-      <div class="modal-body">
-            <div class="form-group">
-                <label for="database" class="control-label">Database</label>
-                <input type="text" name="db" id="db" class="form-control" required="required" readonly/>
-            </div>
-            <div class="form-group">
-                <label for="password" class="control-label">Password</label>
-                <input type="password" name="pwd" id="pwd" class="form-control" required="required" autofocus="autofocus"/>
-            </div>
-      </div>
-      <div class="modal-footer">
-        <input type="submit" value="Continue" class="btn btn-primary pull-right"/>
-      </div>
-      </form>
     </div>
-  </div>
-</div>
+
+    <div class="modal fade modal-create-db" role="dialog">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title"></h4>
+          </div>
+          <form style="margin:10px;" id="form-pwd-admin" role="form" action="/web/database/create" method="post">
+              <div class="modal-body">
+                    <div class="form-group">
+                        <label for="master-pwd" class="control-label">Master Password</label>
+                        <input type="password" name="master-pwd" id="master-pwd" class="form-control" required="required" autofocus="autofocus"/>
+                    </div>
+                    <div class="form-group">
+                        <label for="db-name" class="control-label">Database Name</label>
+                        <input type="text" name="db-name" id="db-name" class="form-control" required="required" />
+                    </div>
+                    <div class="form-group">
+                        <div class="checkbox">
+                            <label>
+                                <input id="demo-data" type="checkbox" class="pull-right">
+                                <span>Load demonstration data</span>
+                                <span class="text-muted"> (Check this box to evaluate Odoo)</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-group field-db">
+                        <label for="lang" class="control-label">Default Language</label>
+                            <select name="lang" id="lang" class="form-control" required="required">
+                                <option></option>
+                                {% for lang in list_lang %}
+                                    {% if lang[0] == "en_US" %}
+                                        <option selected="selected" value="{{ lang[0] }}">{{ lang[1] }}</option>
+                                    {% else %}
+                                        <option value="{{ lang[0] }}">{{ lang[1] }}</option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="db-pwd" class="control-label">Choose a Password</label>
+                        <input type="password" name="db-pwd" id="db-pwd" class="form-control" required="required"/>
+                    </div>
+                    <div class="form-group">
+                        <label for="confirm-pwd" class="control-label">Confirm Password</label>
+                        <input type="password" name="confirm-pwd" id="confirm-pwd" class="form-control" data-match="#db-pwd" required="required" data-match-error="Doesn't match with the database password"/>
+                        <div class="help-block with-errors"></div>
+                    </div>
+              </div>
+              <div class="modal-footer">
+                <input type="submit" value="Continue" class="btn btn-primary pull-right"/>
+              </div>
+          </form>
+        </div>
+      </div>
+    </div>
 </body>
 </html>
 
