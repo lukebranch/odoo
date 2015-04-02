@@ -364,8 +364,6 @@ class RegistryManager(object):
         The (possibly) previous registry for that database name is discarded.
 
         """
-        import pudb
-        pudb.set_trace()
         import openerp.modules
         with cls.lock():
             with openerp.api.Environment.manage():

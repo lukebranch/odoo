@@ -16,6 +16,26 @@
                 var db = $(event.relatedTarget).data('db');
                 $(this).find('#db').val(db);
             });
+            $('.modal-duplicate-db').on('show.bs.modal', function(event){
+                var db = $(event.relatedTarget).data('db');
+                $(this).find('#db-name').val(db);
+            });
+            $('.modal-backup-db').on('show.bs.modal', function(event){
+                var db = $(event.relatedTarget).data('db');
+                $(this).find('#db-name').val(db);
+            });
+            $("#form-create-db").submit(function(){
+                if($(this).find('#db-pwd').val() !== $(this).find('#confirm-pwd').val()){
+                    event.preventDefault();
+                    $(this).find('#confirm-pwd')
+                        .after('<span></span>')
+                        .addClass("text-danger")
+                        .html("The confirmation password doesn't match the password");
+                }
+            });
+            $("#form-backup-db").submit(function(){
+                $('.modal-backup-db').modal('hide');
+            });
         });
     </script>
 <body class="oe_single_form">
@@ -32,9 +52,13 @@
                 <div><span class="text-danger">Wrong password or you don't have the authorization</span></div>
             {% elif error == "unable_to_drop"%}
                 <div><span class="text-danger">Unable to drop the database</span></div>
+            {% elif error == "unable_to_create"%}
+                <div><span class="text-danger">Unable to create the database</span></div>
+            {% elif error == "unable_to_backup"%}
+                <div><span class="text-danger">Unable to backup the database</span></div>
             {% endif %}
             {% if databases %}
-            <div class="form-group field-db">
+            <div class="form-group">
                 <label for="db" class="control-label">Manage database</label>
                     <ul class="list-group">
                         {% for db in databases %}
@@ -43,6 +67,12 @@
                                 <div class="pull-right">
                                     <a href="/web?db={{ db }}">
                                         <i class="fa fa-sign-in fa-fw"></i>
+                                    </a>
+                                    <a href="#" data-toggle="modal" data-target=".modal-duplicate-db" data-db="{{ db }}">
+                                        <i class="fa fa-files-o fa-fw"></i>
+                                    </a>
+                                    <a href="#" data-toggle="modal" data-target=".modal-backup-db" data-db="{{ db }}">
+                                        <i class="fa fa-floppy-o fa-fw"></i>
                                     </a>
                                     <a href="#" data-toggle="modal" data-target=".modal-pwd-admin" data-db="{{ db }}">
                                         <i class="fa fa-trash fa-fw"></i> 
@@ -56,6 +86,9 @@
             <button type="button" data-toggle="modal" data-target=".modal-create-db" class="btn btn-primary create-database-btn" autocomplete="off">
                 Create Database
             </button>
+            <button type="button" data-toggle="modal" data-target=".modal-restore-db" class="btn btn-primary restore-database-btn" autocomplete="off">
+                Restore Database
+            </button>
             {% if debug %}
                 <input type="hidden" name="debug" value=""/>
             {% endif %}
@@ -66,7 +99,6 @@
             </noscript>
 
             <div class="oe_single_form_footer">
-                <a class="oe_login_manage_db" href="/web/database/manager_old{% if debug %}?debug{% endif %}">Manage Databases</a>
                 <a href="http://www.openerp.com" target="_blank">Powered by <span>OpenERP</span></a>
             </div>
         </form>
@@ -80,16 +112,16 @@
         <div class="modal-content">
           <div class="modal-header">
             <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-            <h4 class="modal-title">Drop the database</h4>
+            <h4 class="modal-title">Drop Database</h4>
           </div>
           <form style="margin:10px;" id="form-pwd-admin" role="form" action="/web/database/drop" method="post">
               <div class="modal-body">
                     <div class="form-group">
-                        <label for="database" class="control-label">Database</label>
+                        <label for="db" class="control-label">Database</label>
                         <input type="text" name="db" id="db" class="form-control" required="required" readonly/>
                     </div>
                     <div class="form-group">
-                        <label for="password" class="control-label">Password</label>
+                        <label for="pwd" class="control-label">Master Password</label>
                         <input type="password" name="pwd" id="pwd" class="form-control" required="required" autofocus="autofocus"/>
                     </div>
               </div>
@@ -106,9 +138,9 @@
         <div class="modal-content">
           <div class="modal-header">
             <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-            <h4 class="modal-title"></h4>
+            <h4 class="modal-title">Create Database</h4>
           </div>
-          <form style="margin:10px;" id="form-pwd-admin" role="form" action="/web/database/create" method="post">
+          <form style="margin:10px;" id="form-create-db" role="form" action="/web/database/create" method="post">
               <div class="modal-body">
                     <div class="form-group">
                         <label for="master-pwd" class="control-label">Master Password</label>
@@ -127,7 +159,7 @@
                             </label>
                         </div>
                     </div>
-                    <div class="form-group field-db">
+                    <div class="form-group">
                         <label for="lang" class="control-label">Default Language</label>
                             <select name="lang" id="lang" class="form-control" required="required">
                                 <option></option>
@@ -146,9 +178,109 @@
                     </div>
                     <div class="form-group">
                         <label for="confirm-pwd" class="control-label">Confirm Password</label>
-                        <input type="password" name="confirm-pwd" id="confirm-pwd" class="form-control" data-match="#db-pwd" required="required" data-match-error="Doesn't match with the database password"/>
-                        <div class="help-block with-errors"></div>
+                        <input type="password" name="confirm-pwd" id="confirm-pwd" class="form-control" required="required"/>
                     </div>
+              </div>
+              <div class="modal-footer">
+                <input type="submit" value="Continue" class="btn btn-primary pull-right"/>
+              </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    <div class="modal fade modal-duplicate-db" role="dialog">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title">Duplicate Database</h4>
+          </div>
+          <form style="margin:10px;" id="form-duplicate-db" role="form" action="/web/database/duplicate" method="post">
+              <div class="modal-body">
+                    <div class="form-group">
+                        <label for="db-name" class="control-label">Database Name</label>
+                        <input type="text" name="db-name" id="db-name" class="form-control" required="required" readonly/>
+                    </div>
+                    <div class="form-group">
+                        <label for="master-pwd" class="control-label">Master Password</label>
+                        <input type="password" name="master-pwd" id="master-pwd" class="form-control" required="required" autofocus="autofocus"/>
+                    </div>
+                    <div class="form-group">
+                        <label for="database" class="control-label">Database New Name</label>
+                        <input type="text" name="db-new-name" id="db-new-name" class="form-control" required="required"/>
+                    </div>
+              </div>
+              <div class="modal-footer">
+                <input type="submit" value="Continue" class="btn btn-primary pull-right"/>
+              </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal fade modal-backup-db" role="dialog">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title">Backup Database</h4>
+          </div>
+          <form style="margin:10px;" id="form-backup-db" role="form" action="/web/database/backup" method="post">
+              <div class="modal-body">
+                    <div class="form-group">
+                        <label for="db-name" class="control-label">Database Name</label>
+                        <input type="text" name="db-name" id="db-name" class="form-control" required="required" readonly/>
+                    </div>
+                    <div class="form-group">
+                        <label for="master-pwd" class="control-label">Master Password</label>
+                        <input type="password" name="master-pwd" id="master-pwd" class="form-control" required="required" autofocus="autofocus"/>
+                    </div>
+                    <div class="form-group">
+                        <label for="backup-format" class="control-label">Backup Format</label>
+                        <select name="backup-format" id="backup-format" class="form-control" required="required">
+                            <option value="zip">zip (includes filestore)</option>
+                            <option value="dump">pg_dump custom format (without filestore)</option>
+                        </select>
+                    </div>
+                    <input type="hidden" name="token" id="token"/>
+              </div>
+              <div class="modal-footer">
+                <input type="submit" value="Continue" class="btn btn-primary pull-right"/>
+              </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal fade modal-restore-db" role="dialog">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title">Restore Database</h4>
+          </div>
+          <form style="margin:10px;" id="form-restore-db" role="form" action="/web/database/restore" method="post">
+              <div class="modal-body">
+                    <div class="form-group">
+                        <label for="master-pwd" class="control-label">Master Password</label>
+                        <input type="password" name="master-pwd" id="master-pwd" class="form-control" required="required" autofocus="autofocus"/>
+                    </div>
+                    <div class="form-group">
+                        <label for="db-file" class="control-label">File</label>
+                        <input type="file" name="db-file" class="required"/>
+                    </div>
+                    <div class="form-group">
+                        <label for="db-new-name" class="control-label">New Database Name</label>
+                        <input type="text" name="db-new-name" id="db-new-name" class="form-control" required="required"/>
+                    </div>
+                    <div class="form-group">
+                        <label for="restore-mode" class="control-label">Backup Format</label>
+                        <select name="restore-mode" id="restore-mode" class="form-control" required="required">
+                            <option value="restore">Backup Restore</option>
+                            <option value="copy">Copy of an existing database</option>
+                        </select>
+                    </div>
+                    <input type="hidden" name="token" id="token"/>
               </div>
               <div class="modal-footer">
                 <input type="submit" value="Continue" class="btn btn-primary pull-right"/>

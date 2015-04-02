@@ -695,10 +695,6 @@ class Database(http.Controller):
     @http.route('/web/database/manager', type='http', auth="none")
     def manager(self, **kw):
         # TODO: migrate the webclient's database manager to server side views
-        # request.session.logout()
-        # return env.get_template("database_manager.html").render({
-        #     'modules': simplejson.dumps(module_boot()),
-        # })
         try:
             dbs = http.db_list()
 
@@ -736,18 +732,18 @@ class Database(http.Controller):
             post.get('db-pwd'))
         if db_created:
             request.session.authenticate(post.get('db-name'), 'admin', post.get('db-pwd'))
-        return db_created
+            return http.local_redirect('/web/')
+        else:
+            return http.local_redirect('/web/database/manager',{'error':'unable_to_create'})
 
-    @http.route('/web/database/duplicate', type='json', auth="none")
-    def duplicate(self, fields):
-        params = dict(map(operator.itemgetter('name', 'value'), fields))
-        duplicate_attrs = (
-            params['super_admin_pwd'],
-            params['db_original_name'],
-            params['db_name'],
-        )
 
-        return request.session.proxy("db").duplicate_database(*duplicate_attrs)
+    @http.route('/web/database/duplicate', type='http', auth="none")
+    def duplicate(self, **post):
+        request.session.proxy("db").duplicate_database(
+            post.get('master-pwd'),
+            post.get('db-name'),
+            post.get('db-new-name'))
+        return http.local_redirect('/web/database/manager')
 
     @http.route('/web/database/drop', type='http', auth="none")
     def drop(self, **post):
@@ -764,7 +760,11 @@ class Database(http.Controller):
             return http.local_redirect('/web/database/manager',{'error':'unable_to_drop'})
 
     @http.route('/web/database/backup', type='http', auth="none")
-    def backup(self, backup_db, backup_pwd, token, backup_format='zip'):
+    def backup(self, **post):
+        backup_db = post.get('db-name')
+        backup_pwd = post.get('master-pwd')
+        token = post.get('token')
+        backup_format = post.get('backup-format') if 'backup-format' in post else 'zip'
         try:
             openerp.service.security.check_super(backup_pwd)
             ts = datetime.datetime.utcnow().strftime("%Y-%m-%d_%H-%M-%S")
@@ -779,10 +779,16 @@ class Database(http.Controller):
             return response
         except Exception, e:
             _logger.exception('Database.backup')
-            return simplejson.dumps([[],[{'error': openerp.tools.ustr(e), 'title': _('Backup Database')}]])
+            return http.local_redirect('/web/database/manager',{'error':'unable_to_backup'})
 
     @http.route('/web/database/restore', type='http', auth="none")
-    def restore(self, db_file, restore_pwd, new_db, mode):
+    def restore(self, **post):
+        db_file = post.get('db-file')
+        restore_pwd = post.get('master-pwd')
+        new_db = post.get('db-new-name')
+        mode = post.get('restore-mode')
+        import pudb
+        pudb.set_trace()
         try:
             copy = mode == 'copy'
             data = base64.b64encode(db_file.read())
