@@ -255,7 +255,7 @@ class hr_timesheet_sheet(osv.osv):
                 raise UserError(_('You cannot delete a timesheet which have attendance entries.'))
 
         toremove = []
-        analytic_timesheet = self.pool.get('hr.analytic.timesheet')
+        analytic_timesheet = self.pool.get('account.analytic.line')
         for sheet in self.browse(cr, uid, ids, context=context):
             for timesheet in sheet.timesheet_ids:
                 toremove.append(timesheet.id)

@@ -102,6 +102,12 @@ class account_analytic_line(osv.osv):
         return super(account_analytic_line,self).write(cr, uid, ids, vals,
                 context=context)
 
+    def unlink(self, cr, uid, ids, context=None):
+        for line in self.browse(cr, uid, ids):
+            if line.invoice_id.id:
+                raise UserError(_('You cannot delete an invoiced analytic line!'))
+        return super(account_analytic_line,self).unlink(cr, uid, ids, context)
+
     def _check_inv(self, cr, uid, ids, vals):
         select = ids
         if isinstance(select, (int, long)):

@@ -47,10 +47,10 @@ class account_analytic_line(models.Model):
     def default_get(self,cr,uid,fields,context=None):
         values = super(account_analytic_line, self).default_get(cr, uid, fields, context=context)
         if values.get('is_timesheet'):
-            if 'product_uom_id' in fields:
-                values['product_uom_id'] = self._get_employee_unit(cr, uid, context=context)
             if 'product_id' in fields:    
                 values['product_id'] = self._get_employee_product(cr, uid, context=context)
+            if 'product_uom_id' in fields:
+                values['product_uom_id'] = self._get_employee_unit(cr, uid, context=context)
             if 'general_account_id' in fields:    
                 values['general_account_id'] = self._get_general_account(cr, uid, context=context)
             if 'journal_id' in fields:    
@@ -87,7 +87,7 @@ class account_analytic_line(models.Model):
         if emp and emp.product_id.uom_id.id:
             return emp.product_id.uom_id.id
         else:
-            raise exceptions.ValidationError("This user or employee is not associated to a valid Product Amount Type")    
+            raise exceptions.ValidationError("This user or employee is not associated to a Product with a valid Amount Type")
 
     @api.model
     def _get_general_account(self, user_id=None):
@@ -95,7 +95,7 @@ class account_analytic_line(models.Model):
         if emp and emp.product_id.categ_id.property_account_expense_categ.id:
             return emp.product_id.categ_id.property_account_expense_categ.id
         else:
-            raise exceptions.ValidationError("This user or employee is not associated to a valid Product Financial Account")
+            raise exceptions.ValidationError("This user or employee is not associated to a Product with a valid Financial Account")
 
     @api.model
     def _get_analytic_journal(self, user_id=None):
