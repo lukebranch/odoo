@@ -236,7 +236,11 @@ class AccountContractDashboard(http.Controller):
         for i in ticks:
             # METHOD NON-OPTIMIZED (see previous commit for optimized calls)
             date = start_date + timedelta(days=i)
-            value = self.calculate_stat(stat_type, date, filtered_contract_template_ids=filtered_contract_template_ids)
+            if stat_types[stat_type]['type'] == 'last':
+                value = self.calculate_stat(stat_type, date, filtered_contract_template_ids=filtered_contract_template_ids)
+            elif stat_types[stat_type]['type'] == 'sum':
+                value = self.calculate_stat_aggregate(stat_type, date, date, filtered_contract_template_ids=filtered_contract_template_ids)
+
             results.append({
                 '0': str(date).split(' ')[0],
                 '1': value,

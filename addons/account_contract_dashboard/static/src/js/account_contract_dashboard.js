@@ -58,7 +58,7 @@
                           'stat_type': self.box_code,
                           'start_date' : start_date,
                           'end_date': end_date,
-                          'nb_points': 15,
+                          'nb_points': 30,
                           'filtered_contract_template_ids': filtered_contract_template_ids,
                       });
                   };
@@ -473,7 +473,7 @@
               key: key_name,
               color: '#2693d5',
               area: true
-            },  
+            },
           ];
           nv.addGraph(function() {
             var chart = nv.models.lineChart()
