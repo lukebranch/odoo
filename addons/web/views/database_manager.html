@@ -12,7 +12,7 @@
     <script src="/web/static/lib/bootstrap/js/bootstrap.js" type="text/javascript"></script>
     <script type="text/javascript">
         $(function() {
-            $('.modal-pwd-admin').on('show.bs.modal', function(event){
+            $('.model-drop-db').on('show.bs.modal', function(event){
                 var db = $(event.relatedTarget).data('db');
                 $(this).find('#db').val(db);
             });
@@ -28,13 +28,18 @@
                 if($(this).find('#db-pwd').val() !== $(this).find('#confirm-pwd').val()){
                     event.preventDefault();
                     $(this).find('#confirm-pwd')
-                        .after('<span></span>')
-                        .addClass("text-danger")
-                        .html("The confirmation password doesn't match the password");
+                        .after('<span class="text-danger">The confirmation password doesn\'t match the password</span>')
                 }
             });
             $("#form-backup-db").submit(function(){
                 $('.modal-backup-db').modal('hide');
+            });
+            $("#form-change-pwd").submit(function(){
+                if($(this).find('#master-new-pwd').val() !== $(this).find('#confirm-master-pwd').val()){
+                    event.preventDefault();
+                    $(this).find('#confirm-master-pwd')
+                        .after('<span class="text-danger">The confirmation password doesn\'t match the password</span>')
+                }
             });
         });
     </script>
@@ -56,6 +61,10 @@
                 <div><span class="text-danger">Unable to create the database</span></div>
             {% elif error == "unable_to_backup"%}
                 <div><span class="text-danger">Unable to backup the database</span></div>
+            {% elif error == "unable_to_restore"%}
+                <div><span class="text-danger">Unable to restore the database</span></div>
+            {% elif error == "unable_to_change_pwd"%}
+                <div><span class="text-danger">Unable to change the admin password</span></div>
             {% endif %}
             {% if databases %}
             <div class="form-group">
@@ -64,17 +73,17 @@
                         {% for db in databases %}
                             <li class="list-group-item">
                                 <span>{{ db }}</span>
-                                <div class="pull-right">
+                                <div class="pull-right" title="Connect to the database">
                                     <a href="/web?db={{ db }}">
                                         <i class="fa fa-sign-in fa-fw"></i>
                                     </a>
-                                    <a href="#" data-toggle="modal" data-target=".modal-duplicate-db" data-db="{{ db }}">
+                                    <a href="#" title="Duplicate" data-toggle="modal" data-target=".modal-duplicate-db" data-db="{{ db }}">
                                         <i class="fa fa-files-o fa-fw"></i>
                                     </a>
-                                    <a href="#" data-toggle="modal" data-target=".modal-backup-db" data-db="{{ db }}">
+                                    <a href="#" title="Backup" data-toggle="modal" data-target=".modal-backup-db" data-db="{{ db }}">
                                         <i class="fa fa-floppy-o fa-fw"></i>
                                     </a>
-                                    <a href="#" data-toggle="modal" data-target=".modal-pwd-admin" data-db="{{ db }}">
+                                    <a href="#" title="Delete" data-toggle="modal" data-target=".model-drop-db" data-db="{{ db }}">
                                         <i class="fa fa-trash fa-fw"></i> 
                                     </a>
                                 </div>
@@ -83,11 +92,14 @@
                     </ul>
             </div>
             {% endif %}
-            <button type="button" data-toggle="modal" data-target=".modal-create-db" class="btn btn-primary create-database-btn" autocomplete="off">
+            <button type="button" data-toggle="modal" data-target=".modal-create-db" class="btn btn-sm btn-primary create-database-btn" autocomplete="off">
                 Create Database
             </button>
-            <button type="button" data-toggle="modal" data-target=".modal-restore-db" class="btn btn-primary restore-database-btn" autocomplete="off">
+            <button type="button" data-toggle="modal" data-target=".modal-restore-db" class="btn btn-sm btn-primary restore-database-btn" autocomplete="off">
                 Restore Database
+            </button>
+            <button type="button" data-toggle="modal" data-target=".modal-change-pwd" class="btn btn-sm btn-primary change-pwd-btn" autocomplete="off">
+                Change Password
             </button>
             {% if debug %}
                 <input type="hidden" name="debug" value=""/>
@@ -107,14 +119,14 @@
 
 
 <!-- Modal -->
-    <div class="modal fade modal-pwd-admin" role="dialog">
+    <div class="modal fade model-drop-db" role="dialog">
       <div class="modal-dialog">
         <div class="modal-content">
           <div class="modal-header">
             <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
             <h4 class="modal-title">Drop Database</h4>
           </div>
-          <form style="margin:10px;" id="form-pwd-admin" role="form" action="/web/database/drop" method="post">
+          <form style="margin:10px;" id="form-drop-db" role="form" action="/web/database/drop" method="post">
               <div class="modal-body">
                     <div class="form-group">
                         <label for="db" class="control-label">Database</label>
@@ -259,7 +271,7 @@
             <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
             <h4 class="modal-title">Restore Database</h4>
           </div>
-          <form style="margin:10px;" id="form-restore-db" role="form" action="/web/database/restore" method="post">
+          <form style="margin:10px;" id="form-restore-db" role="form" action="/web/database/restore" method="post" enctype="multipart/form-data">
               <div class="modal-body">
                     <div class="form-group">
                         <label for="master-pwd" class="control-label">Master Password</label>
@@ -281,6 +293,36 @@
                         </select>
                     </div>
                     <input type="hidden" name="token" id="token"/>
+              </div>
+              <div class="modal-footer">
+                <input type="submit" value="Continue" class="btn btn-primary pull-right"/>
+              </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal fade modal-change-pwd" role="dialog">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title">Change Admin Password</h4>
+          </div>
+          <form style="margin:10px;" id="form-change-pwd" role="form" action="/web/database/change_password" method="post">
+              <div class="modal-body">
+                    <div class="form-group">
+                        <label for="master-pwd" class="control-label">Master Password</label>
+                        <input type="password" name="master-pwd" id="master-pwd" class="form-control" required="required" autofocus="autofocus"/>
+                    </div>
+                    <div class="form-group">
+                        <label for="db-pwd" class="control-label">New Master Password</label>
+                        <input type="password" name="master-new-pwd" id="master-new-pwd" class="form-control" required="required"/>
+                    </div>
+                    <div class="form-group">
+                        <label for="confirm-pwd" class="control-label">Confirm New Master Password</label>
+                        <input type="password" name="confirm-master-pwd" id="confirm-master-pwd" class="form-control" required="required"/>
+                    </div>
               </div>
               <div class="modal-footer">
                 <input type="submit" value="Continue" class="btn btn-primary pull-right"/>

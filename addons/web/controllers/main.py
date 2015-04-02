@@ -787,27 +787,27 @@ class Database(http.Controller):
         restore_pwd = post.get('master-pwd')
         new_db = post.get('db-new-name')
         mode = post.get('restore-mode')
-        import pudb
-        pudb.set_trace()
         try:
             copy = mode == 'copy'
             data = base64.b64encode(db_file.read())
             request.session.proxy("db").restore(restore_pwd, new_db, data, copy)
-            return ''
+            return http.local_redirect('/web/database/manager')
         except openerp.exceptions.AccessDenied, e:
-            raise Exception("AccessDenied")
-
-    @http.route('/web/database/change_password', type='json', auth="none")
-    def change_password(self, fields):
-        old_password, new_password = operator.itemgetter(
-            'old_pwd', 'new_pwd')(
-                dict(map(operator.itemgetter('name', 'value'), fields)))
-        try:
-            return request.session.proxy("db").change_admin_password(old_password, new_password)
-        except openerp.exceptions.AccessDenied:
-            return {'error': 'AccessDenied', 'title': _('Change Password')}
+            return http.local_redirect('/web/database/manager',{'error':'acces_denied'})
         except Exception:
-            return {'error': _('Error, password not changed !'), 'title': _('Change Password')}
+            return http.local_redirect('/web/database/manager',{'error':'unable_to_restore'})
+
+    @http.route('/web/database/change_password', type='http', auth="none")
+    def change_password(self, **post):
+        old_password = post.get('master-pwd')
+        new_password = post.get('master-new-pwd')
+        try:
+            request.session.proxy("db").change_admin_password(old_password, new_password)
+            return http.local_redirect('/web/database/manager')
+        except openerp.exceptions.AccessDenied:
+            return http.local_redirect('/web/database/manager',{'error':'acces_denied'})
+        except Exception:
+            return http.local_redirect('/web/database/manager',{'error':'unable_to_change_pwd'})
 
 class Session(http.Controller):
 
