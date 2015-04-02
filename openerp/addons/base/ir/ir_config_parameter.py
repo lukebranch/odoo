@@ -37,6 +37,7 @@ _default_parameters = {
     "database.uuid": lambda: (str(uuid.uuid1()), []),
     "database.create_date": lambda: (datetime.datetime.now().strftime(misc.DEFAULT_SERVER_DATETIME_FORMAT), ['base.group_user']),
     "web.base.url": lambda: ("http://localhost:%s" % config.get('xmlrpc_port'), []),
+    "send_mail_on_install_module_date": lambda: (datetime.datetime.now().strftime(misc.DEFAULT_SERVER_DATETIME_FORMAT), []),
 }
 
 

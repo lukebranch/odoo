@@ -23,7 +23,8 @@ import base64
 import logging
 from email.utils import formataddr
 from urlparse import urljoin
-
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
 from openerp import api, tools
 from openerp import SUPERUSER_ID
 from openerp.addons.base.ir.ir_mail_server import MailDeliveryException
@@ -66,6 +67,8 @@ class mail_mail(osv.Model):
         # and during unlink() we will not cascade delete the parent and its attachments
         'notification': fields.boolean('Is Notification',
             help='Mail has been created to notify people of an existing mail.message'),
+        'schedule_date': fields.datetime('Schedule Date'),
+        'template_id': fields.many2one('mail.template', 'Email Template'),
     }
 
     _defaults = {
@@ -99,6 +102,20 @@ class mail_mail(osv.Model):
     def cancel(self, cr, uid, ids, context=None):
         return self.write(cr, uid, ids, {'state': 'cancel'}, context=context)
 
+    def update_module_email_schedule_date(self, cr, uid, ids, context=None):
+        ir_config_parameter = self.pool['ir.config_parameter']
+
+        schedule_date = ir_config_parameter.get_param(cr, uid, 'send_mail_on_install_module_date')
+        current_date = datetime.now().strftime(tools.DEFAULT_SERVER_DATETIME_FORMAT)
+
+        date = current_date if schedule_date < current_date else schedule_date
+
+        schedule_date = datetime.strptime(date, tools.DEFAULT_SERVER_DATETIME_FORMAT) + relativedelta(days=1)
+
+        ir_config_parameter.set_param(cr, uid, 'send_mail_on_install_module_date', schedule_date)
+
+        self.write(cr, uid, ids, {'schedule_date': schedule_date}, context=context)
+
     @api.cr_uid
     def process_email_queue(self, cr, uid, ids=None, context=None):
         """Send immediately queued messages, committing after each
@@ -114,15 +131,22 @@ class mail_mail(osv.Model):
                                 messages to send (by default all 'outgoing'
                                 messages are sent).
         """
+        current_date = datetime.now().strftime(tools.DEFAULT_SERVER_DATETIME_FORMAT)
         if context is None:
             context = {}
         if not ids:
-            filters = [('state', '=', 'outgoing')]
+            filters = [('state', '=', 'outgoing'),'|',('schedule_date', '<', current_date),('schedule_date', '=', False)]
             if 'filters' in context:
                 filters.extend(context['filters'])
             ids = self.search(cr, uid, filters, context=context)
         res = None
         try:
+            for mail in self.browse(cr, uid, ids, context=context):
+                if mail.template_id:
+                    template_id = mail.template_id
+                    res_id = mail.res_id
+                    body_html = template_id.render_template_batch(template_id.body_html, template_id.model_id.model, [res_id], post_process=True)[res_id]
+                    mail.write({'body_html': body_html})
             # Force auto-commit - this is meant to be called by
             # the scheduler, and we can't allow rolling back the status
             # of previously sent emails!

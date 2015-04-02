@@ -50,3 +50,7 @@ class Planner(models.Model):
             if module:
                 url += "&id=%s" % (module.id,)
         return url
+
+    @api.model
+    def get_planner_progress(self, planner_name):
+        return self.search([('planner_application', '=', planner_name)]).progress

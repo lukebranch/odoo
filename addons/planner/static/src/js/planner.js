@@ -307,11 +307,25 @@ var PlannerDialog = Widget.extend({
     },
 });
 
+var PlannerActionClient =  Widget.extend({
+    init: function(parent, action){
+        this._super(parent);
+        this.webclient = parent.getParent();
+        this.params = action.params;
+    },
+    start: function(){
+        var self = this;
+        self.webclient.menu.open_action(self.params.menu_id);
+        $('#PlannerModal').modal('toggle');
+    }
+});
+
 // add planner launcher to the systray
 // if it is empty, it won't be display. Then, each time a top menu is clicked
 // a planner will be given to the launcher. The launcher will appears if the
 // given planner is not null.
 SystrayMenu.Items.push(PlannerLauncher);
+core.action_registry.add('planner_action_client', PlannerActionClient);
 
 return {
     PlannerLauncher: PlannerLauncher,
