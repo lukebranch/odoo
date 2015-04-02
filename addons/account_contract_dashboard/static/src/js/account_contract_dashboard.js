@@ -1,13 +1,29 @@
 (function () {
     'use strict';
 
+
     var value_now = 0;
     var loader = '<i class="fa fa-spin fa-spinner fa-pulse" style="font-size: 3em;"></i>';
 
     openerp.website.add_template_file('/account_contract_dashboard/static/src/xml/templates.xml');
     openerp.website.ready().done(function() {
 
-   // 1. MAIN DASHBOARD - Stat box with graph inside
+      $('#datetimepicker_start').datetimepicker({
+        format: 'YYYY-MM-DD',
+      });
+      $('#datetimepicker_end').datetimepicker({
+        format: 'YYYY-MM-DD',
+      });
+      $("#datetimepicker_start").on("dp.change", function (e) {
+          console.log('coucou');
+          debugger;
+          $('#datetimepicker_end').data("DateTimePicker").setMinDate(e.date);
+      });
+      $("#datetimepicker_end").on("dp.change", function (e) {
+          $('#datetimepicker_start').data("DateTimePicker").setMaxDate(e.date);
+      });
+
+      // 1. MAIN DASHBOARD - Stat box with graph inside
 
       openerp.website.if_dom_contains('div.stat-box, div.forecast-box', function() {
 
@@ -111,8 +127,10 @@
 
           // Launch widgets
 
-          var start_date = $('input[type="date"][name="start_date"]').val();
-          var end_date = $('input[type="date"][name="end_date"]').val();
+          var start_date = $('input[name="start_date"]').val();
+          var end_date = $('input[name="end_date"]').val();
+
+          debugger;
 
           for (var i=0; i<$('.stat-box').length; i++) {
               var self = $(this);
@@ -135,8 +153,8 @@
       openerp.website.if_dom_contains('#stat-history-box', function() {
                 
           var filtered_contract_template_ids = get_filtered_contract_templates();
-          var start_date = $('input[type="date"][name="start_date"]').val();
-          var end_date = $('input[type="date"][name="end_date"]').val();
+          var start_date = $('input[name="start_date"]').val();
+          var end_date = $('input[name="end_date"]').val();
           var stat_type = $('input[type="hidden"][name="stat_type"]').val();
 
           openerp.jsonRpc('/account_contract_dashboard/get_stats_history', 'call', {
@@ -186,8 +204,8 @@
 
       openerp.website.if_dom_contains('#stat_chart_div', function() {
 
-          var start_date = $('input[type="date"][name="start_date"]').val();
-          var end_date = $('input[type="date"][name="end_date"]').val();
+          var start_date = $('input[name="start_date"]').val();
+          var end_date = $('input[name="end_date"]').val();
           var stat_type = $('input[type="hidden"][name="stat_type"]').val();
 
           // var loader = '<div class="loading"><div id="big-circle"><div id="little-circle"></div></div></div>';
@@ -212,8 +230,8 @@
 
       openerp.website.if_dom_contains('#mrr_growth_chart_div', function() {
 
-          var start_date = $('input[type="date"][name="start_date"]').val();
-          var end_date = $('input[type="date"][name="end_date"]').val();
+          var start_date = $('input[name="start_date"]').val();
+          var end_date = $('input[name="end_date"]').val();
 
           // var loader = '<div class="loading"><div id="big-circle"><div id="little-circle"></div></div></div>';
           // var loader = '<i class="fa fa-spin fa-refresh" style="font-size: 7em;"></i>';
@@ -236,8 +254,8 @@
       openerp.website.if_dom_contains('#stats_by_plan', function() {
                 
           var filtered_contract_template_ids = get_filtered_contract_templates();
-          var start_date = $('input[type="date"][name="start_date"]').val();
-          var end_date = $('input[type="date"][name="end_date"]').val();
+          var start_date = $('input[name="start_date"]').val();
+          var end_date = $('input[name="end_date"]').val();
           var stat_type = $('input[type="hidden"][name="stat_type"]').val();
 
 
