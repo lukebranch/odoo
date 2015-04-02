@@ -30,21 +30,6 @@ forecast_types = {
 }
 
 
-def compute_rate(stat_type, old, new):
-    direction = stat_types[stat_type]['dir']
-
-    try:
-        value = round(100.0 * (new-old) / old, 2)
-    except ZeroDivisionError:
-        value = 0
-    color = 'oBlack'
-    if value and direction == 'up':
-        color = (value > 0) and 'oGreen' or 'oRed'
-    if value and direction != 'up':
-        color = (value < 0) and 'oGreen' or 'oRed'
-    return int(value), color
-
-
 def get_pruned_tick_values(ticks, nb_desired_ticks):
     nb_values = len(ticks)
     keep_one_of = max(1, floor(nb_values / float(nb_desired_ticks)))
@@ -117,7 +102,6 @@ class AccountContractDashboard(http.Controller):
             'value_now': value_now,
             'display_stats_by_plan': False if stat_type in ['nrr', 'arpu', 'logo_churn'] else True,
             'currency': '€',
-            'rate': compute_rate,
             'href_post_args': href_post_args,
             'find_res_id': request.env['ir.model.data'].xmlid_to_res_id,
         })
@@ -251,7 +235,6 @@ class AccountContractDashboard(http.Controller):
 
         for i in ticks:
             # METHOD NON-OPTIMIZED (see previous commit for optimized calls)
-
             date = start_date + timedelta(days=i)
             value = self.calculate_stat(stat_type, date, filtered_contract_template_ids=filtered_contract_template_ids)
             results.append({
@@ -415,7 +398,6 @@ class AccountContractDashboard(http.Controller):
 
         return result
 
-    # @profile  # Used to estimate the cost of each line
     def calculate_stat(self, stat_type, date, filtered_contract_template_ids=None):
 
         if type(date) == str:
@@ -589,7 +571,7 @@ class AccountContractDashboard(http.Controller):
             result = int(result)
 
         elif stat_type == 'ltv':
-            # LTV = Average Monthly Recurring Revenue Per Customer ÷ User Churn Rate
+            # LTV = Average Monthly Recurring Revenue Per Customer / User Churn Rate
             mrr = _calculate_mrr(date)
             nb_contracts = _calculate_nb_contracts(date)
             avg_mrr_per_customer = 0 if nb_contracts == 0 else mrr / float(nb_contracts)

@@ -1,6 +1,5 @@
 openerp.account_contract_dashboard = function (instance) {
 
-
     // GENERIC
     instance.web.IframeBackend = instance.web.Widget.extend({
         tagName: 'iframe',
