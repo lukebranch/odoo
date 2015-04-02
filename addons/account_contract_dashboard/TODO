@@ -1,35 +1,15 @@
-V calculate expansion mrr & churned mrr
-V filtered_contract_template_ids should not be as a class variable
-V graph behind boxes
-V revenue churn
-V graph : last day
-V revenue churn
-V table by plan on js --> too slow
-V filter by contract_template and not by product_template
-V make demo data to tests algorithms
-	--> if next invoice has 10 days, churn during 10 days and then churn reup
-V monthly revenu on an invoice on 1 month ?
-V design : coller les graphes
-V le style des graphs baremetrics est plus joli (lignes plus grosses)
-V forecast
-V utiliser une client_action (voir chrome.js, "database_manager") pour intégrer la page au backend
-V add 2 boxes for forecast
-V filter : like odoo
-
 ####################################
 
 In https://docs.google.com/a/openerp.com/file/d/0B5BDHVRYo-q5TUN4OXYxY1NkaEE/edit?usp=drivesdk 
-	--> Unit if measure in "Customers" in plan table ?
+	--> Unit of measure in "Customers" in plan table ?
 	--> Same filters : also on products ?
 
 - for more filtering, button on /stat to report/invoice analysis with groupby default on category
-- use @MAT field to caculate nrr
+- use @MAT field
 ? do not use negative mrr (asset, nothing to do with revenue recognition)
-? arpu --> a Monthly rpu ?
 ? net revenue
 	--> either billing (all invoice)
 	--> either non-recurring + prorata of monthly recurrent*nb_months
-- post_message sur l'iframe --> poster les events au parent pour changer l'url
 
 - marketing : faire la page de présentation sur odoo.com
 - vérifier la formule du churn (revenue churn + mrr growth), see @ll
@@ -38,9 +18,4 @@ In https://docs.google.com/a/openerp.com/file/d/0B5BDHVRYo-q5TUN4OXYxY1NkaEE/edi
 
 # OPTIMIZATIONS
 
-V main dashboard : one by one in JS
-- main dashboard : one jsonrpc for value + graph
-- optimize call to db --> filter after and compute graph from the end
-	--> to optimize call : --log-level=debug-sql
 - Monthly Recurring Revenue Growth graph with mousemove event
-- Filter : readgroup
