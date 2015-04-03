@@ -59,10 +59,6 @@
                   <div class="box forecast-box" t-att-name="forecast['name']" t-att-code="forecast['code']">
                     <div class="loading">
                       <i class="fa fa-spin fa-spinner fa-pulse" style="font-size: 3em;"></i>
-                      <!-- <div id="big-circle">
-                        <div id="little-circle">
-                        </div>
-                      </div> -->
                     </div>
                   </div>
                 </a>
@@ -92,13 +88,7 @@
           <t t-set="form_action" t-value="'/account_contract_dashboard/detailed/%s' % stat_type"/>
           <t t-call="account_contract_dashboard.dashboard_options"/>
 
-<!--           <div>
-            <form t-att-action='"/web#view_type=pivot&amp;model=account.invoice.report&amp;action="+str(find_res_id("account_asset.action_asset_revenue_report"))' method="post" target="_parent">
-              <button class="btn btn-primary" type="submit">Invoice Analysis</button>
-            </form>
-          </div> -->
-
-          <button class="btn btn-primary button-to-backend" t-att-action-id="find_res_id('account_contract_dashboard.action_analytic_entries_report')" t-att-menu-id="find_res_id('account.menu_action_analytic_entries_report')">Detailed Analysis</button>
+          <button class="btn btn-primary button-to-backend" t-att-data-action-id="find_res_id('account_contract_dashboard.action_analytic_entries_report')" t-att-data-menu-id="find_res_id('account.menu_action_analytic_entries_report')">Detailed Analysis</button>
 
 
           <div class="row box graph-detailed">
@@ -108,7 +98,6 @@
             </div>
             <input type="hidden" name="stat_type" t-att-value="stat_type"/>
             <div id="stat_chart_div">
-              <!-- <svg style="height:20em;"></svg> -->
             </div>
           </div>
 
@@ -119,7 +108,6 @@
             <div class="col-sm-12 mrr_growth_chart">
               <h3>Monthly Recurring Revenue Growth</h3>
               <div id="mrr_growth_chart_div">
-                <!-- <svg style="height:20em;"></svg> -->
               </div>
 
 <!--               <hr/>
@@ -244,7 +232,6 @@
                   <td>Starting Contract:</td>
                   <td class="pull-right">
                     <div class="input-group">
-                      <!-- <span class="input-group-addon"><t t-esc="currency"/></span> -->
                       <input class="form-control" type="number" id="starting_contracts"/>
                     </div>
                   </td>
@@ -256,7 +243,6 @@
                   <td>Contracts Growth:</td>
                   <td class="pull-right">
                     <div class="input-group">
-                      <!-- <span class="input-group-addon"><t t-esc="currency"/></span> -->
                       <input class="form-control" type="number" id="contracts_growth_linear"/>
                     </div>
                     <div style="display: none;" class="input-group">
@@ -287,10 +273,7 @@
             </div>
             <div id="contracts_forecast_chart_div" class="col-sm-8"></div>
           </div>
-
-
       </div>
-
     </div>
     </t>
   </template>

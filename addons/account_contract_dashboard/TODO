@@ -16,6 +16,7 @@ In https://docs.google.com/a/openerp.com/file/d/0B5BDHVRYo-q5TUN4OXYxY1NkaEE/edi
 - add index in init of module :
 	create index account_invoice_line_aai_assets_index on account_invoice_line(account_analytic_id, asset_start_date, asset_end_date);
 
-# OPTIMIZATIONS
+
+############# OPTIMIZATIONS
 
 - Monthly Recurring Revenue Growth graph with mousemove event

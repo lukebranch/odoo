@@ -1,3 +1,3 @@
-# -*- encoding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 import account_contract_dashboard

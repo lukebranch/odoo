@@ -26,9 +26,9 @@ openerp.account_contract_dashboard = function (instance) {
             this._super(parent, '/account_contract_dashboard');
         },
         iframe_clicked: function(e){
-            if (e.target.className && e.target.className.indexOf('button-to-backend') > 0){
-                var action_id = e.target.getAttribute('action-id');
-                var menu_id = e.target.getAttribute('menu-id');
+            if ($(e.target).hasClass('button-to-backend')){
+                var action_id = $(e.target).data('action-id');
+                var menu_id = $(e.target).data('menu-id');
                 this.do_action(action_id, {action_menu_id: menu_id});
             }
         }

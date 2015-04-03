@@ -1,4 +1,4 @@
-# -*- encoding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 {
     'name': 'Account Contract Dashboard',
@@ -10,10 +10,7 @@
     """,
     'website': 'https://www.odoo.com/page/accounting',
     'category': 'Accounting & Finance',
-    'demo': [],
     'data': [
-        # 'security/account_contract_dashboard.xml',
-        # 'security/ir.model.access.csv',)
         'report/account_contract_dashboard_report_view.xml',
         'templates/dashboard.xml',
         'templates/assets.xml',
