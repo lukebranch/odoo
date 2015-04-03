@@ -55,7 +55,7 @@ only the country code will be validated.
     'author': 'OpenERP SA',
     'depends': ['account'],
     'website': 'https://www.odoo.com/page/accounting',
-    'data': ['base_vat_view.xml'],
+    'data': ['views/res_partner_views.xml'],
     'installable': True,
     'auto_install': False,
 }
