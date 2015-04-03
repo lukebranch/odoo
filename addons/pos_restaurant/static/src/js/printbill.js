@@ -15,13 +15,13 @@ function openerp_restaurant_printbill(instance,module){
                     if(order.get('orderLines').models.length > 0){
                         var receipt = order.export_for_printing();
                         $.each(receipt.multi_orderlines, function(i, val) {
-                            /*setTimeout(function() {*/
+                            setTimeout(function() {
                                 console.log(i, val);
                                 receipt.orderlines = val;
                                 self.pos.proxy.print_receipt(QWeb.render('BillReceipt',{
                                     receipt: receipt, widget: self,
                                 }));
-                           /* }, 0);*/
+                            }, i*1000);
                         });
                     }
                 });

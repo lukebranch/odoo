@@ -29,6 +29,8 @@ class Usb(Escpos):
         self.interface = interface
         self.in_ep     = in_ep
         self.out_ep    = out_ep
+        self.file_i    = 0
+        self.file_name = 'no-file'
         self.open()
 
     def open(self):
@@ -65,10 +67,21 @@ class Usb(Escpos):
 
     def _raw(self, msg):
         """ Print any command sent in raw format """
+        if msg == '\x1B\x63\x30\x04':
+            self.file_i = self.file_i + 1
+            self.file_name = 'ticket_%d' %self.file_i
+            f = open(self.file_name, 'w')
+        else:
+            f = open(self.file_name, 'a')
+
+        f.write(msg+'\n')
+
         if len(msg) != self.device.write(self.out_ep, msg, self.interface):
             self.device.write(self.out_ep, self.errorText, self.interface)
             raise TicketNotPrinted()
-    
+        
+        f.close()
+        
     def __extract_status(self):
         maxiterate = 0
         rep = None
