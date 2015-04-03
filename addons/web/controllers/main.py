@@ -684,14 +684,6 @@ class Database(http.Controller):
             'debug': request.debug,
         })
 
-    @http.route('/web/database/manager_old', type='http', auth="none")
-    def manager_old(self, **kw):
-        # TODO: migrate the webclient's database manager to server side views
-        request.session.logout()
-        return env.get_template("database_old_manager.html").render({
-            'modules': simplejson.dumps(module_boot()),
-        })
-
     @http.route('/web/database/manager', type='http', auth="none")
     def manager(self, **kw):
         # TODO: migrate the webclient's database manager to server side views
@@ -725,13 +717,13 @@ class Database(http.Controller):
     @http.route('/web/database/create', type='http', auth="none")
     def create(self, **post):
         db_created = request.session.proxy("db").create_database(
-            post.get('master-pwd'),
-            post.get('db-name'),
-            bool(post.get('demo-data')),
+            post.get('master_pwd'),
+            post.get('db_name'),
+            bool(post.get('demo_data')),
             post.get('lang'),
-            post.get('db-pwd'))
+            post.get('db_pwd'))
         if db_created:
-            request.session.authenticate(post.get('db-name'), 'admin', post.get('db-pwd'))
+            request.session.authenticate(post.get('db_name'), 'admin', post.get('db-pwd'))
             return http.local_redirect('/web/')
         else:
             return http.local_redirect('/web/database/manager',{'error':'unable_to_create'})
@@ -740,9 +732,9 @@ class Database(http.Controller):
     @http.route('/web/database/duplicate', type='http', auth="none")
     def duplicate(self, **post):
         request.session.proxy("db").duplicate_database(
-            post.get('master-pwd'),
-            post.get('db-name'),
-            post.get('db-new-name'))
+            post.get('master_pwd'),
+            post.get('db_name'),
+            post.get('db_new_name'))
         return http.local_redirect('/web/database/manager')
 
     @http.route('/web/database/drop', type='http', auth="none")
@@ -761,10 +753,10 @@ class Database(http.Controller):
 
     @http.route('/web/database/backup', type='http', auth="none")
     def backup(self, **post):
-        backup_db = post.get('db-name')
-        backup_pwd = post.get('master-pwd')
+        backup_db = post.get('db_name')
+        backup_pwd = post.get('master_pwd')
         token = post.get('token')
-        backup_format = post.get('backup-format') if 'backup-format' in post else 'zip'
+        backup_format = post.get('backup_format') if 'backup_format' in post else 'zip'
         try:
             openerp.service.security.check_super(backup_pwd)
             ts = datetime.datetime.utcnow().strftime("%Y-%m-%d_%H-%M-%S")
@@ -783,10 +775,10 @@ class Database(http.Controller):
 
     @http.route('/web/database/restore', type='http', auth="none")
     def restore(self, **post):
-        db_file = post.get('db-file')
-        restore_pwd = post.get('master-pwd')
-        new_db = post.get('db-new-name')
-        mode = post.get('restore-mode')
+        db_file = post.get('db_file')
+        restore_pwd = post.get('master_pwd')
+        new_db = post.get('db_new_name')
+        mode = post.get('restore_mode')
         try:
             copy = mode == 'copy'
             data = base64.b64encode(db_file.read())
@@ -799,8 +791,8 @@ class Database(http.Controller):
 
     @http.route('/web/database/change_password', type='http', auth="none")
     def change_password(self, **post):
-        old_password = post.get('master-pwd')
-        new_password = post.get('master-new-pwd')
+        old_password = post.get('master_pwd')
+        new_password = post.get('master_new_pwd')
         try:
             request.session.proxy("db").change_admin_password(old_password, new_password)
             return http.local_redirect('/web/database/manager')
