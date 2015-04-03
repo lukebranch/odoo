@@ -114,10 +114,8 @@ class AccountContractDashboard(http.Controller):
         })
 
     @http.route('/account_contract_dashboard/get_default_values_forecast', type="json", auth='user', website=True)
-    def get_default_values_forecast(self, forecast_type=None, end_date=None):
+    def get_default_values_forecast(self, forecast_type, end_date=None):
 
-        print("end_Date")
-        print(end_date)
         if not end_date:
             end_date = date.today()
         mrr = self.calculate_stat('mrr', end_date)
@@ -126,41 +124,24 @@ class AccountContractDashboard(http.Controller):
         nb_contracts = self.calculate_stat('nb_contracts', end_date)
         arpu = self.calculate_stat('arpu', end_date)
 
-        currency = request.env['res.company'].search([])[0].currency_id.symbol
-
-        if forecast_type:
-            if forecast_type == 'forecast_mrr':
-                return {
-                    'currency': currency,
-                    'starting_value': mrr,
-                    'growth_linear': net_new_mrr,
-                    'growth_expon': 15,
-                    'churn': revenue_churn,
-                    'projection_time': 12,
-                }
-            else:
-                return {
-                    'currency': '',
-                    'starting_value': nb_contracts,
-                    'growth_linear': 0 if arpu == 0 else int(net_new_mrr/arpu),
-                    'growth_expon': 15,
-                    'churn': revenue_churn,
-                    'projection_time': 12,
-                }
-
-        # If return both
-        return {
-            'currency': currency,
-            'starting_mrr': mrr,
-            'revenue_growth_linear': net_new_mrr,
-            'revenue_growth_expon': 15,
-            'revenue_churn': revenue_churn,
-            'starting_contracts': nb_contracts,
-            'contracts_growth_linear': 0 if arpu == 0 else int(net_new_mrr/arpu),
-            'contracts_growth_expon': 15,
-            'contracts_churn': revenue_churn,
-            'projection_time': 12,
-        }
+        if forecast_type == 'forecast_mrr':
+            return {
+                'currency': request.env['res.company'].search([])[0].currency_id.symbol,
+                'starting_value': mrr,
+                'growth_linear': net_new_mrr,
+                'growth_expon': 15,
+                'churn': revenue_churn,
+                'projection_time': 12,
+            }
+        elif forecast_type == 'forecast_contracts':
+            return {
+                'starting_value': nb_contracts,
+                'growth_linear': 0 if arpu == 0 else int(net_new_mrr/arpu),
+                'growth_expon': 15,
+                'churn': revenue_churn,
+                'projection_time': 12,
+            }
+        return
 
     @http.route('/account_contract_dashboard/get_stats_history', type="json", auth='user', website=True)
     def get_stats_history(self, stat_type, start_date, end_date, filtered_contract_template_ids=None):

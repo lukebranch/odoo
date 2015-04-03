@@ -298,19 +298,24 @@
 
           var currency;
 
-          openerp.jsonRpc('/account_contract_dashboard/get_default_values_forecast', 'call', {
-          }).then(function(result){
+          function default_values_forecast(forecast_type){
+              return openerp.jsonRpc('/account_contract_dashboard/get_default_values_forecast', 'call', {
+                  'forecast_type': forecast_type
+              });
+          };
+          $.when(default_values_forecast('forecast_mrr'), default_values_forecast('forecast_contracts'))
+          .done(function(default_values_forecast_mrr, default_values_forecast_contracts){
 
-              default_starting_mrr = parseInt(result['starting_mrr']);
-              default_revenue_growth_linear = parseInt(result['revenue_growth_linear']);
-              default_revenue_growth_expon = parseInt(result['revenue_growth_expon']);
-              default_revenue_churn = parseInt(result['revenue_churn']);
-              default_starting_contracts = parseInt(result['starting_contracts']);
-              default_contracts_growth_linear = parseInt(result['contracts_growth_linear']);
-              default_contracts_growth_expon = parseInt(result['contracts_growth_expon']);
-              default_contracts_churn = parseInt(result['contracts_churn']);
-              default_projection_time = result['projection_time'];
-              currency = result['currency'];
+              default_starting_mrr = parseInt(default_values_forecast_mrr['starting_value']);
+              default_revenue_growth_linear = parseInt(default_values_forecast_mrr['growth_linear']);
+              default_revenue_growth_expon = parseInt(default_values_forecast_mrr['growth_expon']);
+              default_revenue_churn = parseInt(default_values_forecast_mrr['churn']);
+              default_starting_contracts = parseInt(default_values_forecast_contracts['starting_value']);
+              default_contracts_growth_linear = parseInt(default_values_forecast_contracts['growth_linear']);
+              default_contracts_growth_expon = parseInt(default_values_forecast_contracts['growth_expon']);
+              default_contracts_churn = parseInt(default_values_forecast_contracts['churn']);
+              default_projection_time = default_values_forecast_mrr['projection_time'];
+              currency = default_values_forecast_mrr['currency'];
 
               $('#starting_mrr').val(default_starting_mrr);
               $('#revenue_growth_linear').val(default_revenue_growth_linear);
