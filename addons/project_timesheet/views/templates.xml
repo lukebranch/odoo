@@ -21,9 +21,18 @@
         <script type="text/javascript" id="loading-script" t-raw="init">
           $(function() {
               $.material.init();
-              var s = new openerp.init();
-              var w = new s.project_timesheet.ProjectTimesheet();
-              w.appendTo("body");
+              console.log("test");
+              odoo.define('project_timesheet.project_timesheet', function(require){
+              console.log("2");
+                var project_timesheet = require('project_timesheet.ui');
+                    var p_t = new project_timesheet.ProjectTimesheet();
+                    p_t.appendTo("body");
+                    console.log("appended?")
+              });
+              odoo.init();
+              //var s = new odoo.init();
+              //var w = new s.project_timesheet.ProjectTimesheet();
+              //w.appendTo("body");
           });
         </script>
       </head>

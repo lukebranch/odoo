@@ -1,12 +1,20 @@
-openerp.project_timesheet = function(openerp) {
+odoo.define('project_timeshee.ui', function (require ) {
+"use strict";
+
+var core = require('web.core');
+var Session = require('web.Session');
+var Widget = require('web.Widget');
+
+
+var QWeb = core.qweb;
 
 	//Main widget to instantiate the app
-	openerp.project_timesheet.ProjectTimesheet = openerp.Widget.extend({
+	var ProjectTimesheet = Widget.extend({
 		start: function(){
 			var self = this;
 
 			// Load session, if there is any :
-			this.session = new openerp.Session();
+			this.session = new Session();
             this.session.session_reload().then(function(){
                 if(self.session.uid !== null){
                     alert('You do have a session!');
@@ -63,8 +71,8 @@ openerp.project_timesheet = function(openerp) {
 		},
 		load_template: function(){
             var self = this;
-            return openerp.session.rpc('/web/proxy/load', {path: "/project_timesheet/static/src/xml/project_timesheet.xml"}).then(function(xml) {
-                openerp.qweb.add_template(xml);
+            return session.rpc('/web/proxy/load', {path: "/project_timesheet/static/src/xml/project_timesheet.xml"}).then(function(xml) {
+                QWeb.add_template(xml);
             });
         },
         build_widgets: function(){
@@ -94,7 +102,7 @@ openerp.project_timesheet = function(openerp) {
 	});
 
 	// Basic screen widget, inherited by all screens
-	openerp.project_timesheet.BasicScreenWidget = openerp.Widget.extend({
+	var BasicScreenWidget = Widget.extend({
 		events:{
             "click .pt_day_planner_link" : "goto_day_planner",
             "click .pt_settings_link" : "goto_settings",
@@ -316,7 +324,7 @@ openerp.project_timesheet = function(openerp) {
 	    }
 	});
 
-	openerp.project_timesheet.Activities_screen = openerp.project_timesheet.BasicScreenWidget.extend({
+	var Activities_screen = BasicScreenWidget.extend({
         template: "activities_screen",
         init: function(parent) {
             self = this;
@@ -509,7 +517,7 @@ openerp.project_timesheet = function(openerp) {
         },
     });
 
-    openerp.project_timesheet.Day_planner_screen = openerp.project_timesheet.BasicScreenWidget.extend({
+    var Day_planner_screen = BasicScreenWidget.extend({
         template: "day_planner_screen",
         init: function(parent) {
         	this._super(parent);
@@ -534,7 +542,7 @@ openerp.project_timesheet = function(openerp) {
         }
     });
 
-    openerp.project_timesheet.Settings_screen = openerp.project_timesheet.BasicScreenWidget.extend({
+    var Settings_screen = BasicScreenWidget.extend({
         template: "settings_screen",
         init: function(parent) {
         	self = this;
@@ -633,7 +641,7 @@ openerp.project_timesheet = function(openerp) {
         }
     });
 	//TODO : clean up select2 inittialize method and re-rendering logic
-    openerp.project_timesheet.Edit_activity_screen = openerp.project_timesheet.BasicScreenWidget.extend({
+    var Edit_activity_screen = BasicScreenWidget.extend({
         template: "edit_activity_screen",
         init: function(parent) {
         	self = this;
@@ -862,7 +870,7 @@ openerp.project_timesheet = function(openerp) {
         }
     });
     
-    openerp.project_timesheet.Sync_screen = openerp.project_timesheet.BasicScreenWidget.extend({
+    var Sync_screen = BasicScreenWidget.extend({
         template: "sync_screen",
         init: function(parent) {
             var self = this;
@@ -1017,4 +1025,8 @@ openerp.project_timesheet = function(openerp) {
             });   
         }
     });
-};
+
+    return{
+        ProjectTimesheet : ProjectTimesheet
+    };
+});
