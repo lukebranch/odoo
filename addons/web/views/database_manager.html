@@ -72,20 +72,23 @@
                     <ul class="list-group">
                         {% for db in databases %}
                             <li class="list-group-item">
-                                <span>{{ db }}</span>
-                                <div class="pull-right" title="Connect to the database">
-                                    <a href="/web?db={{ db }}">
-                                        <i class="fa fa-sign-in fa-fw"></i>
-                                    </a>
-                                    <a href="#" title="Duplicate" data-toggle="modal" data-target=".modal-duplicate-db" data-db="{{ db }}">
-                                        <i class="fa fa-files-o fa-fw"></i>
-                                    </a>
-                                    <a href="#" title="Backup" data-toggle="modal" data-target=".modal-backup-db" data-db="{{ db }}">
-                                        <i class="fa fa-floppy-o fa-fw"></i>
-                                    </a>
-                                    <a href="#" title="Delete" data-toggle="modal" data-target=".model-drop-db" data-db="{{ db }}">
-                                        <i class="fa fa-trash fa-fw"></i> 
-                                    </a>
+                                <div style="width:100%; text-overflow:ellipsis; overflow: hidden; white-space: nowrap;">
+                                    <span style="width: 70%;display: inline-block;overflow: hidden;text-overflow: ellipsis;">   {{ db }}
+                                    </span>
+                                    <div class="pull-right" title="Connect to the database">
+                                        <a href="/web?db={{ db }}">
+                                            <i class="fa fa-sign-in fa-fw"></i>
+                                        </a>
+                                        <a href="#" title="Duplicate" data-toggle="modal" data-target=".modal-duplicate-db" data-db="{{ db }}">
+                                            <i class="fa fa-files-o fa-fw"></i>
+                                        </a>
+                                        <a href="#" title="Backup" data-toggle="modal" data-target=".modal-backup-db" data-db="{{ db }}">
+                                            <i class="fa fa-floppy-o fa-fw"></i>
+                                        </a>
+                                        <a href="#" title="Delete" data-toggle="modal" data-target=".model-drop-db" data-db="{{ db }}">
+                                            <i class="fa fa-trash fa-fw"></i> 
+                                        </a>
+                                    </div>
                                 </div>
                             </li>
                         {% endfor %}
