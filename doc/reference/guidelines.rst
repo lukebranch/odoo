@@ -4,30 +4,37 @@
 Odoo Guidelines
 =================
 
-This page introduce the new Odoo Coding Guidelines. This guidelines
+This page introduces the new Odoo Coding Guidelines. This guidelines
 aims to improve the quality of the code (better readability of source,
 ...) but also to improve Odoo Apps ! Indeed, a proper code will ease
 the maintenance and debugging, lower the complexity and promote the
 reliability.
+
+This guidelines should be applied to every new module. These guidelines will be applied to old module only in case of refactoring.
 
 Module structure
 ================
 
 Directories
 ------------
-A module is organised in a few directory :
+A module is organised in a some important directories. These directories aims to contains the business core of the module ; having a look at them should make understand the purpose of the module.
 
-- *data/* : demo and data xml
-- *models/* : models definition
-- *controllers/* : contains controllers (http routes).
+- *models/* : contains the model definition (the main business objects of the module)
 - *views/* : contains the views and templates
+- *controllers/* : contains controllers (http routes).
+- *security/* : contains the access rules, security groups, ...
 - *static/* : contains the web assets, separated into *css/, js/, img/, lib/, ...*
+
+Other directories compose the module.
+
+- *data/* : contains the data (in xml form)
+- *wizard/* : regroup the transient models (formerly `osv_memory`) and their views.
+- *report/* : contains the report (RML report [normally deprecated], models based on SQL views (for reporting) and other complex reports). Python objects and XML views are included in this directory.
+- *tests/* : contains the python/yml tests
+
 
 File naming
 ------------
-For *views* declarations, split backend views from (frontend)
-templates in 2 differents files.
-
 For *models*, split the business logic by sets of models, in each sets
 select a main model, this model gives its name to the set. If there is
 only one set of module, its name is the same as the module name. For
@@ -43,16 +50,34 @@ For instance, *sale* module introduce ``sale_order`` and
 <main_model> files will be named *models/sale_order.py* and
 *views/sale_order_views.py*.
 
+For *views* declarations, split backend views from (frontend)
+templates in 2 differents files.
+
+
+For *controllers*, the only file should be named *main.py*. Otherwise, if you need to inherit an existing controller from another module, its name will be *<module_name>.py*. Unlike *models*, each controller should be contained in a separated file.
+
+For *static files*, since the ressources can be use in different context (frontend, backend, both), they will be included in only one bundle. So, css/less, javascript and XML files should be suffixed with the name of the bundle type. i.e.: *im_chat_common.css*, *im_chat_common.js* for assets_common bundle, and *im_chat_backend.css*, *im_chat_backend.js* for assets_backend bundle.
+
+For module having only one file, the convention will be *<module_name>.ext* (i.e.: *project.js*).
+Don't link data (image, libraries) outside Odoo : don't use an
+url to an image but copy it in our codebase instead.
 
 For *data*, split them by purpose : demo or data. The filename will be
-the main_model name, suffixed by *_demo.xml* or *_data.xml*.
+the *main_model* name, suffixed by *_demo.xml* or *_data.xml*.
 
-For *controller*, the only file should be named *main.py*.
+For *wizard*, the naming convention is :
 
-For *static files*, the name pattern is *<module_name>.ext* (i.e. :
-static/js/im_chat.js, static/css/im_chat.css, static/xml/im_chat.xml,
-...). Don't link data (image, libraries) outside Odoo : don't use an
-url to an image but copy it in our codebase instead.
+- <main_transient>.py
+- <main_transient>_views.xml
+
+Where *<main_transient>* is the name of the dominant transient model, just like for *models*. <main_transient>.py can contains the models `model.action` and `model.action.line`.
+
+For *report*, their names should be like :
+
+- <report_name_A>_report.py
+- <report_name_A>_report_views.xml
+
+
 
 The complete tree should looks like
 
@@ -89,12 +114,16 @@ The complete tree should looks like
     |       |   `-- <my_module_name>.less
     |       `-- xml/
     |           `-- <my_module_name>.xml
-    `-- views/
-        |-- <main_model>_templates.xml
-        |-- <main_model>_views.xml
-        |-- <inherited_main_model>_templates.xml
-        `-- <inherited_main_model>_views.xml
-
+    |-- views/
+    |   |-- <main_model>_templates.xml
+    |   |-- <main_model>_views.xml
+    |   |-- <inherited_main_model>_templates.xml
+    |   `-- <inherited_main_model>_views.xml
+    `-- wizard/
+        |-- <main_transient_A>.py
+        |-- <main_transient_A>_views.xml
+        |-- <main_transient_B>.py
+        `-- <main_transient_B>_views.xml
 
 .. note:: Filename should only use only ``[a-z0-9_]``
 
@@ -105,7 +134,7 @@ XML files
 
 Format
 ------
-When declaring a record in XML,
+To declare a record in XML, the **record** notation (using `<record>`) is recommended :
 
 - Place ``id`` attribute before ``model``
 - For field declaration, ``name`` attribute is first. Then place the
@@ -132,6 +161,16 @@ When declaring a record in XML,
         </field>
     </record>
 
+Some syntax equivalences exists, and can be use :
+
+- menuitem : use it as a shortcut to declare a `ir.ui.menu`
+- workflow : The workflow tag sends a signal to an existing workflow.
+- template : use it to declare a QWeb View requirin gonly the `arch` section of the view.
+- report : use to declare a :ref:`report action <reference/actions/report>`
+- act_window : use it if the record notation can not do what you want
+
+The 4 first tags are prefered over the `record` notation.
+
 
 Naming xml_id
 -------------
@@ -141,27 +180,23 @@ Security, View and Action
 
 Use the following pattern :
 
-* For a menu : *<model_name>_menu*
+* For a menu : *<model_name>_menu_<action>* where *action* is a little explanation of the action. (use *root* for the main menu)
 * For a view : *<model_name>_view_<view_type>*, where *view_type* is kanban, form, tree, search, ...
 * For an action : the main action respects *<model_name>_action*.
   Others are suffixed with *_<detail>*, where *detail* is a underscore
   lowercase string explaining a little bit the action (Should not be
   long). This is used only if multiple action are declared for the
   model.
-* For a group : *<model_name>_group_<group_name>* where *group_name*
-  is the name of the group, genrally 'user', 'manager', ...
 * For a rule : *<model_name>_rule_<concerned_group>* where
   *concerned_group* is the short name of the concerned group ('user'
   for the 'model_name_group_user', 'public' for public user, 'company'
   for multi-company rules, ...).
+* For a group : *<module_name>_group_<group_name>* where *group_name*
+  is the name of the group, genrally 'user', 'manager', ...
 
 .. code-block:: xml
 
     <!-- views and menus -->
-    <record id="model_name_menu" model="ir.ui.menu">
-        ...
-    </record>
-
     <record id="model_name_view_form" model="ir.ui.view">
         ...
     </record>
@@ -169,6 +204,19 @@ Use the following pattern :
     <record id="model_name_view_kanban" model="ir.ui.view">
         ...
     </record>
+
+    <menuitem
+        id="model_name_menu_root"
+        name="Main Menu"
+        sequence="5"
+    />
+    <menuitem
+        id="model_name_menu_action"
+        name="Sub Menu 1"
+        parent="module_name.module_name_menu_root"
+        action="model_name_action"
+        sequence="10"
+    />
 
     <!-- actions -->
     <record id="model_name_action" model="ir.actions.act_window">
@@ -180,7 +228,7 @@ Use the following pattern :
     </record>
 
     <!-- security -->
-    <record id="model_name_group_user" model="res.groups">
+    <record id="module_name_group_user" model="res.groups">
         ...
     </record>
 
@@ -255,13 +303,13 @@ Inside these 3 groups, the imported lines are alphabetically sorted.
 Idioms
 -------
 
-- Prefer ``%`` over ``.format()``, prefer ``%(varname)`` instead of position (This is better for translation)
-- Try to avoid generators and decorators
-- Always favor *Readability* over *conciseness* or using the language features or idioms.
+- Prefer ``%`` over ``.format()`` (when only one variable to replace in a string), prefer ``%(varname)`` instead of position (when multiple variables to replace in a string). This make the translation easier for the translator community.
+- Avoid to create generators and decorators : only use the ones provide by the Odoo API.
+- Always favor *readability* over *onciseness* or using the language features or idioms.
 - Use list comprehension, dict comprehension, and basic manipulation using ``map``, ``filter``, ``sum``, ... They make the code easier to read.
 - The same applies for recordset methods : use ``filtered``, ``mapped``, ``sorted``, ...
 - Each python file should have ``# -*- coding: utf-8 -*-`` as first line
-- Use the ``UserError`` defined in ``openerp.exceptions`` instead of overriding ``Warning``, or find a more appropriate exception in *exceptions.py*
+- Use the ``UserError`` defined in ``openerp.exceptions`` instead of overriding ``Warning``, or find a more appropriate exception in *exceptions.py* (only from v9).
 - Document your code (docstring on methods, simple comments for the tricky part of the code)
 - Use meaningful variable/class/method names
 
@@ -269,8 +317,10 @@ Idioms
 
 Symbols
 -------
-
-- Odoo Python Class : use camelcase for code in api v8, underscore lowercase notation for old api.
+- Model name (using the dot notation, prefix by the module name) :
+    - When defining an Odoo Model : use singular form of the name (`res.partner` and `sale.order` instead of `res.partnerS` and `saleS.orderS`)
+    - When defining an Odoo Transient (wizard) : use *<related_base_model>.<action>* where *related_base_model* is the base model (defined in *models/*) related to the transient, and *action* is the short name of what the transient do. For instance : ``account.invoice.make``, ``project.task.delegate.batch``, ...
+- Odoo Python Class : use camelcase for code in api v8 (Object-oriented style), underscore lowercase notation for old api (SQL style).
 
 .. code-block:: python
 
@@ -371,7 +421,7 @@ Javascript and CSS
 
 **For CSS :**
 
-- Prefix all your class with *o_<module_name>* where *module_name* is the technical name of the module ('sale', 'im_chat', ...) or the main route reserved by the module (for website module mainly, i.e. : 'o_forum' for website_forum module). The only exception for this rule is the webclient : it simply use *o_* prefix.
+- Prefix all your class with *o_<module_name>* where *module_name* is the technical name of the module ('sale', 'im_chat', ...) or the main route reserved by the module (for website module mainly, i.e. : 'o_forum' for *website_forum* module). The only exception for this rule is the webclient : it simply use *o_* prefix.
 - Avoid using id
 - Use bootstrap native class
 - Use underscore lowercase notation to name class
@@ -392,15 +442,15 @@ Prefix your commit with
 - **[MERGE]** for merge commits (only for forward/back-port)
 - **[CLA]** for signing the Odoo Individual Contributor License
 
-Then, in the message itself, specify the part of the code impacted by your changes (module name, lib, transversal object, ...) and a description of the changes.
+Then, in the message itself, specify the part of the code impacted by your changes (module name, lib, transversal object, ...) and a 'subject' of the changes. After a blank line, you can add a longer description explaining your modifications.
 
-- Always put meaning full commit message: commit message should be
+- Always put meaningful commit message: commit message should be
   self explanatory (long enough) including the name of the module that
   has been changed and the reason behind that change. Do not use
   single words like "bugfix" or "improvements".
 
-- Avoid commits which simultaneously impacts lots of modules. Try to
-  splits into different commits where impacted modules are different
+- Avoid commit which simultaneously impact lots of modules. Try to
+  split into different commits where impacted modules are different
   (It will be helpful when we are going to revert that module
   separately).
 
