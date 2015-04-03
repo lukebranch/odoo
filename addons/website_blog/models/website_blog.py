@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 
-from datetime import datetime
 import lxml
 import random
 
-from openerp import api, fields, models, tools, _
+from openerp import api, fields, models, _
 from openerp.addons.website.models.website import slug
 
 
@@ -39,8 +38,9 @@ class Blog(models.Model):
             if freq >= min_limit:
                 tag_by_blog[blog_id].append(tag_id)
 
+        Tag = self.env['blog.tag']
         for blog_id in tag_by_blog:
-            tag_by_blog[blog_id] = self.env['blog.tag'].browse(tag_by_blog[blog_id])
+            tag_by_blog[blog_id] = Tag.browse(tag_by_blog[blog_id])
         return tag_by_blog
 
 
@@ -60,26 +60,12 @@ class BlogPost(models.Model):
     _order = 'id DESC'
     _mail_post_access = 'read'
 
-    @api.multi
-    def _website_url(self, field_name, arg):
-        res = super(BlogPost, self)._website_url(field_name, arg)
-        res.update({(blog_post.id, '/blog/%s/post/%s' % (slug(blog_post.blog_id), slug(blog_post))) for blog_post in self})
-        return res
-
     def _default_content(self):
         return '''  <div class="container">
                         <section class="mt16 mb16">
                             <p class="o_default_snippet_text">''' + _("Start writing here...") + '''</p>
                         </section>
                     </div> '''
-
-    @api.multi
-    @api.depends('visits')
-    def _compute_ranking(self):
-        for blog_post in self:
-            if blog_post.visits:
-                age = datetime.now() - datetime.strptime(blog_post.create_date, tools.DEFAULT_SERVER_DATETIME_FORMAT)
-                blog_post.ranking = blog_post.visits * (0.5+random.random()) / max(3, age.days)
 
     name = fields.Char(string='Title', required=True, translate=True, default='')
     subtitle = fields.Char(string='Sub Title', translate=True, default=_('Subtitle'))
@@ -96,14 +82,37 @@ class BlogPost(models.Model):
     website_message_ids = fields.One2many(
         'mail.message', 'res_id',
         domain=lambda self: [
-            '&', '&', ('model', '=', self._name), ('type', '=', 'comment'), ('path', '=', False)
+            '&', ('model', '=', self._name), ('type', '=', 'comment')
         ],
         string='Website Messages',
         help="Website communication history"
     )
     author_avatar = fields.Binary(related="author_id.image_small", string="Avatar")
     visits = fields.Integer(string='No of Views')
-    ranking = fields.Float(compute='_compute_ranking', string='Ranking')
+
+    @api.model
+    def create(self, vals):
+        if 'content' in vals and vals['content']:
+            vals['content'], mapping = self.html_tag_nodes(vals['content'], attribute='data-chatter-id', tags=['p'])
+        post = super(BlogPost, self.with_context(mail_create_nolog=True)).create(vals)
+        post._check_for_publication(vals)
+        return post
+
+    @api.multi
+    def write(self, vals):
+        if 'content' in vals and vals['content']:
+            vals['content'], mapping = self.html_tag_nodes(vals['content'], attribute='data-chatter-id', tags=['p'])
+            existing = [x[0] for x in mapping if x[0]]
+            self.website_message_ids.filtered(lambda message: message.path not in existing and message.path).unlink()
+        result = super(BlogPost, self).write(vals)
+        self._check_for_publication(vals)
+        return result
+
+    @api.multi
+    def _website_url(self, field_name, arg):
+        res = super(BlogPost, self)._website_url(field_name, arg)
+        res.update({(blog_post.id, '/blog/%s/post/%s' % (slug(blog_post.blog_id), slug(blog_post))) for blog_post in self})
+        return res
 
     @api.model
     def html_tag_nodes(self, html, attribute=None, tags=None):
@@ -154,27 +163,6 @@ class BlogPost(models.Model):
             html = html[5:-6]
         return html, mapping
 
-    @api.model
-    def _postprocess_content(self, id, content=None):
-        #(_postproces_content = _postprocess_content)
-        if content is None:
-            content = self.browse(id).content
-        if content is False:
-            return content
-        content, mapping = self.html_tag_nodes(content, attribute='data-chatter-id', tags=['p'])
-        if id:  # not creating
-            existing = [x[0] for x in mapping if x[0]]
-            msg_ids = self.env['mail.message'].sudo().search([
-                ('res_id', '=', id),
-                ('model', '=', self._name),
-                ('path', 'not in', existing),
-                ('path', '!=', False)
-            ])
-            if msg_ids:
-                msg_ids.unlink()
-
-        return content
-
     @api.multi
     def _check_for_publication(self, vals):
         if vals.get('website_published'):
@@ -191,22 +179,6 @@ class BlogPost(models.Model):
                     subtype='website_blog.mt_blog_blog_published')
             return True
         return False
-
-    @api.model
-    def create(self, vals):
-        if 'content' in vals:
-            vals['content'] = self._postprocess_content(None, vals['content'])
-        post = super(BlogPost, self.with_context(mail_create_nolog=True)).create(vals)
-        post._check_for_publication(vals)
-        return post
-
-    @api.multi
-    def write(self, vals):
-        if 'content' in vals:
-            vals['content'] = self._postprocess_content(self.id, vals['content'])
-        result = super(BlogPost, self).write(vals)
-        self._check_for_publication(vals)
-        return result
 
 
 class Website(models.Model):
@@ -226,10 +198,10 @@ class Website(models.Model):
         if posts:
             page_key = _('Blog Post')
             dep[page_key] = []
-        for p in posts:
+        for post in posts:
             dep[page_key].append({
-                'text': _('Blog Post <b>%s</b> seems to have a link to this page !' % p.name),
-                'link': p.website_url
+                'text': _('Blog Post <b>%s</b> seems to have a link to this page !' % post.name),
+                'link': post.website_url
             })
 
         return dep

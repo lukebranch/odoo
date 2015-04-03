@@ -1,16 +1,15 @@
 # -*- coding: utf-8 -*-
 
-import datetime
 import json
 import werkzeug
 
-from openerp import models, tools, _
+from openerp import fields, models, _
+from openerp.exceptions import UserError
+from openerp.tools import html2plaintext
 from openerp.addons.web import http
 from openerp.addons.web.http import request
 from openerp.addons.website.models.website import slug, unslug
 from openerp.addons.web.controllers.main import login_redirect
-from openerp.exceptions import UserError
-from openerp.tools import html2plaintext
 
 
 class QueryURL(object):
@@ -52,10 +51,10 @@ class WebsiteBlog(http.Controller):
         groups = request.env['blog.post'].read_group(domain, ['name', 'create_date'],
             groupby="create_date", orderby="create_date desc")
         for group in groups:
-            begin_date = datetime.datetime.strptime(group['__domain'][0][2], tools.DEFAULT_SERVER_DATETIME_FORMAT).date()
-            end_date = datetime.datetime.strptime(group['__domain'][1][2], tools.DEFAULT_SERVER_DATETIME_FORMAT).date()
-            group['date_begin'] = '%s' % datetime.date.strftime(begin_date, tools.DEFAULT_SERVER_DATE_FORMAT)
-            group['date_end'] = '%s' % datetime.date.strftime(end_date, tools.DEFAULT_SERVER_DATE_FORMAT)
+            begin_date = fields.Datetime.from_string(group['__domain'][0][2]).date()
+            end_date = fields.Datetime.from_string(group['__domain'][1][2]).date()
+            group['date_begin'] = '%s' % fields.Date.to_string(begin_date)
+            group['date_end'] = '%s' % fields.Date.to_string(end_date)
         return groups
 
     @http.route([
@@ -71,7 +70,7 @@ class WebsiteBlog(http.Controller):
             page=page,
             step=self._blog_post_per_page,
         )
-        posts = BlogPost.search([], offset=(page-1)*self._blog_post_per_page, limit=self._blog_post_per_page)
+        posts = BlogPost.search([], offset=(page - 1) * self._blog_post_per_page, limit=self._blog_post_per_page)
         blog_url = QueryURL('', ['blog', 'tag'])
         return request.website.render("website_blog.latest_blogs", {
             'posts': posts,
@@ -138,15 +137,15 @@ class WebsiteBlog(http.Controller):
                 tag_ids.remove(current_tag)
             else:
                 tag_ids.append(current_tag)
-            tag_ids = request.env['blog.tag'].browse(tag_ids).exists()
-            return ','.join(map(slug, tag_ids))
+            tags = request.env['blog.tag'].browse(tag_ids).exists()
+            return ','.join(map(slug, tags))
 
         values = {
             'blog': blog,
             'blogs': blogs,
             'tags': all_tags,
             'active_tag_ids': active_tag_ids,
-            'tags_list' : tags_list,
+            'tags_list': tags_list,
             'blog_posts': blog_posts,
             'pager': pager,
             'nav_list': self.nav_list(blog),
@@ -177,16 +176,17 @@ class WebsiteBlog(http.Controller):
 
         pager_url = "/blogpost/%s" % blog_post.id
 
+        filtered_message = blog_post.website_message_ids.filtered(lambda message: message.path == False)
         pager = request.website.pager(
             url=pager_url,
-            total=len(blog_post.website_message_ids),
+            total=len(filtered_message),
             page=page,
             step=self._post_comment_per_page,
             scope=7
         )
         pager_begin = (page - 1) * self._post_comment_per_page
         pager_end = page * self._post_comment_per_page
-        comments = blog_post.website_message_ids[pager_begin:pager_end]
+        comments = filtered_message[pager_begin: pager_end]
 
         blog_url = QueryURL('', ['blog', 'tag'], blog=blog_post.blog_id, tag=None, date_begin=date_begin, date_end=date_end)
 
@@ -196,10 +196,10 @@ class WebsiteBlog(http.Controller):
         tags = request.env['blog.tag'].search([])
 
         # Find next Post
-        all_post_ids = request.env['blog.post'].search([('blog_id', '=', blog.id)])
+        all_posts = request.env['blog.post'].search([('blog_id', '=', blog.id)])
         # should always return at least the current post
-        current_blog_post_index = all_post_ids.ids.index(blog_post.id)
-        next_post = all_post_ids[0 if current_blog_post_index == len(all_post_ids) - 1 \
+        current_blog_post_index = all_posts.ids.index(blog_post.id)
+        next_post = all_posts[0 if current_blog_post_index == len(all_posts) - 1 \
                             else current_blog_post_index + 1]
         values = {
             'tags': tags,
@@ -222,7 +222,7 @@ class WebsiteBlog(http.Controller):
         if not (blog_post.id in request.session[request.session_id]):
             request.session[request.session_id].append(blog_post.id)
             # Increase counter
-            blog_post.sudo().visits = blog_post.visits+1
+            blog_post.sudo().visits = blog_post.visits + 1
         return response
 
     def _blog_post_message(self, blog_post_id, message_content, **post):
@@ -259,8 +259,8 @@ class WebsiteBlog(http.Controller):
                     '/website_blog/static/src/img/anonymous.png',
                 "date": message.date,
                 'body': html2plaintext(message.body),
-                'website_published' : message.website_published,
-                'publish' : publish,
+                'website_published': message.website_published,
+                'publish': publish,
             })
         return values
 
