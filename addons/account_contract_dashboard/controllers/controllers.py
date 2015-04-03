@@ -114,13 +114,17 @@ class AccountContractDashboard(http.Controller):
         })
 
     @http.route('/account_contract_dashboard/get_default_values_forecast', type="json", auth='user', website=True)
-    def get_default_values_forecast(self, forecast_type=None):
+    def get_default_values_forecast(self, forecast_type=None, end_date=None):
 
-        mrr = self.calculate_stat('mrr', date.today())
-        net_new_mrr = self.calculate_stat('net_new_mrr', date.today())[3]
-        revenue_churn = self.calculate_stat('revenue_churn', date.today())
-        nb_contracts = self.calculate_stat('nb_contracts', date.today())
-        arpu = self.calculate_stat('arpu', date.today())
+        print("end_Date")
+        print(end_date)
+        if not end_date:
+            end_date = date.today()
+        mrr = self.calculate_stat('mrr', end_date)
+        net_new_mrr = self.calculate_stat('net_new_mrr', end_date)[3]
+        revenue_churn = self.calculate_stat('revenue_churn', end_date)
+        nb_contracts = self.calculate_stat('nb_contracts', end_date)
+        arpu = self.calculate_stat('arpu', end_date)
 
         currency = request.env['res.company'].search([])[0].currency_id.symbol
 

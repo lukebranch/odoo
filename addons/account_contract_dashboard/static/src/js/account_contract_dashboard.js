@@ -19,7 +19,7 @@
           $("#datetimepicker_end").on("dp.change", function (e) {
               $('#datetimepicker_start').data("DateTimePicker").setMaxDate(e.date);
           });
-      }
+      });
 
       // 1. MAIN DASHBOARD - Stat box with graph inside
       openerp.website.if_dom_contains('div.stat-box, div.forecast-box', function() {
@@ -84,8 +84,9 @@
 
           // Widget for forecast
           openerp.account_contract_dashboard_boxes.ForecastBox = openerp.Widget.extend({
-              init: function(box) {
+              init: function(box, end_date) {
                   this.box = box;
+                  this.end_date = end_date
 
                   this.box_name = this.box.getAttribute("name");
                   this.box_code = this.box.getAttribute("code");
@@ -97,6 +98,7 @@
                   var compute_numbers = function(){
                       return openerp.jsonRpc('/account_contract_dashboard/get_default_values_forecast', 'call', {
                           'forecast_type': self.box_code,
+                          'end_date': self.end_date,
                       });
                   }
 
@@ -136,7 +138,7 @@
               var self = $(this);
               var box = $('.forecast-box')[i];
 
-              var box_widget = new openerp.account_contract_dashboard_boxes.ForecastBox(box);
+              var box_widget = new openerp.account_contract_dashboard_boxes.ForecastBox(box, end_date);
               box_widget.start();
           }
       });
@@ -160,7 +162,6 @@
                   var direction = stat_types[stat_type]['dir']
                   var value = 0
                   var color = 'oBlack'
-                  debugger;
 
                   if (old_value != 0) {value = 100.0 * (new_value-old_value) / old_value}
                   if (value && direction == 'up'){
