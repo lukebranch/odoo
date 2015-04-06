@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<openerp>
-<data>
-    <record id="hr_job_public" model="ir.rule">
+<odoo>
+    <record id="hr_job_rule_public" model="ir.rule">
         <field name="name">Job Positions: Public</field>
         <field name="model_id" ref="hr.model_hr_job"/>
         <field name="domain_force">[('website_published', '=', True)]</field>
@@ -11,7 +10,7 @@
         <field name="perm_create" eval="False"/>
         <field name="perm_unlink" eval="False"/>
     </record>
-    <record id="hr_job_portal" model="ir.rule">
+    <record id="hr_job_rule_portal" model="ir.rule">
         <field name="name">Job Positions: Portal</field>
         <field name="model_id" ref="hr.model_hr_job"/>
         <field name="domain_force">[('website_published', '=', True)]</field>
@@ -21,7 +20,7 @@
         <field name="perm_create" eval="False"/>
         <field name="perm_unlink" eval="False"/>
     </record>
-    <record id="hr_job_officer" model="ir.rule">
+    <record id="hr_job_rule_officer" model="ir.rule">
         <field name="name">Job Positions: HR Officer</field>
         <field name="model_id" ref="hr.model_hr_job"/>
         <field name="domain_force">[(1, '=', 1)]</field>
@@ -31,7 +30,7 @@
         <field name="perm_create" eval="False"/>
         <field name="perm_unlink" eval="False"/>
     </record>
-    <record id="hr_department_public" model="ir.rule">
+    <record id="hr_department_rule_public" model="ir.rule">
         <field name="name">Job department: Public</field>
         <field name="model_id" ref="hr.model_hr_department"/>
         <field name="domain_force">[('jobs_ids.website_published', '=', True)]</field>
@@ -41,5 +40,4 @@
         <field name="perm_create" eval="False"/>
         <field name="perm_unlink" eval="False"/>
     </record>
-</data>
-</openerp>
+</odoo>
