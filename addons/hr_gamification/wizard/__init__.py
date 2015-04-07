@@ -19,4 +19,4 @@
 #
 ##############################################################################
 
-import grant_badge
+import gamification_badge_user_wizard
