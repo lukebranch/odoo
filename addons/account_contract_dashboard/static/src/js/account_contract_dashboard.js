@@ -206,6 +206,7 @@
               'stat_type': stat_type,
               'start_date' : start_date,
               'end_date': end_date,
+              'complete': true,
               'nb_points': 30,
               'filtered_contract_template_ids': filtered_contract_template_ids,
           }).then(function(result){
@@ -544,16 +545,21 @@
               },
               {
                   values: result[1],
-                  key: 'Expansion MRR',
-                  color: '#fed049',
-              },
-              {
-                  values: result[2],
                   key: 'Churned MRR',
                   color: '#df2e28',
               },
               {
+                  values: result[2],
+                  key: 'Expansion MRR',
+                  color: '#fed049',
+              },
+              {
                   values: result[3],
+                  key: 'Down MRR',
+                  color: '#ffa500',
+              },
+              {
+                  values: result[4],
                   key: 'Net New MRR',
                   color: '#2693d5',
               }

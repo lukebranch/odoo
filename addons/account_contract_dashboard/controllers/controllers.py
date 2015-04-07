@@ -119,7 +119,7 @@ class AccountContractDashboard(http.Controller):
         if not end_date:
             end_date = date.today()
         mrr = self.calculate_stat('mrr', end_date)
-        net_new_mrr = self.calculate_stat('net_new_mrr', end_date)[3]
+        net_new_mrr = self.calculate_stat('net_new_mrr', end_date)[4]
         revenue_churn = self.calculate_stat('revenue_churn', end_date)
         nb_contracts = self.calculate_stat('nb_contracts', end_date)
         arpu = self.calculate_stat('arpu', end_date)
@@ -244,25 +244,29 @@ class AccountContractDashboard(http.Controller):
 
         ticks = range(delta.days + 1) if complete else get_pruned_tick_values(range(delta.days + 1), nb_points)
 
-        results = [[], [], [], []]
+        results = [[], [], [], [], []]
 
         for i in ticks:
             date = start_date + timedelta(days=i)
 
-            new_mrr, expansion_mrr, churned_mrr, net_new_mrr = self.calculate_stat('net_new_mrr', date, filtered_contract_template_ids=filtered_contract_template_ids)
+            new_mrr, churned_mrr, expansion_mrr, down_mrr, net_new_mrr = self.calculate_stat('net_new_mrr', date, filtered_contract_template_ids=filtered_contract_template_ids)
             results[0].append({
                 '0': str(date).split(' ')[0],
                 '1': new_mrr,
             })
             results[1].append({
                 '0': str(date).split(' ')[0],
-                '1': expansion_mrr,
+                '1': churned_mrr,
             })
             results[2].append({
                 '0': str(date).split(' ')[0],
-                '1': churned_mrr,
+                '1': expansion_mrr,
             })
             results[3].append({
+                '0': str(date).split(' ')[0],
+                '1': down_mrr,
+            })
+            results[4].append({
                 '0': str(date).split(' ')[0],
                 '1': net_new_mrr,
             })
@@ -340,6 +344,7 @@ class AccountContractDashboard(http.Controller):
                         (invoice.date_due BETWEEN %s AND %s) AND
                         line.invoice_id = invoice.id AND
                         invoice.type IN ('out_invoice') AND
+                        invoice.currency_id = 1 AND
                         invoice.state NOT IN ('draft', 'cancel')
                 """, [start_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), end_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT)])
             else:
@@ -350,6 +355,7 @@ class AccountContractDashboard(http.Controller):
                         (invoice.date_due BETWEEN %s AND %s) AND
                         line.invoice_id = invoice.id AND
                         invoice.type IN ('out_invoice') AND
+                        invoice.currency_id = 1 AND
                         invoice.state NOT IN ('draft', 'cancel') AND
                         line.account_analytic_id = analytic_account.id AND
                         analytic_account.template_id IN %s
@@ -367,6 +373,7 @@ class AccountContractDashboard(http.Controller):
                         line.asset_category_id IS NULL AND
                         line.invoice_id = invoice.id AND
                         invoice.type IN ('out_invoice') AND
+                        invoice.currency_id = 1 AND
                         invoice.state NOT IN ('draft', 'cancel')
                 """, [start_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), end_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT)])
             else:
@@ -378,6 +385,7 @@ class AccountContractDashboard(http.Controller):
                         line.asset_category_id IS NULL AND
                         line.invoice_id = invoice.id AND
                         invoice.type IN ('out_invoice') AND
+                        invoice.currency_id = 1 AND
                         invoice.state NOT IN ('draft', 'cancel') AND
                         line.account_analytic_id = analytic_account.id AND
                         analytic_account.template_id IN %s
@@ -400,6 +408,7 @@ class AccountContractDashboard(http.Controller):
                     WHERE (date %s BETWEEN line.asset_start_date AND line.asset_end_date) AND
                         invoice.id = line.invoice_id AND
                         invoice.type IN ('out_invoice') AND
+                        invoice.currency_id = 1 AND
                         invoice.state NOT IN ('draft', 'cancel')
                 """, [date.strftime(DEFAULT_SERVER_DATE_FORMAT)])
             else:
@@ -409,6 +418,7 @@ class AccountContractDashboard(http.Controller):
                     WHERE (date %s BETWEEN line.asset_start_date AND line.asset_end_date) AND
                         invoice.id = line.invoice_id AND
                         invoice.type IN ('out_invoice') AND
+                        invoice.currency_id = 1 AND
                         invoice.state NOT IN ('draft', 'cancel') AND
                         line.account_analytic_id = analytic_account.id AND
                         analytic_account.template_id IN %s
@@ -424,6 +434,7 @@ class AccountContractDashboard(http.Controller):
                     WHERE date %s BETWEEN line.asset_start_date AND line.asset_end_date AND
                         invoice.id = line.invoice_id AND
                         invoice.type IN ('out_invoice') AND
+                        invoice.currency_id = 1 AND
                         invoice.state NOT IN ('draft', 'cancel')
                 """, [date.strftime(DEFAULT_SERVER_DATE_FORMAT)])
             else:
@@ -433,6 +444,7 @@ class AccountContractDashboard(http.Controller):
                     WHERE date %s BETWEEN line.asset_start_date AND line.asset_end_date AND
                         invoice.id = line.invoice_id AND
                         invoice.type IN ('out_invoice') AND
+                        invoice.currency_id = 1 AND
                         invoice.state NOT IN ('draft', 'cancel') AND
                         line.account_analytic_id = analytic_account.id AND
                         analytic_account.template_id IN %s
@@ -448,6 +460,7 @@ class AccountContractDashboard(http.Controller):
                     WHERE date %s - interval '1 months' BETWEEN line.asset_start_date AND line.asset_end_date AND
                         invoice.id = line.invoice_id AND
                         invoice.type IN ('out_invoice') AND
+                        invoice.currency_id = 1 AND
                         invoice.state NOT IN ('draft', 'cancel')
                 """, [date.strftime(DEFAULT_SERVER_DATETIME_FORMAT)])
             else:
@@ -457,6 +470,7 @@ class AccountContractDashboard(http.Controller):
                     WHERE date %s - interval '1 months' BETWEEN line.asset_start_date AND line.asset_end_date AND
                         invoice.id = line.invoice_id AND
                         invoice.type IN ('out_invoice') AND
+                        invoice.currency_id = 1 AND
                         invoice.state NOT IN ('draft', 'cancel') AND
                         line.account_analytic_id = analytic_account.id AND
                         analytic_account.template_id IN %s
@@ -470,6 +484,7 @@ class AccountContractDashboard(http.Controller):
                     WHERE (date %s - interval '1 months' BETWEEN line.asset_start_date AND line.asset_end_date) AND
                         invoice.id = line.invoice_id AND
                         invoice.type IN ('out_invoice') AND
+                        invoice.currency_id = 1 AND
                         invoice.state NOT IN ('draft', 'cancel') AND
                         NOT exists (
                         SELECT 1 from account_invoice_line ail
@@ -484,6 +499,7 @@ class AccountContractDashboard(http.Controller):
                     WHERE (date %s - interval '1 months' BETWEEN line.asset_start_date AND line.asset_end_date) AND
                         invoice.id = line.invoice_id AND
                         invoice.type IN ('out_invoice') AND
+                        invoice.currency_id = 1 AND
                         invoice.state NOT IN ('draft', 'cancel') AND
                         line.account_analytic_id = analytic_account.id AND
                         analytic_account.template_id IN %s AND
@@ -506,6 +522,7 @@ class AccountContractDashboard(http.Controller):
                     WHERE (date %s - interval '1 months' BETWEEN line.asset_start_date AND line.asset_end_date) AND
                         invoice.id = line.invoice_id AND
                         invoice.type IN ('out_invoice') AND
+                        invoice.currency_id = 1 AND
                         invoice.state NOT IN ('draft', 'cancel') AND
                         NOT exists (
                         SELECT 1 from account_invoice_line ail
@@ -520,6 +537,7 @@ class AccountContractDashboard(http.Controller):
                     WHERE (date %s - interval '1 months' BETWEEN line.asset_start_date AND line.asset_end_date) AND
                         invoice.id = line.invoice_id AND
                         invoice.type IN ('out_invoice') AND
+                        invoice.currency_id = 1 AND
                         invoice.state NOT IN ('draft', 'cancel') AND
                         line.account_analytic_id = analytic_account.id AND
                         analytic_account.template_id IN %s AND
@@ -579,7 +597,6 @@ class AccountContractDashboard(http.Controller):
             new_mrr = 0
             expansion_mrr = 0
             down_mrr = 0
-            cancel_mrr = 0
             churned_mrr = 0
             net_new_mrr = 0
 
@@ -591,7 +608,9 @@ class AccountContractDashboard(http.Controller):
                     WHERE (date %s BETWEEN line.asset_start_date AND line.asset_end_date) AND
                         invoice.id = line.invoice_id AND
                         invoice.type IN ('out_invoice') AND
+                        invoice.currency_id = 1 AND
                         invoice.state NOT IN ('draft', 'cancel') AND
+                        line.account_analytic_id IS NOT NULL AND
                         NOT exists (
                         SELECT 1 from account_invoice_line ail
                         WHERE ail.account_analytic_id = line.account_analytic_id
@@ -605,8 +624,10 @@ class AccountContractDashboard(http.Controller):
                     WHERE (date %s BETWEEN line.asset_start_date AND line.asset_end_date) AND
                         invoice.id = line.invoice_id AND
                         invoice.type IN ('out_invoice') AND
+                        invoice.currency_id = 1 AND
                         invoice.state NOT IN ('draft', 'cancel') AND
                         line.account_analytic_id = analytic_account.id AND
+                        line.account_analytic_id IS NOT NULL AND
                         analytic_account.template_id IN %s AND
                         NOT exists (
                         SELECT 1 from account_invoice_line ail
@@ -633,7 +654,7 @@ class AccountContractDashboard(http.Controller):
                         (
                         SELECT account_analytic_id, SUM(mrr) AS sum
                         FROM account_invoice_line AS line, account_invoice AS invoice
-                        WHERE asset_end_date BETWEEN date %s - interval '2 months' and date %s AND
+                        WHERE asset_end_date BETWEEN date %s - interval '2 months' + interval '1 days' and date %s - interval '1 months' AND
                             invoice.id = line.invoice_id AND
                             invoice.type IN ('out_invoice') AND
                             invoice.state NOT IN ('draft', 'cancel')
@@ -664,7 +685,7 @@ class AccountContractDashboard(http.Controller):
                         (
                         SELECT account_analytic_id, SUM(mrr) AS sum
                         FROM account_invoice_line AS line, account_invoice AS invoice, account_analytic_account AS analytic_account
-                        WHERE asset_end_date BETWEEN date %s - interval '2 months' and date %s AND
+                        WHERE asset_end_date BETWEEN date %s - interval '2 months' + interval '1 days' and date %s - interval '1 months' AND
                             invoice.id = line.invoice_id AND
                             invoice.type IN ('out_invoice') AND
                             invoice.state NOT IN ('draft', 'cancel') AND
@@ -697,7 +718,9 @@ class AccountContractDashboard(http.Controller):
                     WHERE (date %s - interval '1 months' BETWEEN line.asset_start_date AND line.asset_end_date) AND
                         invoice.id = line.invoice_id AND
                         invoice.type IN ('out_invoice') AND
+                        invoice.currency_id = 1 AND
                         invoice.state NOT IN ('draft', 'cancel') AND
+                        line.account_analytic_id IS NOT NULL AND
                         NOT exists (
                         SELECT 1 from account_invoice_line ail
                         WHERE ail.account_analytic_id = line.account_analytic_id
@@ -711,8 +734,10 @@ class AccountContractDashboard(http.Controller):
                     WHERE (date %s - interval '1 months' BETWEEN line.asset_start_date AND line.asset_end_date) AND
                         invoice.id = line.invoice_id AND
                         invoice.type IN ('out_invoice') AND
+                        invoice.currency_id = 1 AND
                         invoice.state NOT IN ('draft', 'cancel') AND
                         line.account_analytic_id = analytic_account.id AND
+                        line.account_analytic_id IS NOT NULL AND
                         analytic_account.template_id IN %s AND
                         NOT exists (
                         SELECT 1 from account_invoice_line ail
@@ -721,12 +746,10 @@ class AccountContractDashboard(http.Controller):
                         )
                 """, [date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), tuple(filtered_contract_template_ids), date.strftime(DEFAULT_SERVER_DATETIME_FORMAT)])
             sql_results = request.cr.dictfetchall()
-            cancel_mrr = 0 if not sql_results or not sql_results[0]['sum'] else sql_results[0]['sum']
+            churned_mrr = 0 if not sql_results or not sql_results[0]['sum'] else sql_results[0]['sum']
 
-            churned_mrr = cancel_mrr + down_mrr
-
-            net_new_mrr = new_mrr + expansion_mrr - churned_mrr
-            result = new_mrr, expansion_mrr, -churned_mrr, net_new_mrr
+            net_new_mrr = new_mrr - churned_mrr + expansion_mrr - down_mrr
+            result = new_mrr, -churned_mrr, expansion_mrr, -down_mrr, net_new_mrr
 
         else:
             result = 0
