@@ -19,65 +19,99 @@ var QWeb = core.qweb;
 			// Load session, if there is any :
 			this.session = new Session();
             this.session.session_reload().then(function(){
+
+                // Case: The user is connected to an Odoo instance and we retrieve the localstorage data based on his username and server
                 if(self.session && self.session.uid !== null){
                     // Set demo data in local storage. TO REMOVE LATER
-                    var timestamp = (new Date()).getTime();
-                    var startup_data = [
-                        {
-                            "session_user":"admin",
-                            "session_uid":1,
-                            "session_server":"http://localhost:8069",
-                            "data":{
-                                "next_aal_id":9,
-                                "next_project_id":3,
-                                "next_task_id":4,
-                                "module_key" : "Project_timesheet_UI_",
-                                "original_timestamp" : timestamp,
-                                "settings":{
-                                    "default_project_id":undefined,
-                                    "minimal_duration":0.25,
-                                    "time_unit":0.25
-                                },
-                                "projects":[],
-                                "tasks": [],
-                                "account_analytic_lines":[],
-                                "day_plan":[]
-                            }
-                        },
-                    ];
+                    self.username = self.session.username;
+                    
                     // Comment or uncomment following lines to reset demo data
-                    // if(localStorage.getItem("pt_data") === null){
+                    if(localStorage.getItem("pt_data") === null){
+                        var timestamp = (new Date()).getTime();
+                        var startup_data = [
+                            {
+                                "session_user": self.username,
+                                "session_uid": self.session.uid,
+                                "session_server": self.session.server,
+                                "data":{
+                                    "next_aal_id":1,
+                                    "next_project_id":1,
+                                    "next_task_id":1,
+                                    "module_key" : "Project_timesheet_UI_",
+                                    "original_timestamp" : timestamp,
+                                    "settings":{
+                                        "default_project_id":undefined,
+                                        "minimal_duration":0.25,
+                                        "time_unit":0.25
+                                    },
+                                    "projects":[],
+                                    "tasks": [],
+                                    "account_analytic_lines":[],
+                                    "day_plan":[]
+                                }
+                            },
+                        ];
                        localStorage.setItem("pt_data", JSON.stringify(startup_data));
-                    // }
+                    }
 
                 	// Load (demo) data from local storage
                 	self.stored_data = JSON.parse(localStorage.getItem("pt_data"));
-                 	self.user_local_data = _.findWhere(self.stored_data, {session_user : self.session.username})
+                 	self.user_local_data = _.findWhere(self.stored_data, {session_user : self.username, session_server : self.session.server});
                  	self.data = self.user_local_data.data;
+
+                    localStorage.setItem("pt_current_user", self.username);
+                    localStorage.setItem("pt_current_server", self.session.server);
                 }
-                else if(localStorage.getItem("pt_current_user") !== null){
-                    
+                // Case: The user is not connected to an Odoo instance, but he has at least connected once earlier.
+                // we retrieve the localstorage data from the previous connection 
+                else if(localStorage.getItem("pt_current_user")  !== null && localStorage.getItem("pt_current_server") !== null){
+                    var current_user = localStorage.getItem("pt_current_user");
+                    var current_server = localStorage.getItem("pt_current_server");
+                    self.username = current_user;
+
+                    self.stored_data = JSON.parse(localStorage.getItem("pt_data"));
+                    self.user_local_data = _.findWhere(self.stored_data, {session_user : current_user, session_server : current_server});
+                    self.data = self.user_local_data.data;
                 }
+                //Case: The user is not and has never been connected to an Odoo instance. We create a default username and server name.
+                // They will be updated when the user connects to an Odoo instance.
                 else{
                     alert("No session detected !");
-                    var timestamp = (new Date()).getTime();
-                    self.data = {
-                                "next_aal_id":1,
-                                "next_project_id":1,
-                                "next_task_id":1,
-                                "module_key" : "Project_timesheet_UI_",
-                                "original_timestamp" : timestamp,
-                                "settings":{
-                                    "default_project_id":undefined,
-                                    "minimal_duration":0.25,
-                                    "time_unit":0.25
-                                },
-                                "projects":[],
-                                "tasks": [],
-                                "account_analytic_lines":[],
-                                "day_plan":[]
-                            }
-                    //if default session, load it, else create new one?
+
+                    //Case : The user has used the app earlier at least once.                    
+                    if(localStorage.getItem("pt_current_user") !== null){
+                        // In theory it should be "$no_user$"
+                        self.username = localStorage.getItem("pt_current_user");
+                        self.stored_data = JSON.parse(localStorage.getItem("pt_data"));
+                        self.user_local_data = _.findWhere(self.stored_data, {session_user : current_user});
+                        self.data = self.user_local_data.data;
+                    }
+
+                    // Case: First connection ever
+                    else{
+                        var timestamp = (new Date()).getTime();
+                        self.username = "$no_user$";
+                        localStorage.setItem("pt_current_user", self.username);
+                        
+                        // Data initialization
+                        self.data = {
+                            "next_aal_id":1,
+                            "next_project_id":1,
+                            "next_task_id":1,
+                            "module_key" : "Project_timesheet_UI_",
+                            "original_timestamp" : timestamp,
+                            "settings":{
+                                "default_project_id":undefined,
+                                "minimal_duration":0.25,
+                                "time_unit":0.25
+                            },
+                            "projects":[],
+                            "tasks": [],
+                            "account_analytic_lines":[],
+                            "day_plan":[]
+                        }
+                        localStorage.setItem("pt_data", JSON.stringify(self.data));
+                    }
                 }
 
              	//Load templates for widgets
@@ -120,7 +154,125 @@ var QWeb = core.qweb;
         },
         update_localStorage: function(){
         	localStorage.setItem("pt_data", JSON.stringify(this.stored_data));
-        }
+        },
+
+        //TAC : TO remove later, it's for testing !
+        test_sess: function(){
+            console.log("start");
+            var self = this;
+
+            // Load session, if there is any :
+            this.session = new Session();
+            this.session.session_reload().then(function(){
+
+                // Case: The user is connected to an Odoo instance and we retrieve the localstorage data based on his username and server
+                if(self.session && self.session.uid !== null){
+                    // Set demo data in local storage. TO REMOVE LATER
+                    self.username = self.session.username;
+                    
+                    // Comment or uncomment following lines to reset demo data
+                    if(localStorage.getItem("pt_data") === null){
+                        var timestamp = (new Date()).getTime();
+                        var startup_data = [
+                            {
+                                "session_user": self.username,
+                                "session_uid": self.session.uid,
+                                "session_server": self.session.server,
+                                "data":{
+                                    "next_aal_id":1,
+                                    "next_project_id":1,
+                                    "next_task_id":1,
+                                    "module_key" : "Project_timesheet_UI_",
+                                    "original_timestamp" : timestamp,
+                                    "settings":{
+                                        "default_project_id":undefined,
+                                        "minimal_duration":0.25,
+                                        "time_unit":0.25
+                                    },
+                                    "projects":[],
+                                    "tasks": [],
+                                    "account_analytic_lines":[],
+                                    "day_plan":[]
+                                }
+                            },
+                        ];
+                       localStorage.setItem("pt_data", JSON.stringify(startup_data));
+                    }
+
+                    // Load (demo) data from local storage
+                    self.stored_data = JSON.parse(localStorage.getItem("pt_data"));
+                    self.user_local_data = _.findWhere(self.stored_data, {session_user : self.username, session_server : self.session.server});
+                    self.data = self.user_local_data.data;
+
+                    localStorage.setItem("pt_current_user", self.username);
+                    localStorage.setItem("pt_current_server", self.session.server);
+                }
+                // Case: The user is not connected to an Odoo instance, but he has at least connected once earlier.
+                // we retrieve the localstorage data from the previous connection 
+                else if(localStorage.getItem("pt_current_user")  !== null && localStorage.getItem("pt_current_server") !== null){
+                    var current_user = localStorage.getItem("pt_current_user");
+                    var current_server = localStorage.getItem("pt_current_server");
+                    self.username = current_user;
+
+                    self.stored_data = JSON.parse(localStorage.getItem("pt_data"));
+                    self.user_local_data = _.findWhere(self.stored_data, {session_user : current_user, session_server : current_server});
+                    self.data = self.user_local_data.data;
+                }
+                //Case: The user is not and has never been connected to an Odoo instance. We create a default username and server name.
+                // They will be updated when the user connects to an Odoo instance.
+                else{
+                    alert("No session detected !");
+
+                    //Case : The user has used the app earlier at least once.                    
+                    if(localStorage.getItem("pt_current_user") !== null){
+                        // In theory it should be "$no_user$"
+                        self.username = localStorage.getItem("pt_current_user");
+                        self.stored_data = JSON.parse(localStorage.getItem("pt_data"));
+                        self.user_local_data = _.findWhere(self.stored_data, {session_user : current_user, session_server : current_server});
+                        self.data = self.user_local_data.data;
+                    }
+
+                    // Case: First connection ever
+                    else{
+                        var timestamp = (new Date()).getTime();
+                        self.username = "$no_user$";
+                        localStorage.setItem("pt_current_user", self.username);
+                        
+                        // Data initialization
+                        self.data = {
+                            "next_aal_id":1,
+                            "next_project_id":1,
+                            "next_task_id":1,
+                            "module_key" : "Project_timesheet_UI_",
+                            "original_timestamp" : timestamp,
+                            "settings":{
+                                "default_project_id":undefined,
+                                "minimal_duration":0.25,
+                                "time_unit":0.25
+                            },
+                            "projects":[],
+                            "tasks": [],
+                            "account_analytic_lines":[],
+                            "day_plan":[]
+                        }
+                        localStorage.setItem("pt_data", JSON.stringify(startup_data));
+                    }
+                }
+
+                //Load templates for widgets
+
+                    if(self.session.uid !== null){
+                        self.sync_screen.sync(function(){
+                            self.activities_screen.renderElement();
+                        });
+                    }
+                    else{
+                        self.activities_screen.renderElement();
+                    }
+
+            });
+        },
+
 	});
 
 	// Basic screen widget, inherited by all screens
@@ -136,7 +288,6 @@ var QWeb = core.qweb;
             "click .pt_drawer_menu_zone" : "on_close_menu_by_click",
             "touchstart .pt_drawer_menu,.pt_drawer_menu_zone" : "on_menu_touch_start",
             "touchmove .pt_drawer_menu,.pt_drawer_menu_zone" : "on_touchmove",
-            "click div.pt_activities_screen" : "on_screen_touch_start"
         },
 		init: function(parent){
 			this._super(parent);
@@ -200,7 +351,6 @@ var QWeb = core.qweb;
 
         },
         on_menu_touch_start: function(event){
-            console.log("touchstart")
             var touch;
             if (event.originalEvent.touches && event.originalEvent.touches[0]){
                 touch = event.originalEvent.touches[0];
@@ -218,16 +368,6 @@ var QWeb = core.qweb;
             });
             this.$(".pt_burger_menu_close").toggleClass("pt_burger_menu_open pt_burger_menu_close");
         },
-        on_screen_touch_start: function(event){
-            console.log(event);
-            console.log("ok");
-            return
-            event.preventDefault();
-            var touch = event.originalEvent.touches[0];
-            console.log(touch.pageX);
-        },
-
-
 
         // Methods that might be moved later if necessary :
         get_project_name: function(project_id){
@@ -609,7 +749,7 @@ var QWeb = core.qweb;
                         return undefined;
                     }
                     var res = {
-                        id : self.data.module_key + self.getParent().session.username + self.data.original_timestamp + "_project." + self.data.next_project_id,
+                        id : self.data.module_key + self.getParent().username + self.data.original_timestamp + "_project." + self.data.next_project_id,
                         name : user_input.trim(),
                         isNew: true,
                     };
@@ -677,7 +817,7 @@ var QWeb = core.qweb;
                     "change input.pt_activity_task":"on_change_task",
                     "click .pt_discard_changes":"discard_changes",
                     "click .pt_validate_edit_btn" : "save_changes",
-                    "click .pt_delete_activity" : "delete_activity"
+                    "click .pt_delete_activity" : "delete_activity",
                 }
             );
             this.activity = {
@@ -714,7 +854,7 @@ var QWeb = core.qweb;
                         return undefined;
                     }
                     var res = {
-                        id : self.data.module_key + self.getParent().session.username + self.data.original_timestamp + "_project." + self.data.next_project_id,
+                        id : self.data.module_key + self.getParent().username + self.data.original_timestamp + "_project." + self.data.next_project_id,
                         name : user_input.trim(),
                         isNew: true,
                     };
@@ -753,7 +893,7 @@ var QWeb = core.qweb;
                         return undefined;
                     }
 					var res = {
-						id : self.data.module_key + self.getParent().session.username + self.data.original_timestamp + "_task." + self.data.next_task_id,
+						id : self.data.module_key + self.getParent().username + self.data.original_timestamp + "_task." + self.data.next_task_id,
 						name : user_input.trim(),
 						isNew: true,
                         project_id: self.activity.project_id
@@ -843,7 +983,7 @@ var QWeb = core.qweb;
             var old_activity = _.findWhere(this.data.account_analytic_lines,  {id:this.activity.id})
             // If this condition is true, it means that the activity is a newly created one :
             if(_.isUndefined(old_activity)){
-                this.data.account_analytic_lines.unshift({id : this.data.module_key + self.getParent().session.username + self.data.original_timestamp + "_aal." + self.data.next_aal_id});
+                this.data.account_analytic_lines.unshift({id : this.data.module_key + self.getParent().username + self.data.original_timestamp + "_aal." + self.data.next_aal_id});
                 old_activity = this.data.account_analytic_lines[0];
                 old_activity.date = this.activity.date;
                 self.data.next_aal_id++;
