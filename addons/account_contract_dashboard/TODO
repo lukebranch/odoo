@@ -17,6 +17,9 @@ In https://docs.google.com/a/openerp.com/file/d/0B5BDHVRYo-q5TUN4OXYxY1NkaEE/edi
 	create index account_invoice_line_aai_assets_index on account_invoice_line(account_analytic_id, asset_start_date, asset_end_date);
 
 - script de migration : add asset_category_id for product ONLY for OE and partnership
+- corriger les données : si ca finit le 01 du mois, changer la date à un jour plus tot
+- boutton --> avoir le même chiffre 
+- ? group_by sales team
 
 ############# OPTIMIZATIONS
 
