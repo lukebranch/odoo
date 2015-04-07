@@ -228,6 +228,7 @@
           openerp.jsonRpc('/account_contract_dashboard/calculate_graph_mrr_growth', 'call', {
               'start_date' : start_date,
               'end_date': end_date,
+              'complete': true,
               'filtered_contract_template_ids': filtered_contract_template_ids,
           }).then(function(result){
               loadChart_mrr_growth_stat('#mrr_growth_chart_div', result);

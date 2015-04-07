@@ -190,7 +190,6 @@ class AccountContractDashboard(http.Controller):
             recurring_invoice_line_ids = request.env['account.invoice.line'].search([
                 ('asset_start_date', '<=', end_date),
                 ('asset_end_date', '>=', end_date),
-                ('asset_category_id', '!=', None),
                 ('account_analytic_id.template_id', '=', plan.id),
             ])
             if stat_types[stat_type]['type'] == 'last':
@@ -370,7 +369,7 @@ class AccountContractDashboard(http.Controller):
                     FROM account_invoice_line AS line, account_invoice AS invoice
                     WHERE
                         (invoice.date_due BETWEEN %s AND %s) AND
-                        line.asset_category_id IS NULL AND
+                        line.mrr IS NULL AND
                         line.invoice_id = invoice.id AND
                         invoice.type IN ('out_invoice') AND
                         invoice.currency_id = 1 AND
@@ -382,7 +381,7 @@ class AccountContractDashboard(http.Controller):
                     FROM account_invoice_line AS line, account_invoice AS invoice, account_analytic_account AS analytic_account
                     WHERE
                         (invoice.date_due BETWEEN %s AND %s) AND
-                        line.asset_category_id IS NULL AND
+                        line.mrr IS NULL AND
                         line.invoice_id = invoice.id AND
                         invoice.type IN ('out_invoice') AND
                         invoice.currency_id = 1 AND
