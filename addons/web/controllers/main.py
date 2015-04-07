@@ -721,9 +721,10 @@ class Database(http.Controller):
             post.get('db_name'),
             bool(post.get('demo_data')),
             post.get('lang'),
+            post.get('db_login'),
             post.get('db_pwd'))
         if db_created:
-            request.session.authenticate(post.get('db_name'), 'admin', post.get('db-pwd'))
+            request.session.authenticate(post.get('db_name'), post.get('db_login'), post.get('db_pwd'))
             return http.local_redirect('/web/')
         else:
             return http.local_redirect('/web/database/manager',{'error':'unable_to_create'})

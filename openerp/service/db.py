@@ -29,7 +29,7 @@ class DatabaseExists(Warning):
     pass
 
 # This should be moved to openerp.modules.db, along side initialize().
-def _initialize_db(id, db_name, demo, lang, user_password):
+def _initialize_db(id, db_name, demo, lang, user_login, user_password):
     try:
         db = openerp.sql_db.db_connect(db_name)
         with closing(db.cursor()) as cr:
@@ -37,6 +37,7 @@ def _initialize_db(id, db_name, demo, lang, user_password):
             openerp.modules.db.initialize(cr)
             openerp.tools.config['lang'] = lang
             cr.commit()
+
         registry = openerp.modules.registry.RegistryManager.new(
             db_name, demo, None, update_module=True)
 
@@ -47,7 +48,7 @@ def _initialize_db(id, db_name, demo, lang, user_password):
                 modobj.update_translations(cr, SUPERUSER_ID, mids, lang)
 
             # update admin's password and lang
-            values = {'password': user_password, 'lang': lang}
+            values = {'login': user_login, 'password': user_password, 'lang': lang}
             registry['res.users'].write(cr, SUPERUSER_ID, [SUPERUSER_ID], values)
 
             cr.execute('SELECT login, password FROM res_users ORDER BY login')
@@ -83,11 +84,11 @@ def _create_empty_database(name):
             cr.autocommit(True)     # avoid transaction block
             cr.execute("""CREATE DATABASE "%s" ENCODING 'unicode' TEMPLATE "%s" """ % (name, chosen_template))
 
-def exp_create_database(db_name, demo, lang, user_password='admin'):
+def exp_create_database(db_name, demo, lang, user_login='admin', user_password='admin'):
     """ Similar to exp_create but blocking."""
     _logger.info('Create database `%s`.', db_name)
     _create_empty_database(db_name)
-    _initialize_db(id, db_name, demo, lang, user_password)
+    _initialize_db(id, db_name, demo, lang, user_login, user_password)
     return True
 
 def exp_duplicate_database(db_original_name, db_name):
