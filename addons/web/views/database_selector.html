@@ -13,16 +13,15 @@
             document.getElementById('dbselector').submit();
         }
     </script>
-<body class="oe_single_form">
-
-    <div class="oe_single_form_container modal-content">
+<body >
+<div class="row" style="padding: 5px;">
+    <div class="col-md-6 col-md-offset-3">
+    
 
         <form class="oe_dbselector_form" id="dbselector" role="form" action="/web" method="get">
-            <div class="oe_single_form_logo">
+            <div class="oe_single_form_logo" style="text-align: center;">
                 <img src="/web/static/src/img/logo2.png"/>
             </div>
-
-            <hr/>
 
             <div class="form-group field-db">
                 <label for="db" class="control-label">Select database</label>
@@ -47,7 +46,7 @@
                 <input type="submit" value="Continue" class="btn btn-primary pull-right"/>
             </noscript>
 
-            <div class="oe_single_form_footer">
+            <div class="oe_single_form_footer" style="text-align: center;">
                 <a class="oe_login_manage_db" href="/web/database/manager{% if debug %}?debug{% endif %}">Manage Databases</a> |
                 <a href="http://www.odoo.com" target="_blank">Powered by <span>Odoo</span></a>
             </div>
