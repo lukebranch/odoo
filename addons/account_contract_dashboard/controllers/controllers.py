@@ -41,6 +41,13 @@ def get_pruned_tick_values(ticks, nb_desired_ticks):
 
 class AccountContractDashboard(http.Controller):
 
+    @http.route('/account_contract_dashboard/home', auth='user', website=True)
+    def home(self, **kw):
+
+        return http.request.render('account_contract_dashboard.home', {
+            'test': 0,
+        })
+
     @http.route('/account_contract_dashboard', auth='user', website=True)
     def account_contract_dashboard(self, **kw):
 

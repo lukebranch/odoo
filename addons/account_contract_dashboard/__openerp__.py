@@ -14,6 +14,7 @@
         'report/account_contract_dashboard_report_view.xml',
         'templates/dashboard.xml',
         'templates/assets.xml',
+        'templates/home.xml',
     ],
     'qweb': ['static/src/xml/*.xml'],
     'installable': True,
