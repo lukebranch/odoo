@@ -4,23 +4,25 @@ odoo.define('project_timeshee.ui', function (require ) {
 var core = require('web.core');
 var Session = require('web.Session');
 var Widget = require('web.Widget');
-
+var time_module = require('web.time');
+var Model = require('web.Model');
+var web_data = require('web.data');
 
 var QWeb = core.qweb;
 
 	//Main widget to instantiate the app
 	var ProjectTimesheet = Widget.extend({
 		start: function(){
+            console.log("start");
 			var self = this;
 
 			// Load session, if there is any :
 			this.session = new Session();
             this.session.session_reload().then(function(){
-                if(self.session.uid !== null){
-                    alert('You do have a session!');
+                if(self.session && self.session.uid !== null){
                     // Set demo data in local storage. TO REMOVE LATER
                     var timestamp = (new Date()).getTime();
-                    var test_data = [
+                    var startup_data = [
                         {
                             "session_user":"admin",
                             "session_uid":1,
@@ -44,17 +46,37 @@ var QWeb = core.qweb;
                         },
                     ];
                     // Comment or uncomment following lines to reset demo data
-                    //if(localStorage.getItem("pt_data") === null){
-                       localStorage.setItem("pt_data", JSON.stringify(test_data));
-                    //}
+                    // if(localStorage.getItem("pt_data") === null){
+                       localStorage.setItem("pt_data", JSON.stringify(startup_data));
+                    // }
 
                 	// Load (demo) data from local storage
                 	self.stored_data = JSON.parse(localStorage.getItem("pt_data"));
                  	self.user_local_data = _.findWhere(self.stored_data, {session_user : self.session.username})
                  	self.data = self.user_local_data.data;
                 }
+                else if(localStorage.getItem("pt_current_user") !== null){
+                    
+                }
                 else{
                     alert("No session detected !");
+                    var timestamp = (new Date()).getTime();
+                    self.data = {
+                                "next_aal_id":1,
+                                "next_project_id":1,
+                                "next_task_id":1,
+                                "module_key" : "Project_timesheet_UI_",
+                                "original_timestamp" : timestamp,
+                                "settings":{
+                                    "default_project_id":undefined,
+                                    "minimal_duration":0.25,
+                                    "time_unit":0.25
+                                },
+                                "projects":[],
+                                "tasks": [],
+                                "account_analytic_lines":[],
+                                "day_plan":[]
+                            }
                     //if default session, load it, else create new one?
                 }
 
@@ -71,28 +93,28 @@ var QWeb = core.qweb;
 		},
 		load_template: function(){
             var self = this;
-            return session.rpc('/web/proxy/load', {path: "/project_timesheet/static/src/xml/project_timesheet.xml"}).then(function(xml) {
+            return this.session.rpc('/web/proxy/load', {path: "/project_timesheet/static/src/xml/project_timesheet.xml"}).then(function(xml) {
                 QWeb.add_template(xml);
             });
         },
         build_widgets: function(){
-        	this.activities_screen = new openerp.project_timesheet.Activities_screen(this);
+        	this.activities_screen = new Activities_screen(this);
         	this.activities_screen.appendTo(this.$el);
         	this.activities_screen.show();
 
-        	this.day_planner_screen = new openerp.project_timesheet.Day_planner_screen(this);
+        	this.day_planner_screen = new Day_planner_screen(this);
         	this.day_planner_screen.appendTo(this.$el);
         	this.day_planner_screen.hide();
 
-        	this.settings_screen = new openerp.project_timesheet.Settings_screen(this);
+        	this.settings_screen = new Settings_screen(this);
         	this.settings_screen.appendTo(this.$el);
         	this.settings_screen.hide();
 
-        	this.edit_activity_screen = new openerp.project_timesheet.Edit_activity_screen(this);
+        	this.edit_activity_screen = new Edit_activity_screen(this);
         	this.edit_activity_screen.appendTo(this.$el);
         	this.edit_activity_screen.hide();
 
-            this.sync_screen = new openerp.project_timesheet.Sync_screen(this);
+            this.sync_screen = new Sync_screen(this);
             this.sync_screen.appendTo(this.$el);
             this.sync_screen.hide();
         },
@@ -209,7 +231,7 @@ var QWeb = core.qweb;
 
         // Methods that might be moved later if necessary :
         get_project_name: function(project_id){
-        	project = _.findWhere(self.data.projects, {id : project_id});
+        	var project = _.findWhere(this.data.projects, {id : project_id});
         	if (!_.isUndefined(project)){
         		return project.name;
         	}
@@ -218,7 +240,7 @@ var QWeb = core.qweb;
         	}
         },
         get_task_name: function(task_id){
-        	task = _.findWhere(self.data.tasks, {id : task_id});
+        	var task = _.findWhere(this.data.tasks, {id : task_id});
         	if (!_.isUndefined(task)){
         		return task.name;
         	}
@@ -227,9 +249,9 @@ var QWeb = core.qweb;
         	}
         },
         get_project_name_from_task_id: function(task_id){
-            task = _.findWhere(self.data.tasks, {id : task_id});
+            var task = _.findWhere(this.data.tasks, {id : task_id});
             if (!_.isUndefined(task)){
-                project = _.findWhere(self.data.projects, {id : task.project_id});
+                project = _.findWhere(this.data.projects, {id : task.project_id});
                 if (!_.isUndefined(project)){
                     return project.name;
                 }
@@ -327,7 +349,7 @@ var QWeb = core.qweb;
 	var Activities_screen = BasicScreenWidget.extend({
         template: "activities_screen",
         init: function(parent) {
-            self = this;
+            var self = this;
             self.screen_name = "Activities";
             self._super(parent);
             // Events specific to this screen
@@ -428,7 +450,7 @@ var QWeb = core.qweb;
             else{
                 activity.unit_amount = parseFloat(activity.unit_amount) + this.data.settings.time_unit;
             }
-            activity.write_date = openerp.datetime_to_str(new Date());
+            activity.write_date = time_module.datetime_to_str(new Date());
             activity.to_sync = true;
             this.getParent().update_localStorage();
             this.renderElement();
@@ -444,7 +466,7 @@ var QWeb = core.qweb;
             if (activity.unit_amount < 0){
                 activity.unit_amount = 0;
             }
-            activity.write_date = openerp.datetime_to_str(new Date());
+            activity.write_date = time_module.datetime_to_str(new Date());
             activity.to_sync = true;
             this.getParent().update_localStorage();
             this.renderElement();
@@ -485,14 +507,14 @@ var QWeb = core.qweb;
             var ms = moment(moment(new Date()).add(activity.unit_amount,"hours")).diff(moment(start_time));
             var d = moment.duration(ms);
             var hours = Math.floor(d.asHours());
-            hh_mm_value = hours + moment.utc(d.asMilliseconds()).format(":mm");
+            var hh_mm_value = hours + moment.utc(d.asMilliseconds()).format(":mm");
             activity.unit_amount = this.hh_mm_to_unit_amount(hh_mm_value);
-            activity.write_date = openerp.datetime_to_str(new Date());
-            activity.date = openerp.date_to_str(new Date());
+            activity.write_date = time_module.datetime_to_str(new Date());
+            activity.date = time_module.date_to_str(new Date())
             activity.to_sync = true;
 
             this.data.account_analytic_lines.sort(function(a,b){
-                return openerp.str_to_datetime(b.write_date) - openerp.str_to_datetime(a.write_date);
+                return time_module.str_to_datetime(b.write_date) - time_module.str_to_datetime(a.write_date);
             });
             this.current_activity = false;
             this.timer_on = false;
@@ -524,8 +546,8 @@ var QWeb = core.qweb;
             this.screen_name = "Day Planner";
             _.extend(self.events,
                 {
-                    "click .pt_day_plan_select":"add_to_day_plan",
-                    "click .pt_day_plan_remove" : "remove_from_day_plan"
+                    "click tr.pt_day_plan_select":"add_to_day_plan",
+                    "click tr.pt_day_plan_remove" : "remove_from_day_plan"
                 }
             );
             this.tasks = this.data.tasks;
@@ -545,7 +567,7 @@ var QWeb = core.qweb;
     var Settings_screen = BasicScreenWidget.extend({
         template: "settings_screen",
         init: function(parent) {
-        	self = this;
+        	var self = this;
             this._super(parent);
             this.screen_name = "Settings";
             _.extend(self.events,
@@ -560,7 +582,7 @@ var QWeb = core.qweb;
             this.initialize_project_selector();
         },
         initialize_project_selector: function(){
-            self = this;
+            var self = this;
             // Initialization of select2 for projects
             function format(item) {return item.name}
             function formatRes(item){
@@ -586,7 +608,7 @@ var QWeb = core.qweb;
                     if (duplicate){
                         return undefined;
                     }
-                    res = {
+                    var res = {
                         id : self.data.module_key + self.getParent().session.username + self.data.original_timestamp + "_project." + self.data.next_project_id,
                         name : user_input.trim(),
                         isNew: true,
@@ -600,7 +622,7 @@ var QWeb = core.qweb;
             }).select2('val',[]);
         },
         on_change_default_project: function(event){
-            self = this;
+            var self = this;
             // "cleared" case
             if(_.isUndefined(event.added)){
                 self.data.settings.default_project_id = undefined;
@@ -644,7 +666,7 @@ var QWeb = core.qweb;
     var Edit_activity_screen = BasicScreenWidget.extend({
         template: "edit_activity_screen",
         init: function(parent) {
-        	self = this;
+        	var self = this;
         	this._super(parent);
             this.screen_name = "Edit Activity";
             _.extend(self.events,
@@ -663,11 +685,11 @@ var QWeb = core.qweb;
                 task_id: undefined,
                 desc:"/",
                 unit_amount: undefined,
-                date: (openerp.date_to_str(new Date()))
+                date: time_module.date_to_str(new Date())
             };
         },
         initialize_project_selector: function(){
-            self = this;
+            var self = this;
         	// Initialization of select2 for projects
         	function format(item) {return item.name}
         	function formatRes(item){
@@ -691,7 +713,7 @@ var QWeb = core.qweb;
                     if (duplicate){
                         return undefined;
                     }
-                    res = {
+                    var res = {
                         id : self.data.module_key + self.getParent().session.username + self.data.original_timestamp + "_project." + self.data.next_project_id,
                         name : user_input.trim(),
                         isNew: true,
@@ -706,7 +728,7 @@ var QWeb = core.qweb;
         },
         // Initialization of select2 for tasks
         initialize_task_selector: function(){
-            self = this;
+            var self = this;
         	function format(item) {return item.name}
         	function formatRes(item){
         		if(item.isNew){
@@ -730,7 +752,7 @@ var QWeb = core.qweb;
                     if (duplicate){
                         return undefined;
                     }
-					res = {
+					var res = {
 						id : self.data.module_key + self.getParent().session.username + self.data.original_timestamp + "_task." + self.data.next_task_id,
 						name : user_input.trim(),
 						isNew: true,
@@ -745,7 +767,7 @@ var QWeb = core.qweb;
         	});
         },
         on_change_task: function(event){
-            self = this;
+            var self = this;
         	var selected_task = {
     			name : event.added.name,
     			id : event.added.id,
@@ -802,8 +824,8 @@ var QWeb = core.qweb;
         	if(!_.isUndefined(activity_id)){
 	            this.activity = _.clone(_.findWhere(this.data.account_analytic_lines,  {id:activity_id}));
 			}
-            else if(!_.isUndefined(self.data.settings.default_project_id)){
-                this.activity.project_id = self.data.settings.default_project_id;
+            else if(!_.isUndefined(this.data.settings.default_project_id)){
+                this.activity.project_id = this.data.settings.default_project_id;
             }
 
             this.renderElement();
@@ -811,6 +833,7 @@ var QWeb = core.qweb;
             this.initialize_task_selector();
         },
         save_changes: function(){
+            var self = this;
             // Validation step :  The only compulsory field is project.
             if(_.isUndefined(this.activity.project_id)){
                 this.$('.pt_save_msg').show(0).delay(5000).hide(0);
@@ -820,7 +843,7 @@ var QWeb = core.qweb;
             var old_activity = _.findWhere(this.data.account_analytic_lines,  {id:this.activity.id})
             // If this condition is true, it means that the activity is a newly created one :
             if(_.isUndefined(old_activity)){
-                this.data.account_analytic_lines.unshift({id : self.data.module_key + self.getParent().session.username + self.data.original_timestamp + "_aal." + self.data.next_aal_id});
+                this.data.account_analytic_lines.unshift({id : this.data.module_key + self.getParent().session.username + self.data.original_timestamp + "_aal." + self.data.next_aal_id});
                 old_activity = this.data.account_analytic_lines[0];
                 old_activity.date = this.activity.date;
                 self.data.next_aal_id++;
@@ -829,11 +852,11 @@ var QWeb = core.qweb;
             old_activity.task_id = this.activity.task_id;
             old_activity.desc = this.activity.desc;
             old_activity.unit_amount = this.activity.unit_amount;
-            old_activity.write_date = openerp.datetime_to_str(new Date());
+            old_activity.write_date = time_module.datetime_to_str(new Date());
             old_activity.to_sync = true;
             
             this.data.account_analytic_lines.sort(function(a,b){
-                return openerp.str_to_datetime(b.write_date) - openerp.str_to_datetime(a.write_date);
+                return time_module.str_to_datetime(b.write_date) - time_module.str_to_datetime(a.write_date);
             });
             this.getParent().update_localStorage();            
 
@@ -847,12 +870,13 @@ var QWeb = core.qweb;
             this.goto_activities();
         },
         reset_activity: function(){
+            var self = this;
             this.activity = {
                 project_id: undefined,
                 task_id: undefined,
                 desc:"/",
                 unit_amount: 0,
-                date: (openerp.date_to_str(new Date()))
+                date: time_module.date_to_str(new Date())
             };
 
             if (!_.isUndefined(self.data.settings.default_project)){
@@ -884,24 +908,26 @@ var QWeb = core.qweb;
             this.session = this.getParent().session;
         },
         test_fct: function(){
-            this.sync();
-            this.renderElement();
+            var self = this;
+            this.sync(function(){
+                self.renderElement();
+            });
         },
         sync: function(callback){
             var self = this;
             var parent = this.getParent();
             var data = parent.data;
-            var account_analytic_line_model = new openerp.Model("account.analytic.line");
+            var account_analytic_line_model = new Model("account.analytic.line");
             account_analytic_line_model.call("export_data_for_ui" , []).then(function(sv_data){
                 // SV => LS sync
-                sv_aals = sv_data.aals.datas;
-                sv_tasks = sv_data.tasks.datas;
-                sv_projects = sv_data.projects.datas;
+                var sv_aals = sv_data.aals.datas;
+                var sv_tasks = sv_data.tasks.datas;
+                var sv_projects = sv_data.projects.datas;
 
                 _.each(sv_projects, function(sv_project){
                     // Check if the project exists in LS.
                     // If it does we simply update the name, otherwise we copy the project in LS.
-                    ls_project = _.findWhere(data.projects, {id : sv_project[0]})
+                    var ls_project = _.findWhere(data.projects, {id : sv_project[0]})
                     if (_.isUndefined(ls_project)){
                         data.projects.push({
                             id : sv_project[0],
@@ -915,7 +941,7 @@ var QWeb = core.qweb;
                 });
 
                 _.each(sv_tasks, function(sv_task){
-                    ls_task = _.findWhere(data.tasks, {id : sv_task[0]})
+                    var ls_task = _.findWhere(data.tasks, {id : sv_task[0]})
                     if(_.isUndefined(ls_task)){
                         data.tasks.push({
                             id : sv_task[0],
@@ -932,7 +958,7 @@ var QWeb = core.qweb;
                 _.each(sv_aals, function(sv_aal){
                     // First, check that the aal is related to a project. If not we don't import it.
                     if(!_.isUndefined(sv_aal[8])){
-                        ls_aal = _.findWhere(data.account_analytic_lines, {id : sv_aal[0]})
+                        var ls_aal = _.findWhere(data.account_analytic_lines, {id : sv_aal[0]})
                         // Create case
                         if (_.isUndefined(ls_aal)){
                             data.account_analytic_lines.push({
@@ -947,7 +973,7 @@ var QWeb = core.qweb;
                         }
                         else{
                             //Update case
-                            if(openerp.str_to_datetime(ls_aal.write_date) < openerp.str_to_datetime(sv_aal[7])){
+                            if(time_module.str_to_datetime(ls_aal.write_date) < time_module.str_to_datetime(sv_aal[7])){
                                 ls_aal.project_id = sv_aal[8];
                                 ls_aal.task_id = sv_aal[1];
                                 ls_aal.desc = sv_aal[3];
@@ -962,7 +988,7 @@ var QWeb = core.qweb;
             })
             .then(function(){
                 //LS => SV sync
-                var context = new openerp.web.CompoundContext({default_is_timesheet : true});
+                var context = new web_data.CompoundContext({default_is_timesheet : true});
                 // For the aals that need to be synced, update unit_amount with minimal duration or round with time_unit.
                 // TAC TODO
                 // This feature is currently disabled. It might need to be moved to the backend.
@@ -993,19 +1019,19 @@ var QWeb = core.qweb;
                     // The entries that have been removed in the backend must be removed from the LS 
                     if(sv_response.projects_to_remove.length > 0){
                         _.each(sv_response.projects_to_remove, function(project_to_remove_id){
-                            p_to_remove = _.findWhere(data.projects, {id : project_to_remove_id});
+                            var p_to_remove = _.findWhere(data.projects, {id : project_to_remove_id});
                             data.projects.splice(_.indexOf(data.projects, p_to_remove), 1);
                         });
                     }
                     if(sv_response.tasks_to_remove.length > 0){
                         _.each(sv_response.tasks_to_remove, function(task_to_remove_id){
-                            t_to_remove = _.findWhere(data.tasks, {id : task_to_remove_id});
+                            var t_to_remove = _.findWhere(data.tasks, {id : task_to_remove_id});
                             data.tasks.splice(_.indexOf(data.tasks, t_to_remove), 1);
                         });
                     }
                     if(sv_response.aals_to_remove.length > 0){
                         _.each(sv_response.aals_to_remove, function(aal_to_remove_id){
-                            aal_to_remove = _.findWhere(data.account_analytic_lines, {id : aal_to_remove_id});
+                            var aal_to_remove = _.findWhere(data.account_analytic_lines, {id : aal_to_remove_id});
                             data.account_analytic_lines.splice(_.indexOf(data.account_analytic_lines, aal_to_remove), 1);
                         });
                     }
@@ -1026,7 +1052,5 @@ var QWeb = core.qweb;
         }
     });
 
-    return{
-        ProjectTimesheet : ProjectTimesheet
-    };
+    return ProjectTimesheet;
 });

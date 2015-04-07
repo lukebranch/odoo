@@ -19,21 +19,14 @@
         <script src="static/src/js/project_timesheet.js" type="text/javascript"></script>
         <link href="static/src/css/project_timesheet.css" rel="stylesheet"/>
         <script type="text/javascript" id="loading-script" t-raw="init">
-          $(function() {
+            $(function(){  
               $.material.init();
-              console.log("test");
               odoo.define('project_timesheet.project_timesheet', function(require){
-              console.log("2");
-                var project_timesheet = require('project_timesheet.ui');
-                    var p_t = new project_timesheet.ProjectTimesheet();
-                    p_t.appendTo("body");
-                    console.log("appended?")
+                var test = require('project_timeshee.ui');
+                var pt = new test();
+                pt.appendTo("body");
               });
-              odoo.init();
-              //var s = new odoo.init();
-              //var w = new s.project_timesheet.ProjectTimesheet();
-              //w.appendTo("body");
-          });
+            });
         </script>
       </head>
       <body class="o_project_timesheet" style="height: 100%;">
