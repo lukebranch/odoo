@@ -886,6 +886,7 @@ class stock_picking(osv.osv):
 
         if todo_force_assign:
             self.force_assign(cr, uid, todo_force_assign, context=context)
+            self.do_prepare_partial(cr, uid, todo_force_assign, context=context)
         return True
 
     def action_assign(self, cr, uid, ids, context=None):
@@ -894,6 +895,7 @@ class stock_picking(osv.osv):
         also impact the state of the picking as it is computed based on move's states.
         @return: True
         """
+        to_prepare = []
         for pick in self.browse(cr, uid, ids, context=context):
             if pick.state == 'draft':
                 self.action_confirm(cr, uid, [pick.id], context=context)
@@ -902,6 +904,10 @@ class stock_picking(osv.osv):
             if not move_ids:
                 raise UserError(_('Nothing to check the availability for.'))
             self.pool.get('stock.move').action_assign(cr, uid, move_ids, context=context)
+            if pick.state in ('assigned', 'partially_available'):
+                to_prepare.append(pick.id)
+        if to_prepare:
+            self.do_prepare_partial(cr, uid, to_prepare, context=context)
         return True
 
     def force_assign(self, cr, uid, ids, context=None):
@@ -912,6 +918,7 @@ class stock_picking(osv.osv):
             move_ids = [x.id for x in pick.move_lines if x.state in ['confirmed', 'waiting']]
             self.pool.get('stock.move').force_assign(cr, uid, move_ids, context=context)
         #pack_operation might have changed and need to be recomputed
+        self.do_prepare_partial(cr, uid, ids, context=context)
         self.write(cr, uid, ids, {'recompute_pack_op': True}, context=context)
         return True
 
@@ -1395,6 +1402,22 @@ class stock_picking(osv.osv):
         created_id = self.pool['stock.transfer_details'].create(cr, uid, {'picking_id': len(picking) and picking[0] or False}, context)
         return self.pool['stock.transfer_details'].wizard_view(cr, uid, created_id, context)
 
+    def do_new_transfer(self, cr, uid, ids, context=None):
+        pack_op_obj = self.pool['stock.pack.operation']
+        for pick in self.browse(cr, uid, ids, context=context):
+            process = False
+            to_delete = []
+            for operation in pick.pack_operation_ids:
+                if operation.qty_done > 0:
+                    pack_op_obj.write(cr, uid, operation.id, {'product_qty': operation.qty_done}, context=context)
+                    process = True
+                else:
+                    to_delete.append(operation.id)
+            if to_delete:
+                pack_op_obj.unlink(cr, uid, to_delete, context=context)
+            if not process:
+                raise UserError(_('This will be replaced by a wizard that asks you to go to the next level'))
+        self.do_transfer(cr, uid, ids, context=context)
 
     @api.cr_uid_ids_context
     def do_transfer(self, cr, uid, picking_ids, context=None):
