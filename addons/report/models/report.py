@@ -19,7 +19,7 @@
 #
 ##############################################################################
 
-from openerp import api
+from openerp import api, fields
 from openerp import SUPERUSER_ID
 from openerp.exceptions import AccessError
 from openerp.osv import osv
@@ -567,3 +567,8 @@ class Report(osv.Model):
             stream.close()
 
         return merged_file_path
+
+class actions(osv.Model):
+    _inherit = 'ir.actions.report.xml'
+
+    print_report_name = fields.Char('Print Report Name', help="This is the filename of the report going to download. Keep empty to not change the report filename. You can use a python expression with the object and time variables.")
