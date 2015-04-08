@@ -276,6 +276,12 @@ class stock_landed_cost(osv.osv):
                 line_obj.write(cr, uid, key, {'additional_landed_cost': value}, context=context)
         return True
 
+    def unlink(self, cr, uid, ids, context=None):
+        context = context or {}
+        for cost in self.browse(cr, uid, ids, context=context):
+            if cost.state == 'done':
+                raise osv.except_osv(_('User Error!'), _('You can not delete applied landed costs'))
+        return super(stock_landed_cost, self).unlink(cr, uid, ids, context=context)
 
 class stock_landed_cost_lines(osv.osv):
     _name = 'stock.landed.cost.lines'
