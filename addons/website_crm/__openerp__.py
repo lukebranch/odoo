@@ -13,7 +13,7 @@ OpenERP Contact Form
     'depends': ['website_partner', 'crm'],
     'data': [
         'data/website_crm_data.xml',
-        'views/website_crm.xml',
+        'views/website_crm_templates.xml',
     ],
     'installable': True,
     'auto_install': False,
