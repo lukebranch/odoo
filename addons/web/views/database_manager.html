@@ -31,9 +31,12 @@
                 if($(this).find('#master_new_pwd').val() !== $(this).find('#confirm_master_pwd').val()){
                     event.preventDefault();
                     $(this).find('#confirm_master_pwd')
-                        .after('<span class="text-danger">The confirmation password doesn\'t match the password</span>')
+                        .after('<span class="text-danger">The confirmation password doesn\'t match the password</span>');
                 }
             });
+            if($(".list_db").length === 0){
+                $('.modal_create_db').modal('show');
+            }
         });
     </script>
 <body>
@@ -59,7 +62,7 @@
                 {% if databases %}
                 <div class="form-group">
                     <label for="db" class="control-label">Manage database</label>
-                        <ul class="list-group">
+                        <ul class="list-group list_db">
                             {% for db in databases %}
                                 <li class="list-group-item">
                                     <div>
