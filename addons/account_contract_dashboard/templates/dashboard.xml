@@ -3,9 +3,8 @@
   <data>
 
   <template id="dashboard_options">
-    <div class="row mt32 mb32">
-      <form t-att-action="form_action">
-        <div class="col-sm-12 text-right">
+      <div class="col-sm-6 pull-right">
+        <form t-att-action="form_action">
           <div class="mb8">
             <a t-att-class="'' if filtered_contract_template_ids else 'collapsed'" data-toggle="collapse" href="#collapse_filter_contracts">
               Filter on contracts
@@ -24,11 +23,8 @@
           <div>
             <input id="datetimepicker_start" name="start_date" t-att-value="start_date"/> to <input name="end_date" t-att-value="end_date" id="datetimepicker_end"/> <button class="btn btn-primary" type="submit">Update</button>
           </div>
-        </div>
-      </form>
-    </div>
-
-    <hr/>
+        </form>
+      </div>
   </template>
 
   <template id="dashboard" name="Recurring Revenue Dashboard" page="True">
@@ -37,34 +33,43 @@
     <div id="wrap" class="oe_structure oe_empty" style="background-color: #F0EEEE;">
       <div class="container">
         <t t-set="form_action" t-value="'/account_contract_dashboard'"/>
-        <t t-call="account_contract_dashboard.dashboard_options"/>
 
-          <div class="row">
-            <t t-foreach="all_stats" t-as="stat">
-              <div class="col-sm-4">
-                <a class="fill-div" t-att-href="'account_contract_dashboard/detailed/%s?%s' % (stat['code'], href_post_args)">
-                  <div class="box stat-box" t-att-name="stat['name']" t-att-code="stat['code']">
-                    <div class="loading">
-                      <i class="fa fa-spin fa-spinner fa-pulse" style="font-size: 3em;"></i>
-                    </div>
-                  </div>
-                </a>
-              </div>
-            </t>
 
-            <t t-foreach="all_forecast" t-as="forecast">
-              <div class="col-sm-6">
-                <!-- <a class="fill-div" href="account_contract_dashboard/forecast"> -->
-                <a class="fill-div button-to-backend" href="account_contract_dashboard/forecast" t-att-menu-id="find_res_id('account_contract_dashboard.menu_action_contract_dashboard_report_forecast')">
-                  <div class="box forecast-box" t-att-name="forecast['name']" t-att-code="forecast['code']">
-                    <div class="loading">
-                      <i class="fa fa-spin fa-spinner fa-pulse" style="font-size: 3em;"></i>
-                    </div>
-                  </div>
-                </a>
-              </div>
-            </t>
+        <div class="row mt32 mb32">
+          <div class="col-md-6 pull-left">
+            <a href="account_contract_dashboard/choose_salesman">Dashboard by salesman</a>
           </div>
+          <t t-call="account_contract_dashboard.dashboard_options"/>
+        </div>
+        
+        <hr/>
+
+        <div class="row">
+          <t t-foreach="all_stats" t-as="stat">
+            <div class="col-sm-4">
+              <a class="fill-div" t-att-href="'account_contract_dashboard/detailed/%s?%s' % (stat['code'], href_post_args)">
+                <div class="box stat-box" t-att-name="stat['name']" t-att-code="stat['code']">
+                  <div class="loading">
+                    <i class="fa fa-spin fa-spinner fa-pulse" style="font-size: 3em;"></i>
+                  </div>
+                </div>
+              </a>
+            </div>
+          </t>
+
+          <t t-foreach="all_forecast" t-as="forecast">
+            <div class="col-sm-6">
+              <!-- <a class="fill-div" href="account_contract_dashboard/forecast"> -->
+              <a class="fill-div button-to-backend" href="account_contract_dashboard/forecast" t-att-menu-id="find_res_id('account_contract_dashboard.menu_action_contract_dashboard_report_forecast')">
+                <div class="box forecast-box" t-att-name="forecast['name']" t-att-code="forecast['code']">
+                  <div class="loading">
+                    <i class="fa fa-spin fa-spinner fa-pulse" style="font-size: 3em;"></i>
+                  </div>
+                </div>
+              </a>
+            </div>
+          </t>
+        </div>
 
       </div>
 
@@ -86,9 +91,12 @@
 
           <hr/> -->
           <t t-set="form_action" t-value="'/account_contract_dashboard/detailed/%s' % stat_type"/>
-          <t t-call="account_contract_dashboard.dashboard_options"/>
 
-          <button class="btn btn-primary button-to-backend" t-att-data-action-id="find_res_id('account_contract_dashboard.action_analytic_entries_report')" t-att-data-menu-id="find_res_id('account.menu_action_analytic_entries_report')">Detailed Analysis</button>
+          <div class="row mt32 mb32">
+            <t t-call="account_contract_dashboard.dashboard_options"/>
+          </div>
+
+          <button class="btn btn-primary button-to-backend" t-att-data-action-id="find_res_id('account_contract_dashboard.action_invoice_line_entries_report')">Detailed Analysis</button>
 
 
           <div class="row box graph-detailed">
@@ -275,6 +283,55 @@
           </div>
       </div>
     </div>
+    </t>
+  </template>
+
+
+  <template id="choose_salesman" name="Recurring Revenue Dashboard for Salesman" page="True">
+    <t t-name="account_contract_dashboard.choose_salesman"/>
+    <t t-call="account_contract_dashboard.layout">
+      <div id="wrap" class="oe_structure oe_empty" style="background-color: #F0EEEE;">
+        <div class="container">
+
+          <h1>
+            Choose your salesman:
+          </h1>
+          
+          <div class="row">
+            <t t-foreach="salesman_ids" t-as="salesman">
+              <div>
+                <a t-att-href="'/account_contract_dashboard/salesman/%s' % salesman.id"><t t-esc="salesman.name"/></a>
+              </div>
+            </t>
+          </div>
+
+        </div>
+      </div>
+    </t>
+  </template>
+
+    <template id="salesman" name="Recurring Revenue Dashboard for Salesman" page="True">
+    <t t-name="account_contract_dashboard.salesman"/>
+    <t t-call="account_contract_dashboard.layout">
+      <div id="wrap" class="oe_structure oe_empty" style="background-color: #F0EEEE;">
+        <div class="container">
+
+         <input name="salesman_id" type="hidden" t-att-value="salesman.id"/>
+
+          <h1>
+            Recurring Revenue Dashboard for <t t-esc="salesman.name"/>
+          </h1>
+          
+          <div class="row">
+            <div class="col-md-12">
+              FULL GRAPHES pour <t t-esc="salesman.name"/>
+            </div>
+          </div>
+
+          <div id="mrr_growth_salesman"/>
+
+        </div>
+      </div>
     </t>
   </template>
 

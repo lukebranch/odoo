@@ -39,6 +39,12 @@ def get_pruned_tick_values(ticks, nb_desired_ticks):
     return ticks
 
 
+def last_day_of_month(date):
+    if date.month == 12:
+        return date.replace(day=31)
+    return date.replace(month=date.month+1, day=1) - timedelta(days=1)
+
+
 class AccountContractDashboard(http.Controller):
 
     @http.route('/account_contract_dashboard/home', auth='user', website=True)
@@ -119,6 +125,104 @@ class AccountContractDashboard(http.Controller):
         return http.request.render('account_contract_dashboard.forecast', {
             'currency': request.env['res.company'].search([])[0].currency_id.symbol,
         })
+
+    @http.route('/account_contract_dashboard/choose_salesman', auth='user', website=True)
+    def choose_salesman(self, **kw):
+
+        salesman_ids = []
+
+        request.cr.execute("""
+            SELECT DISTINCT(user_id)
+            FROM account_invoice
+        """)
+        sql_results = request.cr.dictfetchall()
+        for entry in sql_results:
+            salesman_ids.append(request.env['res.users'].browse(entry['user_id']))
+
+        return http.request.render('account_contract_dashboard.choose_salesman', {
+            'salesman_ids': salesman_ids,
+        })
+
+    @http.route('/account_contract_dashboard/salesman/<int:salesman_id>', auth='user', website=True)
+    def salesman_dashboard(self, salesman_id, **kw):
+
+        salesman = request.env['res.users'].browse(salesman_id)
+        date = datetime.strptime('2015-03-31', DEFAULT_SERVER_DATE_FORMAT)
+
+        return http.request.render('account_contract_dashboard.salesman', {
+            'salesman': salesman,
+        })
+
+    @http.route('/account_contract_dashboard/get_values_salesman', type="json", auth='user', website=True)
+    def get_values_salesman(self, salesman_id, end_date=None):
+
+        salesman = request.env['res.users'].browse(salesman_id)
+
+        if not end_date:
+            end_date = default_start_date
+        print(end_date)
+        end_date = last_day_of_month(end_date)
+        print(end_date)
+
+        date = end_date
+
+        new_mrr, churned_mrr, expansion_mrr, down_mrr, net_new_mrr = 0, 0, 0, 0, 0
+
+        invoice_line_ids_starting_last_month = request.env['account.invoice.line'].search([
+            ('invoice_id.user_id', '=', salesman.id),
+            ('asset_start_date', '>', (date - relativedelta(months=+1)).strftime(DEFAULT_SERVER_DATE_FORMAT)),
+            ('asset_start_date', '<=', date.strftime(DEFAULT_SERVER_DATE_FORMAT)),
+        ])
+        invoice_lines_ids_stopping_last_month = request.env['account.invoice.line'].search([
+            ('invoice_id.user_id', '=', salesman.id),
+            ('asset_end_date', '>', (date - relativedelta(months=+1)).strftime(DEFAULT_SERVER_DATE_FORMAT)),
+            ('asset_end_date', '<=', date.strftime(DEFAULT_SERVER_DATE_FORMAT)),
+        ])
+        # DOWN & CANCEL
+        for invoice in invoice_lines_ids_stopping_last_month.mapped('invoice_id'):
+            invoice_line_ids = invoice_lines_ids_stopping_last_month.filtered(lambda x: x.invoice_id == invoice)
+            invoice_line = invoice_line_ids[0]
+            if not invoice_line:
+                continue
+            # Is there any invoice_line in the next 30 days for this contract ?
+            next_invoice_line_ids = request.env['account.invoice.line'].search([
+                ('asset_start_date', '>=', invoice_line.asset_end_date),
+                ('asset_start_date', '<', (datetime.strptime(invoice_line.asset_end_date, DEFAULT_SERVER_DATE_FORMAT) + relativedelta(months=+1)).strftime(DEFAULT_SERVER_DATE_FORMAT)),
+                ('account_analytic_id', '=', invoice_line.account_analytic_id.id)
+            ])
+            previous_mrr = sum([x['mrr'] for x in invoice_line_ids.read(['mrr'])])
+            if next_invoice_line_ids:
+                next_mrr = sum([x['mrr'] for x in next_invoice_line_ids.read(['mrr'])])
+                if next_mrr < previous_mrr:
+                    # DOWN
+                    down_mrr += (previous_mrr - next_mrr)
+            else:
+                # CANCEL
+                churned_mrr += previous_mrr
+        # UP & NEW
+        for invoice in invoice_line_ids_starting_last_month.mapped('invoice_id'):
+            invoice_line_ids = invoice_line_ids_starting_last_month.filtered(lambda x: x.invoice_id == invoice)
+            invoice_line = invoice_line_ids[0]
+            if not invoice_line:
+                continue
+            # Was there any invoice_line in the last 30 days for this contract ?
+            previous_invoice_line_ids = request.env['account.invoice.line'].search([
+                ('asset_end_date', '<=', invoice_line.asset_start_date),
+                ('asset_end_date', '>', (datetime.strptime(invoice_line.asset_start_date, DEFAULT_SERVER_DATE_FORMAT) - relativedelta(months=+1)).strftime(DEFAULT_SERVER_DATE_FORMAT)),
+                ('account_analytic_id', '=', invoice_line.account_analytic_id.id)]
+            )
+            next_mrr = sum([x['mrr'] for x in invoice_line_ids.read(['mrr'])])
+            if previous_invoice_line_ids:
+                previous_mrr = sum([x['mrr'] for x in previous_invoice_line_ids.read(['mrr'])])
+                if previous_mrr < next_mrr:
+                    # UP
+                    expansion_mrr += (next_mrr - previous_mrr)
+            else:
+                # NEW
+                new_mrr += next_mrr
+        net_new_mrr = new_mrr - churned_mrr + expansion_mrr - down_mrr
+        result = new_mrr, -churned_mrr, expansion_mrr, -down_mrr, net_new_mrr
+        return result
 
     @http.route('/account_contract_dashboard/get_default_values_forecast', type="json", auth='user', website=True)
     def get_default_values_forecast(self, forecast_type, end_date=None):
@@ -376,7 +480,7 @@ class AccountContractDashboard(http.Controller):
                     FROM account_invoice_line AS line, account_invoice AS invoice
                     WHERE
                         (invoice.date_due BETWEEN %s AND %s) AND
-                        line.mrr IS NULL AND
+                        line.asset_start_date IS NULL AND
                         line.invoice_id = invoice.id AND
                         invoice.type IN ('out_invoice') AND
                         invoice.currency_id = 1 AND
@@ -415,6 +519,7 @@ class AccountContractDashboard(http.Controller):
                         invoice.id = line.invoice_id AND
                         invoice.type IN ('out_invoice') AND
                         invoice.currency_id = 1 AND
+                        line.account_analytic_id IS NOT NULL AND
                         invoice.state NOT IN ('draft', 'cancel')
                 """, [date.strftime(DEFAULT_SERVER_DATE_FORMAT)])
             else:
@@ -426,6 +531,7 @@ class AccountContractDashboard(http.Controller):
                         invoice.type IN ('out_invoice') AND
                         invoice.currency_id = 1 AND
                         invoice.state NOT IN ('draft', 'cancel') AND
+                        line.account_analytic_id IS NOT NULL AND
                         line.account_analytic_id = analytic_account.id AND
                         analytic_account.template_id IN %s
                 """, [date.strftime(DEFAULT_SERVER_DATE_FORMAT), tuple(filtered_contract_template_ids)])
@@ -465,6 +571,7 @@ class AccountContractDashboard(http.Controller):
                     FROM account_invoice_line AS line, account_invoice AS invoice
                     WHERE date %s - interval '1 months' BETWEEN line.asset_start_date AND line.asset_end_date AND
                         invoice.id = line.invoice_id AND
+                        line.account_analytic_id IS NOT NULL AND
                         invoice.type IN ('out_invoice') AND
                         invoice.currency_id = 1 AND
                         invoice.state NOT IN ('draft', 'cancel')
@@ -478,6 +585,7 @@ class AccountContractDashboard(http.Controller):
                         invoice.type IN ('out_invoice') AND
                         invoice.currency_id = 1 AND
                         invoice.state NOT IN ('draft', 'cancel') AND
+                        line.account_analytic_id IS NOT NULL AND
                         line.account_analytic_id = analytic_account.id AND
                         analytic_account.template_id IN %s
                 """, [date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), tuple(filtered_contract_template_ids)])
@@ -492,10 +600,11 @@ class AccountContractDashboard(http.Controller):
                         invoice.type IN ('out_invoice') AND
                         invoice.currency_id = 1 AND
                         invoice.state NOT IN ('draft', 'cancel') AND
+                        line.account_analytic_id IS NOT NULL AND
                         NOT exists (
-                        SELECT 1 from account_invoice_line ail
-                        WHERE ail.account_analytic_id = line.account_analytic_id
-                        AND (date %s BETWEEN ail.asset_start_date AND ail.asset_end_date)
+                            SELECT 1 from account_invoice_line ail
+                            WHERE ail.account_analytic_id = line.account_analytic_id
+                            AND (date %s BETWEEN ail.asset_start_date AND ail.asset_end_date)
                         )
                 """, [date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), date.strftime(DEFAULT_SERVER_DATETIME_FORMAT)])
             else:
@@ -507,17 +616,17 @@ class AccountContractDashboard(http.Controller):
                         invoice.type IN ('out_invoice') AND
                         invoice.currency_id = 1 AND
                         invoice.state NOT IN ('draft', 'cancel') AND
+                        line.account_analytic_id IS NOT NULL AND
                         line.account_analytic_id = analytic_account.id AND
                         analytic_account.template_id IN %s AND
                         NOT exists (
-                        SELECT 1 from account_invoice_line ail
-                        WHERE ail.account_analytic_id = line.account_analytic_id
-                        AND (date %s BETWEEN ail.asset_start_date AND ail.asset_end_date)
+                            SELECT 1 from account_invoice_line ail
+                            WHERE ail.account_analytic_id = line.account_analytic_id
+                            AND (date %s BETWEEN ail.asset_start_date AND ail.asset_end_date)
                         )
                 """, [date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), tuple(filtered_contract_template_ids), date.strftime(DEFAULT_SERVER_DATETIME_FORMAT)])
             sql_results = request.cr.dictfetchall()
             resigned_customers = 0 if not sql_results or not sql_results[0]['sum'] else sql_results[0]['sum']
-
             return 0 if not active_customers_1_month_ago else resigned_customers/float(active_customers_1_month_ago)
 
         def _calculate_revenue_churn(date):
@@ -530,10 +639,11 @@ class AccountContractDashboard(http.Controller):
                         invoice.type IN ('out_invoice') AND
                         invoice.currency_id = 1 AND
                         invoice.state NOT IN ('draft', 'cancel') AND
+                        line.account_analytic_id IS NOT NULL AND
                         NOT exists (
-                        SELECT 1 from account_invoice_line ail
-                        WHERE ail.account_analytic_id = line.account_analytic_id
-                        AND (date %s BETWEEN ail.asset_start_date AND ail.asset_end_date)
+                            SELECT 1 from account_invoice_line ail
+                            WHERE ail.account_analytic_id = line.account_analytic_id
+                            AND (date %s BETWEEN ail.asset_start_date AND ail.asset_end_date)
                         )
                 """, [date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), date.strftime(DEFAULT_SERVER_DATETIME_FORMAT)])
             else:
@@ -545,12 +655,13 @@ class AccountContractDashboard(http.Controller):
                         invoice.type IN ('out_invoice') AND
                         invoice.currency_id = 1 AND
                         invoice.state NOT IN ('draft', 'cancel') AND
+                        line.account_analytic_id IS NOT NULL AND
                         line.account_analytic_id = analytic_account.id AND
                         analytic_account.template_id IN %s AND
                         NOT exists (
-                        SELECT 1 from account_invoice_line ail
-                        WHERE ail.account_analytic_id = line.account_analytic_id
-                        AND (date %s BETWEEN ail.asset_start_date AND ail.asset_end_date)
+                            SELECT 1 from account_invoice_line ail
+                            WHERE ail.account_analytic_id = line.account_analytic_id
+                            AND (date %s BETWEEN ail.asset_start_date AND ail.asset_end_date)
                         )
                 """, [date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), tuple(filtered_contract_template_ids), date.strftime(DEFAULT_SERVER_DATETIME_FORMAT)])
             sql_results = request.cr.dictfetchall()
@@ -558,7 +669,6 @@ class AccountContractDashboard(http.Controller):
 
             previous_month_mrr = _calculate_mrr((date - relativedelta(months=+1)))
             result = 0 if previous_month_mrr == 0 else (churned_mrr)/float(previous_month_mrr)
-
             return result
 
         result = 0
@@ -618,8 +728,8 @@ class AccountContractDashboard(http.Controller):
                         invoice.state NOT IN ('draft', 'cancel') AND
                         line.account_analytic_id IS NOT NULL AND
                         NOT exists (
-                        SELECT 1 from account_invoice_line ail
-                        WHERE ail.account_analytic_id = line.account_analytic_id
+                            SELECT 1 from account_invoice_line ail
+                            WHERE ail.account_analytic_id = line.account_analytic_id
                         AND (date %s - interval '1 month' BETWEEN ail.asset_start_date AND ail.asset_end_date)
                         )
                 """, [date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), date.strftime(DEFAULT_SERVER_DATETIME_FORMAT)])
@@ -636,9 +746,9 @@ class AccountContractDashboard(http.Controller):
                         line.account_analytic_id IS NOT NULL AND
                         analytic_account.template_id IN %s AND
                         NOT exists (
-                        SELECT 1 from account_invoice_line ail
-                        WHERE ail.account_analytic_id = line.account_analytic_id
-                        AND (date %s - interval '1 month' BETWEEN ail.asset_start_date AND ail.asset_end_date)
+                            SELECT 1 from account_invoice_line ail
+                            WHERE ail.account_analytic_id = line.account_analytic_id
+                            AND (date %s - interval '1 month' BETWEEN ail.asset_start_date AND ail.asset_end_date)
                         )
                 """, [date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), tuple(filtered_contract_template_ids), date.strftime(DEFAULT_SERVER_DATETIME_FORMAT)])
             sql_results = request.cr.dictfetchall()
@@ -660,13 +770,14 @@ class AccountContractDashboard(http.Controller):
                         (
                         SELECT account_analytic_id, SUM(mrr) AS sum
                         FROM account_invoice_line AS line, account_invoice AS invoice
-                        WHERE asset_end_date BETWEEN date %s - interval '2 months' + interval '1 days' and date %s - interval '1 months' AND
+                        WHERE asset_end_date BETWEEN date %s - interval '2 months' + interval '1 days' and date %s AND
                             invoice.id = line.invoice_id AND
                             invoice.type IN ('out_invoice') AND
                             invoice.state NOT IN ('draft', 'cancel')
                         GROUP BY account_analytic_id
                         ) AS old_line
                     WHERE
+                        new_line.account_analytic_id IS NOT NULL AND
                         old_line.account_analytic_id = new_line.account_analytic_id
                 """, [
                         date.strftime(DEFAULT_SERVER_DATETIME_FORMAT),
@@ -691,7 +802,7 @@ class AccountContractDashboard(http.Controller):
                         (
                         SELECT account_analytic_id, SUM(mrr) AS sum
                         FROM account_invoice_line AS line, account_invoice AS invoice, account_analytic_account AS analytic_account
-                        WHERE asset_end_date BETWEEN date %s - interval '2 months' + interval '1 days' and date %s - interval '1 months' AND
+                        WHERE asset_end_date BETWEEN date %s - interval '2 months' + interval '1 days' and date %s AND
                             invoice.id = line.invoice_id AND
                             invoice.type IN ('out_invoice') AND
                             invoice.state NOT IN ('draft', 'cancel') AND
@@ -700,6 +811,7 @@ class AccountContractDashboard(http.Controller):
                         GROUP BY account_analytic_id
                         ) AS old_line
                     WHERE
+                        new_line.account_analytic_id IS NOT NULL AND
                         old_line.account_analytic_id = new_line.account_analytic_id
                 """, [
                         date.strftime(DEFAULT_SERVER_DATETIME_FORMAT),
@@ -728,9 +840,9 @@ class AccountContractDashboard(http.Controller):
                         invoice.state NOT IN ('draft', 'cancel') AND
                         line.account_analytic_id IS NOT NULL AND
                         NOT exists (
-                        SELECT 1 from account_invoice_line ail
-                        WHERE ail.account_analytic_id = line.account_analytic_id
-                        AND (date %s BETWEEN ail.asset_start_date AND ail.asset_end_date)
+                            SELECT 1 from account_invoice_line ail
+                            WHERE ail.account_analytic_id = line.account_analytic_id
+                            AND (date %s BETWEEN ail.asset_start_date AND ail.asset_end_date)
                         )
                 """, [date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), date.strftime(DEFAULT_SERVER_DATETIME_FORMAT)])
             else:
@@ -746,9 +858,9 @@ class AccountContractDashboard(http.Controller):
                         line.account_analytic_id IS NOT NULL AND
                         analytic_account.template_id IN %s AND
                         NOT exists (
-                        SELECT 1 from account_invoice_line ail
-                        WHERE ail.account_analytic_id = line.account_analytic_id
-                        AND (date %s BETWEEN ail.asset_start_date AND ail.asset_end_date)
+                            SELECT 1 from account_invoice_line ail
+                            WHERE ail.account_analytic_id = line.account_analytic_id
+                            AND (date %s BETWEEN ail.asset_start_date AND ail.asset_end_date)
                         )
                 """, [date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), tuple(filtered_contract_template_ids), date.strftime(DEFAULT_SERVER_DATETIME_FORMAT)])
             sql_results = request.cr.dictfetchall()

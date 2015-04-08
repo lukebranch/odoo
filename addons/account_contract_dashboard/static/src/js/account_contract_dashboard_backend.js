@@ -28,8 +28,8 @@ openerp.account_contract_dashboard = function (instance) {
         iframe_clicked: function(e){
             if ($(e.target).hasClass('button-to-backend')){
                 var action_id = $(e.target).data('action-id');
-                var menu_id = $(e.target).data('menu-id');
-                this.do_action(action_id, {action_menu_id: menu_id});
+                console.log(action_id);
+                this.do_action(action_id);
             }
         }
     });

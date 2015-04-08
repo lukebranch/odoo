@@ -270,6 +270,26 @@
 
       });
 
+      // 2.3 STAT DASHBOARD - MRR GROWTH
+      openerp.website.if_dom_contains('#mrr_growth_salesman', function() {
+
+          // var start_date = $('input[name="start_date"]').val();
+          // var end_date = $('input[name="end_date"]').val();
+
+          var salesman_id = $('input[name="salesman_id"]').val();
+
+          $('#mrr_growth_salesman').html("<div class='loader' style='position: relative; text-align:center; width: 100%; height: 300px;'>" + loader + "</div>");
+
+          openerp.jsonRpc('/account_contract_dashboard/get_values_salesman', 'call', {
+            'salesman_id': salesman_id,
+          }).then(function(result){
+              loadChart_mrr_salesman('#mrr_growth_salesman', result);
+              $('#mrr_growth_salesman div.loader').hide();
+          });
+      });
+
+      
+
       // 5. FORECAST - GRAPH 1
       openerp.website.if_dom_contains('#revenue_forecast_chart_div, #contracts_forecast_chart_div', function() {
 
@@ -536,6 +556,7 @@
           });
       }
 
+
       function loadChart_mrr_growth_stat(div_to_display, result){
 
           var myData = [
@@ -601,7 +622,61 @@
 
           });
       }
+      
+      function loadChart_mrr_salesman(div_to_display, result){
+
+          var myData = [
+            {
+              key: "MRR Growth",
+              values: [
+                { 
+                  "label" : "New MRR" ,
+                  "value" : 10
+                } , 
+                { 
+                  "label" : "Churned MRR" , 
+                  "value" : -20
+                } , 
+                { 
+                  "label" : "Expansion MRR" , 
+                  "value" : 30
+                } , 
+                { 
+                  "label" : "Down MRR" , 
+                  "value" : result[3]
+                } , 
+                { 
+                  "label" : "Net New MRR" ,
+                  "value" : result[4]
+                } ,
+              ]
+            }
+          ];
+
+          nv.addGraph(function() {
+            var chart = nv.models.discreteBarChart()
+                .x(function(d) { return d.label })    //Specify the data accessors.
+                .y(function(d) { return d.value })
+                .staggerLabels(true)    //Too many bars and not enough room? Try staggering labels.
+                .tooltips(false)        //Don't show tooltips
+                .showValues(true)       //...instead, show the bar value right on top of each bar.
+                .transitionDuration(350)
+                ;
+
+            var svg = d3.select(div_to_display)
+                .append("svg")
+                .attr("height", '20em')
+            svg
+                .datum(myData)
+                .call(chart);
+
+            nv.utils.windowResize(chart.update);
+
+            return chart;
+          });
+      }
   });
+
   function getMinY(l) {
       var min = Math.min.apply(Math,l.map(function(o){return o[1];}));
       var max = Math.max.apply(Math,l.map(function(o){return o[1];}));
