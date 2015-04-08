@@ -1,3 +1,4 @@
 # -*- coding: utf-8 -*-
 
-import product_visible_discount
+import sale_order
+import product_pricelist
