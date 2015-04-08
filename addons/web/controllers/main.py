@@ -696,10 +696,14 @@ class Database(http.Controller):
             list_lang = request.session.proxy("db").list_lang() or []
         except Exception, e:
             return {"error": e, "title": _("Languages")}
+        pwd_is_admin = False
+        if(openerp.tools.config['admin_passwd'] == 'admin'):
+            pwd_is_admin = True
         return env.get_template("database_manager.html").render({
             'databases': dbs,
             'debug': request.debug,
             'list_lang': list_lang,
+            'pwd_is_admin': pwd_is_admin,
             'error': kw['error'] if 'error' in kw else False,
         })
 
@@ -741,7 +745,7 @@ class Database(http.Controller):
     @http.route('/web/database/drop', type='http', auth="none")
     def drop(self, **post):
         try:
-            password = post.get('pwd')
+            password = post.get('master_pwd')
             db = post.get('db')
             if request.session.proxy("db").drop(password, db):
                 return http.local_redirect('/web/database/manager')

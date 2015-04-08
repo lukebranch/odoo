@@ -37,156 +37,162 @@
         });
     </script>
 <body>
-<div class="row" style="padding: 5px;">
-    <div class="col-md-6 col-sm-6 col-sm-offset-3 col-md-offset-3">
-
-        <form class="oe_dbselector_form" id="dbselector" role="form" action="/web" method="get">
-            <div class="oe_single_form_logo" style="text-align: center;">
-                <img src="/web/static/src/img/logo2.png" class="img-responsive" style="display:initial;"/>
-            </div>
-            {% if error == "acces_denied" %}
-                <div><span class="text-danger">Wrong password or you don't have the authorization</span></div>
-            {% elif error == "unable_to_drop"%}
-                <div><span class="text-danger">Unable to drop the database</span></div>
-            {% elif error == "unable_to_create"%}
-                <div><span class="text-danger">Unable to create the database</span></div>
-            {% elif error == "unable_to_backup"%}
-                <div><span class="text-danger">Unable to backup the database</span></div>
-            {% elif error == "unable_to_restore"%}
-                <div><span class="text-danger">Unable to restore the database</span></div>
-            {% elif error == "unable_to_change_pwd"%}
-                <div><span class="text-danger">Unable to change the admin password</span></div>
-            {% endif %}
-            {% if databases %}
-            <div class="form-group">
-                <label for="db" class="control-label">Manage database</label>
-                    <ul class="list-group">
-                        {% for db in databases %}
-                            <li class="list-group-item">
-                                <div>
-                                    <a style="width: 70%;height:100%;display: inline-block"href="/web?db={{ db }}"><span style="width:100%;display: inline-block;overflow: hidden;text-overflow: ellipsis;">{{ db }}</span></a>
-                                    <div class="pull-right">
-                                        <a href="#" title="Duplicate" data-toggle="modal" data-target=".modal_duplicate_db" data-db="{{ db }}"><i class="fa fa-files-o fa-fw"></i></a>
-                                        <a href="#" title="Backup" data-toggle="modal" data-target=".modal_backup_db" data-db="{{ db }}"><i class="fa fa-floppy-o fa-fw"></i></a>
-                                        <a href="#" title="Delete" data-toggle="modal" data-target=".modal_drop_db" data-db="{{ db }}"><i class="fa fa-trash fa-fw"></i></a>
+    <div class="row" style="padding: 5px;">
+        <div class="col-md-6 col-sm-6 col-sm-offset-3 col-md-offset-3">
+            <form class="oe_dbselector_form" id="dbselector" role="form" action="/web" method="get">
+                <div class="oe_single_form_logo" style="text-align: center;">
+                    <img src="/web/static/src/img/logo2.png" class="img-responsive" style="display:initial;"/>
+                </div>
+                {% if error == "acces_denied" %}
+                    <div><span class="text-danger">Wrong password or you don't have the authorization</span></div>
+                {% elif error == "unable_to_drop"%}
+                    <div><span class="text-danger">Unable to drop the database</span></div>
+                {% elif error == "unable_to_create"%}
+                    <div><span class="text-danger">Unable to create the database</span></div>
+                {% elif error == "unable_to_backup"%}
+                    <div><span class="text-danger">Unable to backup the database</span></div>
+                {% elif error == "unable_to_restore"%}
+                    <div><span class="text-danger">Unable to restore the database</span></div>
+                {% elif error == "unable_to_change_pwd"%}
+                    <div><span class="text-danger">Unable to change the admin password</span></div>
+                {% endif %}
+                {% if databases %}
+                <div class="form-group">
+                    <label for="db" class="control-label">Manage database</label>
+                        <ul class="list-group">
+                            {% for db in databases %}
+                                <li class="list-group-item">
+                                    <div>
+                                        <a style="width: 70%;height:100%;display: inline-block"href="/web?db={{ db }}"><span style="width:100%;display: inline-block;overflow: hidden;text-overflow: ellipsis;">{{ db }}</span></a>
+                                        <div class="pull-right">
+                                            <a href="#" title="Duplicate" data-toggle="modal" data-target=".modal_duplicate_db" data-db="{{ db }}"><i class="fa fa-files-o fa-fw"></i></a>
+                                            <a href="#" title="Backup" data-toggle="modal" data-target=".modal_backup_db" data-db="{{ db }}"><i class="fa fa-floppy-o fa-fw"></i></a>
+                                            <a href="#" title="Delete" data-toggle="modal" data-target=".modal_drop_db" data-db="{{ db }}"><i class="fa fa-trash fa-fw"></i></a>
+                                        </div>
                                     </div>
-                                </div>
-                            </li>
-                        {% endfor %}
-                    </ul>
-            </div>
-            {% endif %}
-                <div style="text-align: center;">
-                <button style="margin-bottom:5px;" type="button" data-toggle="modal" data-target=".modal_create_db" class="btn btn-sm btn-primary create-database-btn" autocomplete="off">
-                    Create Database
-                </button>
-                <button style="margin-bottom:5px;" type="button" data-toggle="modal" data-target=".modal_restore_db" class="btn btn-sm btn-primary restore_db_btn" autocomplete="off">
-                    Restore Database
-                </button>
-                <button style="margin-bottom:5px;" type="button" data-toggle="modal" data-target=".modal_change_pwd" class="btn btn-sm btn-primary change-pwd-btn" autocomplete="off">
-                    Change Master Password
-                </button>
-            </div>
-            {% if debug %}
-                <input type="hidden" name="debug" value=""/>
-            {% endif %}
+                                </li>
+                            {% endfor %}
+                        </ul>
+                </div>
+                {% endif %}
+                    <div style="text-align: center;">
+                    <button style="margin-bottom:5px;" type="button" data-toggle="modal" data-target=".modal_create_db" class="btn btn-sm btn-primary create-database-btn" autocomplete="off">
+                        Create Database
+                    </button>
+                    <button style="margin-bottom:5px;" type="button" data-toggle="modal" data-target=".modal_restore_db" class="btn btn-sm btn-primary restore_db_btn" autocomplete="off">
+                        Restore Database
+                    </button>
+                    <button style="margin-bottom:5px;" type="button" data-toggle="modal" data-target=".modal_change_pwd" class="btn btn-sm btn-primary change-pwd-btn" autocomplete="off">
+                        Change Master Password
+                    </button>
+                </div>
+                {% if debug %}
+                    <input type="hidden" name="debug" value=""/>
+                {% endif %}
 
-            <noscript>
-                <hr/>
-                <input type="submit" value="Continue" class="btn btn-primary pull-right"/>
-            </noscript>
+                <noscript>
+                    <hr/>
+                    <input type="submit" value="Continue" class="btn btn-primary pull-right"/>
+                </noscript>
 
-            <div style="text-align: center;margin-top:20px;">
-                <a href="http://www.odoo.com" target="_blank">Powered by <span>Odoo</span></a>
-            </div>
-        </form>
-
+                <div style="text-align: center;margin-top:20px;">
+                    <a href="http://www.odoo.com" target="_blank">Powered by <span>Odoo</span></a>
+                </div>
+            </form>
+        </div>
     </div>
 
-</div>
-<!-- Modal -->
+    <!-- Modal -->
     <div class="modal fade modal_drop_db" role="dialog">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-            <h4 class="modal-title">Drop Database</h4>
-          </div>
-          <form style="margin:10px;" id="form_drop_db" role="form" action="/web/database/drop" method="post">
-              <div class="modal-body">
-                    <div class="form-group">
-                        <label for="db" class="control-label">Database</label>
-                        <input type="text" name="db" id="db" class="form-control" required="required" readonly/>
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title">Drop Database</h4>
+                </div>
+                <form style="margin:10px;" id="form_drop_db" role="form" action="/web/database/drop" method="post">
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="db" class="control-label">Database</label>
+                            <input type="text" name="db" id="db" class="form-control" required="required" readonly/>
+                        </div>
+                        <div class="form-group">
+                            {% if pwd_is_admin %}
+                                <input type="hidden" name="master_pwd" id="master_pwd" class="form-control" required="required" value="admin"/>
+                            {% else %}
+                                <label for="master_pwd" class="control-label">Master Password</label>
+                                <input type="password" name="master_pwd" id="master_pwd" class="form-control" required="required" autofocus="autofocus"/>
+                            {% endif %}
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="pwd" class="control-label">Master Password</label>
-                        <input type="password" name="pwd" id="pwd" class="form-control" required="required" autofocus="autofocus"/>
+                    <div class="modal-footer">
+                        <input type="submit" value="Continue" class="btn btn-primary pull-right"/>
                     </div>
-              </div>
-              <div class="modal-footer">
-                <input type="submit" value="Continue" class="btn btn-primary pull-right"/>
-              </div>
-          </form>
+                </form>
+            </div>
         </div>
-      </div>
     </div>
 
     <div class="modal fade modal_create_db" role="dialog">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-            <h4 class="modal-title">Create Database</h4>
-          </div>
-          <form style="margin:10px;" id="form_create_db" role="form" action="/web/database/create" method="post">
-              <div class="modal-body">
-                <p>Fill in this form to create an Odoo database. You can create databases for different companies or for different goals (testing, production). Once the database is created, you will be able to install your first application.<br/>By default, the master password is 'admin'. This password is required to create, delete, dump or restore databases.
-                </p>
-                    <div class="form-group">
-                        <label for="master_pwd" class="control-label">Master Password</label>
-                        <input placeholder="By default 'admin'." type="password" name="master_pwd" id="master_pwd" class="form-control" required="required" autofocus="autofocus"/>
-                    </div>
-                    <div class="form-group">
-                        <label for="db_name" class="control-label">Database Name</label>
-                        <input type="text" name="db_name" id="db_name" class="form-control" required="required" />
-                    </div>
-                    <div class="form-group">
-                        <label for="lang" class="control-label">Default Language</label>
-                            <select name="lang" id="lang" class="form-control" required="required">
-                                <option></option>
-                                {% for lang in list_lang %}
-                                    {% if lang[0] == "en_US" %}
-                                        <option selected="selected" value="{{ lang[0] }}">{{ lang[1] }}</option>
-                                    {% else %}
-                                        <option value="{{ lang[0] }}">{{ lang[1] }}</option>
-                                    {% endif %}
-                                {% endfor %}
-                            </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="db_login" class="control-label">Account Login</label>
-                        <input type="text" name="db_login" id="db_login" class="form-control" required="required" value="admin"/>
-                    </div>
-                    <div class="form-group">
-                        <label for="db_pwd" class="control-label">Account Password</label>
-                        <input type="password" name="db_pwd" id="db_pwd" class="form-control" required="required"/>
-                    </div>
-                    <div class="form-group">
-                        <div class="checkbox">
-                            <label>
-                                <input id="demo_data" type="checkbox" class="pull-right">
-                                <span>Load demonstration data</span>
-                                <span class="text-muted"> (Check this box to evaluate Odoo)</span>
-                            </label>
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title">Create Database</h4>
+                </div>
+                <form style="margin:10px;" id="form_create_db" role="form" action="/web/database/create" method="post">
+                    <div class="modal-body">
+                        <p>Fill in this form to create an Odoo database. You can create databases for different companies or for different goals (testing, production). Once the database is created, you will be able to install your first application.
+                        </p>
+                        <div class="form-group">
+                            {% if pwd_is_admin %}
+                                <input type="hidden" name="master_pwd" id="master_pwd" class="form-control" required="required" value="admin"/>
+                            {% else %}
+                                <label for="master_pwd" class="control-label">Master Password</label>
+                                <input type="password" name="master_pwd" id="master_pwd" class="form-control" required="required" autofocus="autofocus"/>
+                            {% endif %}
+                        </div>
+                        <div class="form-group">
+                            <label for="db_name" class="control-label">Database Name</label>
+                            <input type="text" name="db_name" id="db_name" class="form-control" required="required" />
+                        </div>
+                        <div class="form-group">
+                            <label for="lang" class="control-label">Default Language</label>
+                                <select name="lang" id="lang" class="form-control" required="required">
+                                    <option></option>
+                                    {% for lang in list_lang %}
+                                        {% if lang[0] == "en_US" %}
+                                            <option selected="selected" value="{{ lang[0] }}">{{ lang[1] }}</option>
+                                        {% else %}
+                                            <option value="{{ lang[0] }}">{{ lang[1] }}</option>
+                                        {% endif %}
+                                    {% endfor %}
+                                </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="db_login" class="control-label">Account Login</label>
+                            <input type="text" name="db_login" id="db_login" class="form-control" required="required" value="admin"/>
+                        </div>
+                        <div class="form-group">
+                            <label for="db_pwd" class="control-label">Account Password</label>
+                            <input type="password" name="db_pwd" id="db_pwd" class="form-control" required="required"/>
+                        </div>
+                        <div class="form-group">
+                            <div class="checkbox">
+                                <label>
+                                    <input id="demo_data" type="checkbox" class="pull-right">
+                                    <span>Load demonstration data</span>
+                                    <span class="text-muted"> (Check this box to evaluate Odoo)</span>
+                                </label>
+                            </div>
                         </div>
                     </div>
-              </div>
-              <div class="modal-footer">
-                <input type="submit" value="Continue" class="btn btn-primary pull-right"/>
-              </div>
-          </form>
+                    <div class="modal-footer">
+                        <input type="submit" value="Continue" class="btn btn-primary pull-right"/>
+                    </div>
+                </form>
+            </div>
         </div>
-      </div>
     </div>
 
     <div class="modal fade modal_duplicate_db" role="dialog">
@@ -203,8 +209,12 @@
                         <input type="text" name="db_name" id="db_name" class="form-control" required="required" readonly/>
                     </div>
                     <div class="form-group">
-                        <label for="master_pwd" class="control-label">Master Password</label>
-                        <input type="password" name="master_pwd" id="master_pwd" class="form-control" required="required" autofocus="autofocus"/>
+                        {% if pwd_is_admin %}
+                            <input type="hidden" name="master_pwd" id="master_pwd" class="form-control" required="required" value="admin"/>
+                        {% else %}
+                            <label for="master_pwd" class="control-label">Master Password</label>
+                            <input type="password" name="master_pwd" id="master_pwd" class="form-control" required="required" autofocus="autofocus"/>
+                        {% endif %}
                     </div>
                     <div class="form-group">
                         <label for="database" class="control-label">Database New Name</label>
@@ -233,8 +243,12 @@
                         <input type="text" name="db_name" id="db_name" class="form-control" required="required" readonly/>
                     </div>
                     <div class="form-group">
-                        <label for="master_pwd" class="control-label">Master Password</label>
-                        <input type="password" name="master_pwd" id="master_pwd" class="form-control" required="required" autofocus="autofocus"/>
+                        {% if pwd_is_admin %}
+                            <input type="hidden" name="master_pwd" id="master_pwd" class="form-control" required="required" value="admin"/>
+                        {% else %}
+                            <label for="master_pwd" class="control-label">Master Password</label>
+                            <input type="password" name="master_pwd" id="master_pwd" class="form-control" required="required" autofocus="autofocus"/>
+                        {% endif %}
                     </div>
                     <div class="form-group">
                         <label for="backup_format" class="control-label">Backup Format</label>
@@ -263,8 +277,12 @@
           <form style="margin:10px;" id="form_restore_db" role="form" action="/web/database/restore" method="post" enctype="multipart/form-data">
               <div class="modal-body">
                     <div class="form-group">
-                        <label for="master_pwd" class="control-label">Master Password</label>
-                        <input type="password" name="master_pwd" id="master_pwd" class="form-control" required="required" autofocus="autofocus"/>
+                        {% if pwd_is_admin %}
+                            <input type="hidden" name="master_pwd" id="master_pwd" class="form-control" required="required" value="admin"/>
+                        {% else %}
+                            <label for="master_pwd" class="control-label">Master Password</label>
+                            <input type="password" name="master_pwd" id="master_pwd" class="form-control" required="required" autofocus="autofocus"/>
+                        {% endif %}
                     </div>
                     <div class="form-group">
                         <label for="db_file" class="control-label">File</label>
@@ -292,33 +310,38 @@
     </div>
 
     <div class="modal fade modal_change_pwd" role="dialog">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-            <h4 class="modal-title">Change Master Password</h4>
-          </div>
-          <form style="margin:10px;" id="form_change_pwd" role="form" action="/web/database/change_password" method="post">
-              <div class="modal-body">
-                    <div class="form-group">
-                        <label for="master_pwd" class="control-label">Master Password</label>
-                        <input type="password" name="master_pwd" id="master_pwd" class="form-control" required="required" autofocus="autofocus"/>
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title">Change Master Password</h4>
+                </div>
+                <form style="margin:10px;" id="form_change_pwd" role="form" action="/web/database/change_password" method="post">
+                    <div class="modal-body">
+                        <p>By default, the master password is 'admin'. This master password is required to create, delete, dump or restore databases.</p>
+                        <div class="form-group">
+                            {% if pwd_is_admin %}
+                                <input type="hidden" name="master_pwd" id="master_pwd" class="form-control" required="required" value="admin"/>
+                            {% else %}
+                                <label for="master_pwd" class="control-label">Master Password</label>
+                                <input type="password" name="master_pwd" id="master_pwd" class="form-control" required="required" autofocus="autofocus"/>
+                            {% endif %}
+                        </div>
+                        <div class="form-group">
+                            <label for="master_new_pwd" class="control-label">New Master Password</label>
+                            <input type="password" name="master_new_pwd" id="master_new_pwd" class="form-control" required="required"/>
+                        </div>
+                        <div class="form-group">
+                            <label for="confirm_master_pwd" class="control-label">Confirm New Master Password</label>
+                            <input type="password" name="confirm_master_pwd" id="confirm_master_pwd" class="form-control" required="required"/>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="master_new_pwd" class="control-label">New Master Password</label>
-                        <input type="password" name="master_new_pwd" id="master_new_pwd" class="form-control" required="required"/>
+                    <div class="modal-footer">
+                        <input type="submit" value="Continue" class="btn btn-primary pull-right"/>
                     </div>
-                    <div class="form-group">
-                        <label for="confirm_master_pwd" class="control-label">Confirm New Master Password</label>
-                        <input type="password" name="confirm_master_pwd" id="confirm_master_pwd" class="form-control" required="required"/>
-                    </div>
-              </div>
-              <div class="modal-footer">
-                <input type="submit" value="Continue" class="btn btn-primary pull-right"/>
-              </div>
-          </form>
+                </form>
+            </div>
         </div>
-      </div>
     </div>
 </body>
 </html>
