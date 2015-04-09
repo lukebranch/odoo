@@ -832,6 +832,8 @@ class stock_picking(osv.osv):
         'partner_id': fields.many2one('res.partner', 'Partner', states={'done': [('readonly', True)], 'cancel': [('readonly', True)]}),
         'company_id': fields.many2one('res.company', 'Company', required=True, select=True, states={'done': [('readonly', True)], 'cancel': [('readonly', True)]}),
         'pack_operation_ids': fields.one2many('stock.pack.operation', 'picking_id', states={'done': [('readonly', True)], 'cancel': [('readonly', True)]}, string='Related Packing Operations'),
+        'pack_operation_ids_non_pack': fields.one2many('stock.pack.operation', 'picking_id', states={'done': [('readonly', True)], 'cancel': [('readonly', True)]}, domain=[('product_id', '!=', False)], string='Non pack'),
+        'pack_operation_ids_pack': fields.one2many('stock.pack.operation', 'picking_id', states={'done': [('readonly', True)], 'cancel': [('readonly', True)]}, domain=[('product_id', '=', False)], string='Pack'),
         'pack_operation_exist': fields.function(_get_pack_operation_exist, type='boolean', string='Pack Operation Exists?', help='technical field for attrs in view'),
         'picking_type_id': fields.many2one('stock.picking.type', 'Picking Type', states={'done': [('readonly', True)], 'cancel': [('readonly', True)]}, required=True),
         'picking_type_code': fields.related('picking_type_id', 'code', type='char', string='Picking Type Code', help="Technical field used to display the correct label on print button in the picking view"),
@@ -985,6 +987,7 @@ class stock_picking(osv.osv):
 
             self.write(cr, uid, [picking.id], {'date_done': time.strftime(DEFAULT_SERVER_DATETIME_FORMAT)}, context=context)
             self.action_confirm(cr, uid, [backorder_id], context=context)
+            self.action_assign(cr, uid, [backorder_id], context=context)
             return backorder_id
         return False
 
@@ -1466,8 +1469,8 @@ class stock_picking(osv.osv):
                 elif context.get('do_only_split'):
                     context = dict(context, split=todo_move_ids)
             self._create_backorder(cr, uid, picking, context=context)
-            if toassign_move_ids:
-                stock_move_obj.action_assign(cr, uid, toassign_move_ids, context=context)
+            #if toassign_move_ids:
+            #    stock_move_obj.action_assign(cr, uid, toassign_move_ids, context=context)
         return True
 
     @api.cr_uid_ids_context
@@ -1594,7 +1597,6 @@ class stock_picking(osv.osv):
         stock_operation_obj = self.pool["stock.pack.operation"]
         package_obj = self.pool["stock.quant.package"]
         for pick in self.browse(cr, uid, ids, context=context):
-            import pdb; pdb.set_trace()
             operations = [x for x in pick.pack_operation_ids if x.qty_done > 0 and (not x.result_package_id)]
             pack_operation_ids = []
             for operation in operations:
@@ -4003,12 +4005,26 @@ class stock_pack_operation(osv.osv):
                     }
         return res
 
+    def _get_description(self, cr, uid, ids, field_name, arg, context=None):
+        res = {}
+        for pack in self.browse(cr, uid, ids, context=context):
+            from_name = pack.location_id.name
+            to_name = pack.location_dest_id.name
+            if pack.package_id:
+                from_name += " : " + pack.package_id.name
+            if pack.result_package_id:
+                to_name += " : " + pack.result_package_id.name
+
+            res[pack.id] = {'from': from_name,
+                            'to': to_name}
+        return res
+
     _columns = {
         'picking_id': fields.many2one('stock.picking', 'Stock Picking', help='The stock operation where the packing has been made', required=True),
         'product_id': fields.many2one('product.product', 'Product', ondelete="CASCADE"),  # 1
         'product_uom_id': fields.many2one('product.uom', 'Product Unit of Measure'),
-        'product_qty': fields.float('Quantity', digits_compute=dp.get_precision('Product Unit of Measure'), required=True),
-        'qty_done': fields.float('Quantity Processed', digits_compute=dp.get_precision('Product Unit of Measure')),
+        'product_qty': fields.float('To Do', digits_compute=dp.get_precision('Product Unit of Measure'), required=True),
+        'qty_done': fields.float('Processed', digits_compute=dp.get_precision('Product Unit of Measure')),
         'package_id': fields.many2one('stock.quant.package', 'Source Package'),  # 2
         'lot_id': fields.many2one('stock.production.lot', 'Lot/Serial Number'),
         'result_package_id': fields.many2one('stock.quant.package', 'Destination Package', help="If set, the operations are packed into this package", required=False, ondelete='cascade'),
@@ -4021,12 +4037,15 @@ class stock_pack_operation(osv.osv):
         'remaining_qty': fields.function(_get_remaining_qty, type='float', digits = 0, string="Remaining Qty", help="Remaining quantity in default UoM according to moves matched with this operation. "),
         'location_id': fields.many2one('stock.location', 'Source Location', required=True),
         'location_dest_id': fields.many2one('stock.location', 'Destination Location', required=True),
-        'processed': fields.selection([('true','Yes'), ('false','No')],'Has been processed?', required=True),
+        'processed': fields.selection([('true','Yes'), ('false','No')],'Has been processed?', required=True), #probably not really used anymore with new stuff
+        'from': fields.function(_get_description, string='From', type='char', readonly=True, multi='location'),
+        'to': fields.function(_get_description, string='To', type='char', readonly=True, multi='location'),
     }
 
     _defaults = {
         'date': fields.date.context_today,
-        'qty_done': 0,
+        'qty_done': 0.0,
+        'product_qty': 0.0,
         'processed': lambda *a: 'false',
     }
 
