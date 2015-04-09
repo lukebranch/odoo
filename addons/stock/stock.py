@@ -4026,7 +4026,7 @@ class stock_pack_operation(osv.osv):
 
     def _set_processed_qty(self, cr, uid, id, field_name, field_value, arg, context=None):
         op = self.browse(cr, uid, id, context=context)
-        if op.processed_boolean and op.qty_done == 0:
+        if field_value and op.qty_done == 0:
             self.write(cr, uid, [id], {'qty_done': 1.0}, context=context)
         return True
 
