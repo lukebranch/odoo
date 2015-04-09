@@ -4010,7 +4010,7 @@ class stock_pack_operation(osv.osv):
         for pack in self.browse(cr, uid, ids, context=context):
             from_name = pack.location_id.name
             to_name = pack.location_dest_id.name
-            if pack.package_id:
+            if pack.package_id and pack.product_id:
                 from_name += " : " + pack.package_id.name
             if pack.result_package_id:
                 to_name += " : " + pack.result_package_id.name
@@ -4019,12 +4019,24 @@ class stock_pack_operation(osv.osv):
                             'to': to_name}
         return res
 
+    def _get_bool(self, cr, uid, ids, field_name, arg, context=None):
+        res = {}
+        for pack in self.browse(cr, uid, ids, context=context):
+            res[pack.id] = (pack.qty_done > 0.0)
+        return res
+
+    def _set_processed_qty(self, cr, uid, id, field_name, field_value, arg, context=None):
+        if self.browse(cr, uid, id, context=context).processed_boolean:
+            self.write(cr, uid, [id], {'qty_done': 1.0}, context=context)
+        return True
+
     _columns = {
         'picking_id': fields.many2one('stock.picking', 'Stock Picking', help='The stock operation where the packing has been made', required=True),
         'product_id': fields.many2one('product.product', 'Product', ondelete="CASCADE"),  # 1
         'product_uom_id': fields.many2one('product.uom', 'Product Unit of Measure'),
         'product_qty': fields.float('To Do', digits_compute=dp.get_precision('Product Unit of Measure'), required=True),
         'qty_done': fields.float('Processed', digits_compute=dp.get_precision('Product Unit of Measure')),
+        'processed_boolean': fields.function(_get_bool, fnct_inv=_set_processed_qty, type='boolean', string='Processed'),
         'package_id': fields.many2one('stock.quant.package', 'Source Package'),  # 2
         'lot_id': fields.many2one('stock.production.lot', 'Lot/Serial Number'),
         'result_package_id': fields.many2one('stock.quant.package', 'Destination Package', help="If set, the operations are packed into this package", required=False, ondelete='cascade'),
@@ -4047,6 +4059,7 @@ class stock_pack_operation(osv.osv):
         'qty_done': 0.0,
         'product_qty': 0.0,
         'processed': lambda *a: 'false',
+        'processed_boolean': lambda *a: False,
     }
 
     def write(self, cr, uid, ids, vals, context=None):

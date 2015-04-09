@@ -694,19 +694,19 @@
                     </group>
                     <notebook>
                         <page string="Operations" attrs="{'invisible': [('pack_operation_ids','=',[])]}">
-                            <button name="put_in_pack" type="object" string="Put in Pack" groups="stock.group_tracking_lot"/>
+                            <button name="put_in_pack" type="object" string="Put in Pack" attrs="{'invisible': [('state', 'in', ('done', 'cancel'))]}" groups="stock.group_tracking_lot"/>
                             <field name="pack_operation_ids" invisible="1"/>
                             <field name="pack_operation_ids_non_pack" context="{'default_location_id': location_id, 'default_location_dest_id': location_dest_id, 'default_picking_id': id}">
                                 <tree editable="top" colors="grey:result_package_id;red:qty_done>product_qty;green:qty_done==product_qty">
                                     <field name="package_id" groups="stock.group_tracking_lot" invisible="1"/>
-                                    <field name="product_id" on_change="product_id_change(product_id, product_uom_id, product_qty)"/>
+                                    <field name="product_id" on_change="product_id_change(product_id, product_uom_id, product_qty)" required="1"/>
                                     <field name="product_uom_id" groups="product.group_uom"/>
                                     <field name="lot_id" domain="[('product_id','=?', product_id)]" context="{'product_id': product_id}" groups="stock.group_production_lot"/>
                                     <field name="picking_id" invisible="1"/>
                                     <field name="owner_id" groups="stock.group_tracking_owner"/>
                                     <field name="qty_done"/>
                                     <field name="processed" invisible="1"/>
-                                    <field name="product_qty" readonly='1' attrs="{'required': [('product_id', '!=', False)]}"/>
+                                    <field name="product_qty" readonly="1" attrs="{'required': [('product_id', '!=', False)]}"/>
                                     <field name="location_id" domain="[('id', 'child_of', parent.location_id)]" invisible="1"/>
                                     <field name="location_dest_id" domain="[('id', 'child_of', parent.location_dest_id)]" invisible="1"/>
                                     <field name="from"/>
@@ -716,11 +716,13 @@
                             </field>
                             <field name="pack_operation_ids_pack" context="{'default_location_id': location_id, 'default_location_dest_id': location_dest_id, 'default_picking_id': id}" groups="stock.group_tracking_lot">
                                 <tree editable="top" colors="grey:qty_done>0;">
-                                    <field name="package_id" groups="stock.group_tracking_lot"/>
+                                    <field name="package_id" required="1"/>
                                     <field name="picking_id" invisible="1"/>
-                                    <field name="qty_done"/>
+                                    <field name="qty_done" invisible="1"/>
+                                    <field name="processed_boolean"/>
                                     <field name="processed" invisible="1"/>
-                                    <field name="location_id" domain="[('id', 'child_of', parent.location_id)]" readonly="1" string="From"/>
+                                    <field name="location_id" domain="[('id', 'child_of', parent.location_id)]" invisible="1"/>
+                                    <field name="from"/>
                                     <field name="to"/>
                                     <field name="location_dest_id" domain="[('id', 'child_of', parent.location_dest_id)]" invisible="1"/>
                                     <field name="result_package_id" groups="stock.group_tracking_lot" context="{'location_id': location_dest_id}" invisible="1"/>
