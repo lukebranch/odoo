@@ -1589,6 +1589,27 @@ class stock_picking(osv.osv):
             
         return answer
 
+    def put_in_pack(self, cr, uid, ids, context=None):
+        stock_move_obj = self.pool["stock.move"]
+        stock_operation_obj = self.pool["stock.pack.operation"]
+        package_obj = self.pool["stock.quant.package"]
+        for pick in self.browse(cr, uid, ids, context=context):
+            import pdb; pdb.set_trace()
+            operations = [x for x in pick.pack_operation_ids if x.qty_done > 0 and (not x.result_package_id)]
+            pack_operation_ids = []
+            for operation in operations:
+                #If we haven't done all qty in operation, we have to split into 2 operation
+                op = operation
+                if operation.qty_done < operation.product_qty:
+                    new_operation = stock_operation_obj.copy(cr, uid, operation.id, {'product_qty': operation.qty_done,'qty_done': operation.qty_done}, context=context)
+                    stock_operation_obj.write(cr, uid, operation.id, {'product_qty': operation.product_qty - operation.qty_done,'qty_done': 0, 'lot_id': False}, context=context)
+                    op = stock_operation_obj.browse(cr, uid, new_operation, context=context)
+                pack_operation_ids.append(op.id)
+                if op.product_id and op.location_id and op.location_dest_id:
+                    stock_move_obj.check_tracking_product(cr, uid, op.product_id, op.lot_id.id, op.location_id, op.location_dest_id, context=context)
+            package_id = package_obj.create(cr, uid, {}, context=context)
+            stock_operation_obj.write(cr, uid, pack_operation_ids, {'result_package_id': package_id}, context=context)
+
 
 class stock_production_lot(osv.osv):
     _name = 'stock.production.lot'

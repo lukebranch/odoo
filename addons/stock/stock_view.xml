@@ -692,8 +692,9 @@
                     </group>
                     <notebook>
                         <page string="Operations" attrs="{'invisible': [('pack_operation_ids','=',[])]}">
+                            <button name="put_in_pack" type="object" string="Put in Pack" groups="stock.group_tracking_lot"/>
                             <field name="pack_operation_ids" context="{'default_location_id': location_id, 'default_location_dest_id': location_dest_id}">
-                                <tree editable="top" colors="grey:processed=='true'">
+                                <tree editable="top" colors="grey:result_package_id;red:qty_done>product_qty;green:qty_done==product_qty">
                                     <field name="package_id" groups="stock.group_tracking_lot"/>
                                     <field name="product_id" on_change="product_id_change(product_id, product_uom_id, product_qty)"/>
                                     <field name="product_uom_id" groups="product.group_uom"/>
