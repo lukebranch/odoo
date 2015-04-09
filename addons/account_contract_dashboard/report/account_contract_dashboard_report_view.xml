@@ -2,7 +2,7 @@
 <openerp>
 <data>
 
-    <record model="ir.ui.view">
+    <record id="invoice_line_entries_report_pivot" model="ir.ui.view">
         <field name="name">account.invoice.line.pivot</field>
         <field name="model">account.invoice.line</field>
         <field name="arch" type="xml">
@@ -22,6 +22,12 @@
             <search string="Invoice Line Entries Analysis">
                 <group expand="0" string="Group By">
                     <filter string="Active Recurrent Entries" name="MRR" domain="[('asset_end_date','&gt;=', context_today().strftime('%%Y-%%m-%%d')), ('asset_start_date','&lt;=', context_today().strftime('%%Y-%%m-%%d'))]" help="Active recurrent entries"/>
+                    <separator/>
+                    <filter string="EUR currency" name="EUR" domain="[('invoice_id.currency_id', '=', 1)]" help="Invoice in EUR only"/>
+                    <separator/>
+                    <filter string="OUT invoices" name="OUT" domain="[('invoice_id.type', '=', 'out_invoice')]"/>
+                    <separator/>
+                    <filter string="Active invoices" name="ACTIVE" domain="[('invoice_id.state', 'not in', ('draft', 'cancel'))]"/>
                 </group>
             </search>
         </field>
@@ -52,7 +58,7 @@
         <field name="view_type">form</field>
         <field name="view_mode">pivot</field>
         <field name="search_view_id" ref="account_contract_dashboard.invoice_line_entries_report_search"/>
-        <field name="context">{'search_default_MRR':1}</field>
+        <field name="context">{'search_default_MRR':1, 'search_default_EUR':1, 'search_default_OUT':1, 'search_default_ACTIVE':1,}</field>
         <field name="help">From this view, have an analysis of your different invoice line entries.</field>
     </record>
 

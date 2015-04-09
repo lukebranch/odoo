@@ -78,6 +78,26 @@
     </div>
   </t>
 
+  <t t-name="account_contract_dashboard.contractModifications">
+    <table class="table table-striped">
+      <tr>
+        <th>Contracts</th>
+        <th>Type</th>
+        <th>Previous MRR</th>
+        <th>Current MRR</th>
+      </tr>
+      <t t-foreach="modifications" t-as="modification">
+        <tr>
+          <td><t t-esc="modification['account_analytic']"/></td>
+          <td><t t-esc="modification['type']"/></td>
+          <td><t t-esc="modification['previous_mrr']"/></td>
+          <td><t t-esc="modification['current_mrr']"/></td>
+        </tr>
+      </t>
+    </table>
+  </t>
+
+
 
 </templates>
 

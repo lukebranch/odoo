@@ -296,8 +296,12 @@
           <h1>
             Choose your salesman:
           </h1>
+
+          <div>
+            <a href="/account_contract_dashboard/">Back to dashboard</a>
+          </div>
           
-          <div class="row">
+          <div class="row box">
             <t t-foreach="salesman_ids" t-as="salesman">
               <div>
                 <a t-att-href="'/account_contract_dashboard/salesman/%s' % salesman.id"><t t-esc="salesman.name"/></a>
@@ -321,15 +325,29 @@
           <h1>
             Recurring Revenue Dashboard for <t t-esc="salesman.name"/>
           </h1>
-          
           <div class="row">
-            <div class="col-md-12">
-              FULL GRAPHES pour <t t-esc="salesman.name"/>
+            <div>
+              <a href="/account_contract_dashboard/choose_salesman">Back to all</a>
+            </div>
+            <div class="pull-right">
+              <form t-att-action="'/account_contract_dashboard/salesman/%s' % salesman.id">
+                <input id="datetimepicker_period" name="period" t-att-value="period"/> <button class="btn btn-primary" type="submit">Update</button>
+              </form>
             </div>
           </div>
-
-          <div id="mrr_growth_salesman"/>
-
+          <div class="box">
+            <h2>
+              Summary
+            </h2>
+            <div id="mrr_growth_salesman"/>
+            <div class="clearfix"/>
+          </div>
+          <div class="box">
+            <h2>
+              List of contract modifications
+            </h2>
+            <div id="contract_modifications"/>
+          </div>
         </div>
       </div>
     </t>

@@ -9,9 +9,11 @@
       openerp.website.if_dom_contains('#datetimepicker_start, #datetimepicker_end', function() {
           $('#datetimepicker_start').datetimepicker({
             format: 'YYYY-MM-DD',
+            viewMode: 'months',
           });
           $('#datetimepicker_end').datetimepicker({
             format: 'YYYY-MM-DD',
+            viewMode: 'months',
           });
           $("#datetimepicker_start").on("dp.change", function (e) {
               $('#datetimepicker_end').data("DateTimePicker").setMinDate(e.date);
@@ -273,20 +275,36 @@
       // 2.3 STAT DASHBOARD - MRR GROWTH
       openerp.website.if_dom_contains('#mrr_growth_salesman', function() {
 
+          $('#datetimepicker_period').datetimepicker({
+              viewMode: 'months',
+              format: 'YYYY-MM-DD',
+            });
+
           // var start_date = $('input[name="start_date"]').val();
           // var end_date = $('input[name="end_date"]').val();
 
           var salesman_id = $('input[name="salesman_id"]').val();
+          var period = $('input[name="period"]').val();
 
           $('#mrr_growth_salesman').html("<div class='loader' style='position: relative; text-align:center; width: 100%; height: 300px;'>" + loader + "</div>");
 
           openerp.jsonRpc('/account_contract_dashboard/get_values_salesman', 'call', {
+            'end_date': period,
             'salesman_id': salesman_id,
           }).then(function(result){
               loadChart_mrr_salesman('#mrr_growth_salesman', result);
               $('#mrr_growth_salesman div.loader').hide();
+
+              displayContractsModifications(result[5]);
           });
       });
+
+      function displayContractsModifications(modifications){
+        var html = openerp.qweb.render('account_contract_dashboard.contractModifications', {
+          'modifications': modifications,
+        });
+        $('#contract_modifications').append(html);
+      }
 
       
 
@@ -631,15 +649,15 @@
               values: [
                 { 
                   "label" : "New MRR" ,
-                  "value" : 10
+                  "value" : result[0]
                 } , 
                 { 
                   "label" : "Churned MRR" , 
-                  "value" : -20
+                  "value" : result[1]
                 } , 
                 { 
                   "label" : "Expansion MRR" , 
-                  "value" : 30
+                  "value" : result[2]
                 } , 
                 { 
                   "label" : "Down MRR" , 

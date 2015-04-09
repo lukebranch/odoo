@@ -138,6 +138,7 @@ class AccountContractDashboard(http.Controller):
         sql_results = request.cr.dictfetchall()
         for entry in sql_results:
             salesman_ids.append(request.env['res.users'].browse(entry['user_id']))
+        salesman_ids = sorted([x for x in salesman_ids], key=lambda k: k['name'])
 
         return http.request.render('account_contract_dashboard.choose_salesman', {
             'salesman_ids': salesman_ids,
@@ -149,22 +150,29 @@ class AccountContractDashboard(http.Controller):
         salesman = request.env['res.users'].browse(salesman_id)
         date = datetime.strptime('2015-03-31', DEFAULT_SERVER_DATE_FORMAT)
 
+        period = datetime.strptime(kw.get('period'), '%Y-%m-%d') if kw.get('period') else default_end_date
+
         return http.request.render('account_contract_dashboard.salesman', {
             'salesman': salesman,
+            'period': period.strftime(DEFAULT_SERVER_DATE_FORMAT),
         })
 
     @http.route('/account_contract_dashboard/get_values_salesman', type="json", auth='user', website=True)
     def get_values_salesman(self, salesman_id, end_date=None):
 
-        salesman = request.env['res.users'].browse(salesman_id)
+        salesman = request.env['res.users'].browse(int(salesman_id))
 
-        if not end_date:
+        if end_date:
+            end_date = datetime.strptime(end_date, DEFAULT_SERVER_DATE_FORMAT)
+        else:
             end_date = default_start_date
         print(end_date)
         end_date = last_day_of_month(end_date)
         print(end_date)
 
         date = end_date
+
+        contract_modifications = []
 
         new_mrr, churned_mrr, expansion_mrr, down_mrr, net_new_mrr = 0, 0, 0, 0, 0
 
@@ -195,9 +203,21 @@ class AccountContractDashboard(http.Controller):
                 next_mrr = sum([x['mrr'] for x in next_invoice_line_ids.read(['mrr'])])
                 if next_mrr < previous_mrr:
                     # DOWN
+                    contract_modifications.append({
+                        'type': 'Downgrade',
+                        'account_analytic': invoice_line.account_analytic_id.name,
+                        'previous_mrr': previous_mrr,
+                        'current_mrr': next_mrr,
+                    })
                     down_mrr += (previous_mrr - next_mrr)
             else:
                 # CANCEL
+                contract_modifications.append({
+                    'type': 'Churned MRR',
+                    'account_analytic': invoice_line.account_analytic_id.name,
+                    'previous_mrr': previous_mrr,
+                    'current_mrr': 0,
+                })
                 churned_mrr += previous_mrr
         # UP & NEW
         for invoice in invoice_line_ids_starting_last_month.mapped('invoice_id'):
@@ -216,12 +236,27 @@ class AccountContractDashboard(http.Controller):
                 previous_mrr = sum([x['mrr'] for x in previous_invoice_line_ids.read(['mrr'])])
                 if previous_mrr < next_mrr:
                     # UP
+                    contract_modifications.append({
+                        'type': 'Upgrade',
+                        'account_analytic': invoice_line.account_analytic_id.name,
+                        'previous_mrr': previous_mrr,
+                        'current_mrr': next_mrr,
+                    })
                     expansion_mrr += (next_mrr - previous_mrr)
             else:
                 # NEW
+                contract_modifications.append({
+                    'type': 'New MRR',
+                    'account_analytic': invoice_line.account_analytic_id.name,
+                    'previous_mrr': 0,
+                    'current_mrr': next_mrr,
+                })
                 new_mrr += next_mrr
         net_new_mrr = new_mrr - churned_mrr + expansion_mrr - down_mrr
-        result = new_mrr, -churned_mrr, expansion_mrr, -down_mrr, net_new_mrr
+        result = new_mrr, -churned_mrr, expansion_mrr, -down_mrr, net_new_mrr, contract_modifications
+
+        print(contract_modifications)
+
         return result
 
     @http.route('/account_contract_dashboard/get_default_values_forecast', type="json", auth='user', website=True)
