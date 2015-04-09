@@ -888,7 +888,6 @@ class stock_picking(osv.osv):
 
         if todo_force_assign:
             self.force_assign(cr, uid, todo_force_assign, context=context)
-            self.do_prepare_partial(cr, uid, todo_force_assign, context=context)
         return True
 
     def action_assign(self, cr, uid, ids, context=None):
@@ -897,7 +896,6 @@ class stock_picking(osv.osv):
         also impact the state of the picking as it is computed based on move's states.
         @return: True
         """
-        to_prepare = []
         for pick in self.browse(cr, uid, ids, context=context):
             if pick.state == 'draft':
                 self.action_confirm(cr, uid, [pick.id], context=context)
@@ -906,10 +904,6 @@ class stock_picking(osv.osv):
             if not move_ids:
                 raise UserError(_('Nothing to check the availability for.'))
             self.pool.get('stock.move').action_assign(cr, uid, move_ids, context=context)
-            if pick.state in ('assigned', 'partially_available'):
-                to_prepare.append(pick.id)
-        if to_prepare:
-            self.do_prepare_partial(cr, uid, to_prepare, context=context)
         return True
 
     def force_assign(self, cr, uid, ids, context=None):
@@ -920,7 +914,6 @@ class stock_picking(osv.osv):
             move_ids = [x.id for x in pick.move_lines if x.state in ['confirmed', 'waiting']]
             self.pool.get('stock.move').force_assign(cr, uid, move_ids, context=context)
         #pack_operation might have changed and need to be recomputed
-        self.do_prepare_partial(cr, uid, ids, context=context)
         self.write(cr, uid, ids, {'recompute_pack_op': True}, context=context)
         return True
 
@@ -2237,7 +2230,10 @@ class stock_move(osv.osv):
         """ Changes the state to assigned.
         @return: True
         """
-        return self.write(cr, uid, ids, {'state': 'assigned'}, context=context)
+        res = self.write(cr, uid, ids, {'state': 'assigned'}, context=context)
+        pickings = list(set([x.picking_id.id for x in self.browse(cr, uid, ids, context=context) if x.picking_id.id and not x.picking_id.pack_operation_ids]))
+        self.pool['stock.picking'].do_prepare_partial(cr, uid, pickings, context=context)
+        return res
 
     def check_tracking_product(self, cr, uid, product, lot_id, location, location_dest, context=None):
         check = False
@@ -2322,6 +2318,9 @@ class stock_move(osv.osv):
         #force assignation of consumable products and incoming from supplier/inventory/production
         if to_assign_moves:
             self.force_assign(cr, uid, to_assign_moves, context=context)
+
+        pickings = list(set([x.picking_id.id for x in self.browse(cr, uid, ids, context=context) if x.picking_id.id and not x.picking_id.pack_operation_ids]))
+        self.pool['stock.picking'].do_prepare_partial(cr, uid, pickings, context=context)
 
     def action_cancel(self, cr, uid, ids, context=None):
         """ Cancels the moves and if all moves are cancelled it cancels the picking.
@@ -4026,7 +4025,8 @@ class stock_pack_operation(osv.osv):
         return res
 
     def _set_processed_qty(self, cr, uid, id, field_name, field_value, arg, context=None):
-        if self.browse(cr, uid, id, context=context).processed_boolean:
+        op = self.browse(cr, uid, id, context=context)
+        if op.processed_boolean and op.qty_done == 0:
             self.write(cr, uid, [id], {'qty_done': 1.0}, context=context)
         return True
 
