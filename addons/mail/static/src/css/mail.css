@@ -465,19 +465,6 @@
     position: relative;
     z-index: 2;
 }
-.openerp .oe_mail .oe_msg_footer button.oe_attach{
-    width: 24px;
-    margin-bottom: 5px; /* improved margin of file attach button according bootstrap3 */
-    filter:none;
-}
-.openerp .oe_mail .oe_msg_footer button.oe_attach .fa{
-    position: relative;
-    top: 2px;
-    margin-left: 3px;
-    vertical-align: middle;
-    filter:none;
-    font-size: 1.4em;
-}
 .openerp .oe_mail .oe_hidden_input_file, .openerp .oe_mail .oe_hidden_input_file form{
     display:inline;
 }
@@ -497,20 +484,13 @@
     height: 16px;
     font-size: 22px
 }
-.openerp .oe_mail button.oe_attach, .openerp .oe_mail button.oe_full{
+.openerp .oe_mail button.oe_full{
     background: transparent; 
     color: #7C7BAD;
     box-shadow: none;
     border: none;
     text-shadow: none;
     filter:none;
-}
-.openerp .oe_mail .oe_attach_label{
-    color: #7C7BAD;
-    margin-left: -3px;
-}
-.openerp .oe_mail .oe_msg_footer .oe_attachment_file{
-    cursor: pointer;
 }
 .openerp .oe_mail .oe_msg_footer .oe_attachment_file .oe_form_binary_file{
     display: inline-block;

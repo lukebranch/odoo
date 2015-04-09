@@ -1787,6 +1787,44 @@ $sheet-padding: 16px
                 background: white
             .oe_attachment:nth-child(even)
                 background: #F4F5FA
+
+    .oe_attach_label
+        color: #7C7BAD
+        margin-left: -3px
+    .oe_form_field_binary
+        .oe_form_binary_file_save
+            font-size: 12px
+        .oe_form_binary_file_clear
+            float: right
+            font-size: 16px
+            margin: 4px 0
+            display: none
+            cursor: pointer
+        .oe_form_binary_link
+            position: relative
+            display: inline-block
+            &:hover .oe_form_binary_file_clear
+                display: block
+    .oe_attachment_file
+        cursor: pointer
+        button.oe_attach
+            width: 24px
+            margin-bottom: 5px /* improved margin of file attach button according bootstrap3 */
+            filter:none
+        button.oe_attach .fa
+            position: relative
+            top: 2px
+            margin-left: 3px
+            vertical-align: middle
+            filter:none
+            font-size: 1.4em
+        button.oe_attach
+            background: transparent
+            color: #7C7BAD
+            box-shadow: none
+            border: none
+            text-shadow: none
+            filter:none
     // }}}
     // FormView.many2one {{{
     .oe_form_field_many2one

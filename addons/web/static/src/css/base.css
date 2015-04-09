@@ -1,4 +1,4 @@
-@charset "UTF-8";
+@charset "utf-8";
 @font-face {
   font-family: "mnmliconsRegular";
   src: url("/web/static/src/font/mnmliconsv21-webfont.eot") format("eot");
@@ -2136,6 +2136,47 @@
 }
 .openerp .oe_fileupload .oe_attachments .oe_attachment:nth-child(even) {
   background: #F4F5FA;
+}
+.openerp .oe_attach_label {
+  color: #7C7BAD;
+  margin-left: -3px;
+}
+.openerp .oe_form_field_binary .oe_form_binary_file_save {
+  font-size: 12px;
+}
+.openerp .oe_form_field_binary .oe_form_binary_file_clear {
+  float: right;
+  font-size: 16px;
+  margin: 4px 0;
+  display: none;
+}
+.openerp .oe_form_field_binary .oe_form_binary_link {
+  position: relative;
+  display: inline-block;
+}
+.openerp .oe_form_field_binary .oe_form_binary_link:hover .oe_form_binary_file_clear {
+  display: block;
+}
+.openerp .oe_attachment_file {
+  cursor: pointer;
+}
+.openerp .oe_attachment_file button.oe_attach {
+  width: 24px;
+  margin-bottom: 5px;
+}
+.openerp .oe_attachment_file button.oe_attach .fa {
+  position: relative;
+  top: 2px;
+  margin-left: 3px;
+  vertical-align: middle;
+  font-size: 1.4em;
+}
+.openerp .oe_attachment_file button.oe_attach {
+  background: transparent;
+  color: #7C7BAD;
+  box-shadow: none;
+  border: none;
+  text-shadow: none;
 }
 .openerp .oe_form_field_many2one {
   display: inline-block;

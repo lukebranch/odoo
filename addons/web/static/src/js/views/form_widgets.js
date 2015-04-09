@@ -1175,6 +1175,7 @@ var FieldBinaryFile = FieldBinary.extend({
     template: 'FieldBinaryFile',
     initialize_content: function() {
         this._super();
+        this.$link = this.$el.find('.oe_form_binary_file_save');
         if (this.get("effective_readonly")) {
             var self = this;
             this.$el.find('a').click(function(ev) {
@@ -1193,27 +1194,29 @@ var FieldBinaryFile = FieldBinary.extend({
             } else {
                 show_value = (this.get('value') !== null && this.get('value') !== undefined && this.get('value') !== false) ? this.get('value') : '';
             }
-            this.$el.find('input').eq(0).val(show_value);
+            this.$link.text(show_value);
         } else {
-            this.$el.find('a').toggle(!!this.get('value'));
+            this.$link.parent().toggle(!!this.get('value'));
             if (this.get('value')) {
                 show_value = _t("Download");
                 if (this.view)
                     show_value += " " + (this.view.datarecord[this.node.attrs.filename] || '');
-                this.$el.find('a').text(show_value);
+                this.$link.text(show_value);
             }
         }
     },
     on_file_uploaded_and_valid: function(size, name, content_type, file_base64) {
+        this.$(".oe_form_binary_link").show();
         this.binary_value = true;
         this.internal_set_value(file_base64);
         var show_value = name + " (" + utils.human_size(size) + ")";
-        this.$el.find('input').eq(0).val(show_value);
+        this.$link.text(show_value);
         this.set_filename(name);
     },
     on_clear: function() {
+        this.$link.parent().hide();
         this._super.apply(this, arguments);
-        this.$el.find('input').eq(0).val('');
+        this.$link.text('');
         this.set_filename('');
     }
 });
