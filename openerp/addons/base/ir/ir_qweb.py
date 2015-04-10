@@ -1175,7 +1175,7 @@ class AssetsBundle(object):
                 response.append('<link href="%s" rel="stylesheet"/>' % url_for(href))
             if js:
                 src = '/web/js/%s/%s' % (self.xmlid, self.version)
-                response.append('<script %s type="text/javascript" src="%s"></script>' % (async and 'async=1' or '', url_for(src)))
+                response.append('<script %s type="text/javascript" src="%s"></script>' % (async and 'async="async"' or '', url_for(src)))
         response.extend(self.remains)
         return sep + sep.join(response)
 
