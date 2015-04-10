@@ -167,11 +167,11 @@ class AccountContractDashboard(http.Controller):
         salesman = request.env['res.users'].browse(salesman_id)
         date = datetime.strptime('2015-03-31', DEFAULT_SERVER_DATE_FORMAT)
 
-        period = datetime.strptime(kw.get('period'), '%Y-%m-%d') if kw.get('period') else default_end_date
+        period = datetime.strptime(kw.get('period'), '%Y-%m') if kw.get('period') else default_end_date
 
         return http.request.render('account_contract_dashboard.salesman', {
             'salesman': salesman,
-            'period': period.strftime(DEFAULT_SERVER_DATE_FORMAT),
+            'period': period.strftime('%Y-%m'),
         })
 
     @http.route('/account_contract_dashboard/get_values_salesman', type="json", auth='user', website=True)
@@ -182,7 +182,7 @@ class AccountContractDashboard(http.Controller):
         currency = get_currency()
 
         if end_date:
-            end_date = datetime.strptime(end_date, DEFAULT_SERVER_DATE_FORMAT)
+            end_date = datetime.strptime(end_date, '%Y-%m')
         else:
             end_date = default_start_date
         end_date = last_day_of_month(end_date)

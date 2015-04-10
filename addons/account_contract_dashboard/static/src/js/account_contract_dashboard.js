@@ -282,8 +282,8 @@
       openerp.website.if_dom_contains('#mrr_growth_salesman', function() {
 
           $('#datetimepicker_period').datetimepicker({
-              viewMode: 'months',
-              format: 'YYYY-MM-DD',
+              viewMode: 'years',
+              format: 'YYYY-MM',
             });
 
           // var start_date = $('input[name="start_date"]').val();
