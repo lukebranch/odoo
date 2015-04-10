@@ -28,8 +28,13 @@ openerp.account_contract_dashboard = function (instance) {
         iframe_clicked: function(e){
             if ($(e.target).hasClass('button-to-backend')){
                 var action_id = $(e.target).data('action-id');
-                console.log(action_id);
-                this.do_action(action_id);
+                var end_date = this.$el.contents().find('input[name="end_date"').val();
+                this.do_action(action_id, {
+                    additional_context: {
+                        'search_default_asset_end_date': moment(end_date).toDate(),
+                        'search_default_asset_start_date': moment(end_date).toDate(),
+                    }
+                });
             }
         }
     });

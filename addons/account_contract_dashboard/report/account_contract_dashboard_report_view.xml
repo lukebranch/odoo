@@ -20,8 +20,9 @@
         <field name="model">account.invoice.line</field>
         <field name="arch" type="xml">
             <search string="Invoice Line Entries Analysis">
+                <field name="asset_start_date" string="Asset Start Date" filter_domain="[('asset_start_date','&lt;=', self)]"/>
+                <field name="asset_end_date" string="Asset End Date" filter_domain="[('asset_end_date','&gt;=', self)]"/>
                 <group expand="0" string="Group By">
-                    <filter string="Active Recurrent Entries" name="MRR" domain="[('asset_end_date','&gt;=', context_today().strftime('%%Y-%%m-%%d')), ('asset_start_date','&lt;=', context_today().strftime('%%Y-%%m-%%d'))]" help="Active recurrent entries"/>
                     <separator/>
                     <filter string="EUR currency" name="EUR" domain="[('invoice_id.currency_id', '=', 1)]" help="Invoice in EUR only"/>
                     <separator/>
