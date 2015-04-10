@@ -10,10 +10,12 @@
           $('#datetimepicker_start').datetimepicker({
             format: 'YYYY-MM-DD',
             viewMode: 'months',
+              pickTime: false,
           });
           $('#datetimepicker_end').datetimepicker({
             format: 'YYYY-MM-DD',
             viewMode: 'months',
+              pickTime: false,
           });
           $("#datetimepicker_start").on("dp.change", function (e) {
               $('#datetimepicker_end').data("DateTimePicker").setMinDate(e.date);
@@ -284,6 +286,7 @@
           $('#datetimepicker_period').datetimepicker({
               viewMode: 'years',
               format: 'YYYY-MM',
+              pickTime: false,
             });
 
           // var start_date = $('input[name="start_date"]').val();

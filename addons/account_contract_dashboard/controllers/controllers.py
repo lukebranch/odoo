@@ -210,6 +210,7 @@ class AccountContractDashboard(http.Controller):
             if not invoice_line:
                 continue
             # Is there any invoice_line in the next 30 days for this contract ?
+            # Careful : what happened if invoice_lines from multiple invoices during next 30 days ?
             next_invoice_line_ids = request.env['account.invoice.line'].search([
                 ('asset_start_date', '>=', invoice_line.asset_end_date),
                 ('asset_start_date', '<', (datetime.strptime(invoice_line.asset_end_date, DEFAULT_SERVER_DATE_FORMAT) + relativedelta(months=+1)).strftime(DEFAULT_SERVER_DATE_FORMAT)),
@@ -223,6 +224,7 @@ class AccountContractDashboard(http.Controller):
                     contract_modifications.append({
                         'type': 'Downgrade',
                         'account_analytic': invoice_line.account_analytic_id.name,
+                        'account_analytic_template': invoice_line.account_analytic_id.template_id.name,
                         'previous_mrr': str(previous_mrr),
                         'current_mrr': str(next_mrr),
                         'currency': currency,
@@ -233,6 +235,7 @@ class AccountContractDashboard(http.Controller):
                 contract_modifications.append({
                     'type': 'Churned MRR',
                     'account_analytic': invoice_line.account_analytic_id.name,
+                    'account_analytic_template': invoice_line.account_analytic_id.template_id.name,
                     'previous_mrr': str(previous_mrr),
                     'current_mrr': str(0),
                     'currency': currency,
@@ -245,6 +248,7 @@ class AccountContractDashboard(http.Controller):
             if not invoice_line:
                 continue
             # Was there any invoice_line in the last 30 days for this contract ?
+            # Careful : what happened if invoice_lines from multiple invoices during last 30 days ?
             previous_invoice_line_ids = request.env['account.invoice.line'].search([
                 ('asset_end_date', '<=', invoice_line.asset_start_date),
                 ('asset_end_date', '>', (datetime.strptime(invoice_line.asset_start_date, DEFAULT_SERVER_DATE_FORMAT) - relativedelta(months=+1)).strftime(DEFAULT_SERVER_DATE_FORMAT)),
@@ -258,6 +262,7 @@ class AccountContractDashboard(http.Controller):
                     contract_modifications.append({
                         'type': 'Upgrade',
                         'account_analytic': invoice_line.account_analytic_id.name,
+                        'account_analytic_template': invoice_line.account_analytic_id.template_id.name,
                         'previous_mrr': str(previous_mrr),
                         'current_mrr': str(next_mrr),
                         'currency': currency,
@@ -268,6 +273,7 @@ class AccountContractDashboard(http.Controller):
                 contract_modifications.append({
                     'type': 'New MRR',
                     'account_analytic': invoice_line.account_analytic_id.name,
+                    'account_analytic_template': invoice_line.account_analytic_id.template_id.name,
                     'previous_mrr': str(0),
                     'current_mrr': str(next_mrr),
                     'currency': currency,

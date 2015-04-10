@@ -82,6 +82,7 @@
     <table class="table table-striped">
       <tr>
         <th>Contracts</th>
+        <th>Template</th>
         <th>Type</th>
         <th>Previous MRR</th>
         <th>Current MRR</th>
@@ -89,6 +90,7 @@
       <t t-foreach="modifications" t-as="modification">
         <tr>
           <td><t t-esc="modification['account_analytic']"/></td>
+          <td><t t-esc="modification['account_analytic_template']"/></td>
           <td><t t-esc="modification['type']"/></td>
           <td><t t-esc="modification['previous_mrr'] + modification['currency']"/></td>
           <td><t t-esc="modification['current_mrr'] + modification['currency']"/></td>
