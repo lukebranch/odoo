@@ -70,13 +70,16 @@
                       self.value = compute_numbers['value_2'];
                       self.perc = compute_numbers['perc'];
                       self.color = compute_numbers['color'];
+                      self.added_symbol = compute_numbers['added_symbol']
 
                       var box_content = openerp.qweb.render('account_contract_dashboard.statBoxContent', {
                         'value': self.value,
                         'color': self.color,
                         'perc': self.perc,
+                        'added_symbol': self.added_symbol,
                         'chart_div_id': self.chart_div_id,
                         'box_name': self.box_name,
+                        'formatNumber': formatNumber,
                       });
                       self.box.innerHTML = box_content;
                       loadChart_stat('#'+self.chart_div_id, self.box_code, false, compute_graph[1], false);
@@ -116,6 +119,7 @@
                       'currency': compute_numbers['currency'],
                       'chart_div_id': self.chart_div_id,
                       'box_name': self.box_name,
+                      'formatNumber': formatNumber,
                     });
                     self.box.innerHTML = box_content;
                     loadChart_stat('#'+self.chart_div_id, self.box_code, false, compute_graph, false);
@@ -696,6 +700,16 @@
           });
       }
   });
+
+  function formatNumber(number) {
+      if (number > 999999){
+        return (parseInt(number/1000000)).toString() + 'M';
+      }
+      else if (number > 99999){
+        return (parseInt(number/1000)).toString() + 'K';
+      }
+      return number;
+  }
 
   function getMinY(l) {
       var min = Math.min.apply(Math,l.map(function(o){return o[1];}));

@@ -49,8 +49,14 @@
         <field name="tag">account_contract_dashboard_forecast</field>
     </record>
 
+    <record id="action_contract_dashboard_report_salesman" model="ir.actions.client">
+        <field name="name">Dashboard by salesman</field>
+        <field name="tag">account_contract_dashboard_salesman</field>
+    </record>
+
     <menuitem action="action_contract_dashboard_report_main" id="menu_action_contract_dashboard_report_main" parent="account_contract_dashboard.action_contract_dashboard_report" name="Revenue KPIs"/>
     <menuitem action="action_contract_dashboard_report_forecast" id="menu_action_contract_dashboard_report_forecast" parent="account_contract_dashboard.action_contract_dashboard_report" name="Forecast"/>
+    <menuitem action="action_contract_dashboard_report_salesman" id="menu_action_contract_dashboard_report_salesman" parent="account_contract_dashboard.action_contract_dashboard_report" name="Salesman Dashboard"/>
 
 
     <record id="action_invoice_line_entries_report" model="ir.actions.act_window">

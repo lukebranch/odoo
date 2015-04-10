@@ -43,6 +43,19 @@ def get_pruned_tick_values(ticks, nb_desired_ticks):
     return ticks
 
 
+def format_number(number):
+    if type(number) == str:
+        try:
+            number = float(number)
+        except ValueError:
+            return number
+    if number > 999999:
+        return str(int(number/1000000)) + 'M'
+    elif number > 99999:
+        return str(int(number/1000)) + 'K'
+    return str(number)
+
+
 def last_day_of_month(date):
     if date.month == 12:
         return date.replace(day=31)
@@ -120,6 +133,7 @@ class AccountContractDashboard(http.Controller):
             'display_stats_by_plan': False if stat_type in ['nrr', 'arpu', 'logo_churn'] else True,
             'href_post_args': href_post_args,
             'find_res_id': request.env['ir.model.data'].xmlid_to_res_id,
+            'format_number': format_number,
         })
 
     @http.route('/account_contract_dashboard/forecast', auth='user', website=True)
@@ -165,13 +179,13 @@ class AccountContractDashboard(http.Controller):
 
         salesman = request.env['res.users'].browse(int(salesman_id))
 
+        currency = get_currency()
+
         if end_date:
             end_date = datetime.strptime(end_date, DEFAULT_SERVER_DATE_FORMAT)
         else:
             end_date = default_start_date
-        print(end_date)
         end_date = last_day_of_month(end_date)
-        print(end_date)
 
         date = end_date
 
@@ -209,8 +223,9 @@ class AccountContractDashboard(http.Controller):
                     contract_modifications.append({
                         'type': 'Downgrade',
                         'account_analytic': invoice_line.account_analytic_id.name,
-                        'previous_mrr': previous_mrr,
-                        'current_mrr': next_mrr,
+                        'previous_mrr': str(previous_mrr),
+                        'current_mrr': str(next_mrr),
+                        'currency': currency,
                     })
                     down_mrr += (previous_mrr - next_mrr)
             else:
@@ -218,8 +233,9 @@ class AccountContractDashboard(http.Controller):
                 contract_modifications.append({
                     'type': 'Churned MRR',
                     'account_analytic': invoice_line.account_analytic_id.name,
-                    'previous_mrr': previous_mrr,
-                    'current_mrr': 0,
+                    'previous_mrr': str(previous_mrr),
+                    'current_mrr': str(0),
+                    'currency': currency,
                 })
                 churned_mrr += previous_mrr
         # UP & NEW
@@ -242,8 +258,9 @@ class AccountContractDashboard(http.Controller):
                     contract_modifications.append({
                         'type': 'Upgrade',
                         'account_analytic': invoice_line.account_analytic_id.name,
-                        'previous_mrr': previous_mrr,
-                        'current_mrr': next_mrr,
+                        'previous_mrr': str(previous_mrr),
+                        'current_mrr': str(next_mrr),
+                        'currency': currency,
                     })
                     expansion_mrr += (next_mrr - previous_mrr)
             else:
@@ -251,14 +268,13 @@ class AccountContractDashboard(http.Controller):
                 contract_modifications.append({
                     'type': 'New MRR',
                     'account_analytic': invoice_line.account_analytic_id.name,
-                    'previous_mrr': 0,
-                    'current_mrr': next_mrr,
+                    'previous_mrr': str(0),
+                    'current_mrr': str(next_mrr),
+                    'currency': currency,
                 })
                 new_mrr += next_mrr
         net_new_mrr = new_mrr - churned_mrr + expansion_mrr - down_mrr
         result = new_mrr, -churned_mrr, expansion_mrr, -down_mrr, net_new_mrr, contract_modifications
-
-        print(contract_modifications)
 
         return result
 
@@ -473,12 +489,12 @@ class AccountContractDashboard(http.Controller):
             else:
                 added_symbol = stat_types[stat_type]['add_symbol']
         result = {
-            'value_1': str(value_1) + added_symbol,
-            'value_2': str(value_2) + added_symbol,
+            'value_1': str(value_1),
+            'value_2': str(value_2),
             'perc': perc,
             'color': color,
+            'added_symbol': added_symbol,
         }
-        print(result)
         return result
 
     def calculate_stat_aggregate(self, stat_type, start_date, end_date, filtered_contract_template_ids=None):

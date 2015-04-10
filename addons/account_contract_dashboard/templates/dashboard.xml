@@ -102,7 +102,7 @@
           <div class="row box graph-detailed">
             <div class="col-sm-12">
               <div id="value_now" t-att-value="value_now['value_2']" class="hidden"/>
-              <h1 class="metric_current oBlue mt32 mb32"><t t-esc="value_now['value_2']"/><t t-esc="all_stats[stat_type]['add_symbol'] if all_stats[stat_type]['add_symbol'] != 'currency' else currency"/></h1>
+              <h1 class="metric_current oBlue mt32 mb32"><t t-esc="format_number(value_now['value_2'])"/><t t-esc="all_stats[stat_type]['add_symbol'] if all_stats[stat_type]['add_symbol'] != 'currency' else currency"/></h1>
             </div>
             <input type="hidden" name="stat_type" t-att-value="stat_type"/>
             <div id="stat_chart_div">

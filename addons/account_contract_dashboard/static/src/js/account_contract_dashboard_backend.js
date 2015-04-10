@@ -45,6 +45,14 @@ openerp.account_contract_dashboard = function (instance) {
         }
     });
 
+    instance.web.account_contract_dashboard_salesman = instance.web.IframeBackend.extend({
+        init: function(parent) {
+            this._super(parent, '/account_contract_dashboard/choose_salesman');
+        }
+    });
+
     instance.web.client_actions.add("account_contract_dashboard_main", "instance.web.account_contract_dashboard_main");
     instance.web.client_actions.add("account_contract_dashboard_forecast", "instance.web.account_contract_dashboard_forecast");
+    instance.web.client_actions.add("account_contract_dashboard_salesman", "instance.web.account_contract_dashboard_salesman");
+
 };

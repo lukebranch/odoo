@@ -56,7 +56,7 @@
 
   <t t-name="account_contract_dashboard.statBoxContent">
     <div style="position: relative;">
-      <h2 style="color: #2693d5;"><t t-esc="value"/></h2>
+      <h2 style="color: #2693d5;"><t t-esc="formatNumber(value)"/><t t-esc="added_symbol"/></h2>
         <div class="trend">
           <h4 t-att-class="'mb0 ' + color"><t t-esc="perc"/>%</h4>
           <span style="font-size: 10px;">30 Days Ago</span>
@@ -70,7 +70,7 @@
 
   <t t-name="account_contract_dashboard.forecastBoxContent">
     <div style="position: relative;">
-      <h2 style="color: #2693d5;"><t t-esc="value"/><t t-esc="currency"/></h2>
+      <h2 style="color: #2693d5;"><t t-esc="formatNumber(value)"/><t t-esc="currency"/></h2>
     </div>
     <div class="graph-box" t-att-id="chart_div_id"></div>
     <div>
@@ -90,8 +90,8 @@
         <tr>
           <td><t t-esc="modification['account_analytic']"/></td>
           <td><t t-esc="modification['type']"/></td>
-          <td><t t-esc="modification['previous_mrr']"/></td>
-          <td><t t-esc="modification['current_mrr']"/></td>
+          <td><t t-esc="modification['previous_mrr'] + modification['currency']"/></td>
+          <td><t t-esc="modification['current_mrr'] + modification['currency']"/></td>
         </tr>
       </t>
     </table>
