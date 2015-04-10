@@ -298,13 +298,14 @@
           $('#mrr_growth_salesman').html("<div class='loader' style='position: relative; text-align:center; width: 100%; height: 300px;'>" + loader + "</div>");
 
           openerp.jsonRpc('/account_contract_dashboard/get_values_salesman', 'call', {
-            'end_date': period,
+            'start_date': period,
             'salesman_id': salesman_id,
           }).then(function(result){
               loadChart_mrr_salesman('#mrr_growth_salesman', result);
               $('#mrr_growth_salesman div.loader').hide();
 
               displayContractsModifications(result[5]);
+              displayNRRInvoices(result[7]);
           });
       });
 
@@ -313,6 +314,13 @@
           'modifications': modifications,
         });
         $('#contract_modifications').append(html);
+      }
+
+      function displayNRRInvoices(invoices){
+        var html = openerp.qweb.render('account_contract_dashboard.NRRInvoices', {
+          'invoices': invoices,
+        });
+        $('#NRR_invoices').append(html);
       }
 
       
@@ -675,6 +683,10 @@
                 { 
                   "label" : "Net New MRR" ,
                   "value" : result[4]
+                } , 
+                { 
+                  "label" : "NRR" ,
+                  "value" : result[6]
                 } ,
               ]
             }

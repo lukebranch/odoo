@@ -56,6 +56,10 @@ def format_number(number):
     return str(number)
 
 
+def first_day_of_month(date):
+    return date.replace(day=1)
+
+
 def last_day_of_month(date):
     if date.month == 12:
         return date.replace(day=31)
@@ -175,19 +179,17 @@ class AccountContractDashboard(http.Controller):
         })
 
     @http.route('/account_contract_dashboard/get_values_salesman', type="json", auth='user', website=True)
-    def get_values_salesman(self, salesman_id, end_date=None):
+    def get_values_salesman(self, salesman_id, start_date=None):
 
         salesman = request.env['res.users'].browse(int(salesman_id))
 
         currency = get_currency()
 
-        if end_date:
-            end_date = datetime.strptime(end_date, '%Y-%m')
+        if start_date:
+            start_date = datetime.strptime(start_date, '%Y-%m')
         else:
-            end_date = default_start_date
-        end_date = last_day_of_month(end_date)
-
-        date = end_date
+            start_date = first_day_of_month(default_start_date)
+        end_date = last_day_of_month(start_date)
 
         contract_modifications = []
 
@@ -195,13 +197,13 @@ class AccountContractDashboard(http.Controller):
 
         invoice_line_ids_starting_last_month = request.env['account.invoice.line'].search([
             ('invoice_id.user_id', '=', salesman.id),
-            ('asset_start_date', '>', (date - relativedelta(months=+1)).strftime(DEFAULT_SERVER_DATE_FORMAT)),
-            ('asset_start_date', '<=', date.strftime(DEFAULT_SERVER_DATE_FORMAT)),
+            ('asset_start_date', '>=', start_date.strftime(DEFAULT_SERVER_DATE_FORMAT)),
+            ('asset_start_date', '<=', end_date.strftime(DEFAULT_SERVER_DATE_FORMAT)),
         ])
         invoice_lines_ids_stopping_last_month = request.env['account.invoice.line'].search([
             ('invoice_id.user_id', '=', salesman.id),
-            ('asset_end_date', '>', (date - relativedelta(months=+1)).strftime(DEFAULT_SERVER_DATE_FORMAT)),
-            ('asset_end_date', '<=', date.strftime(DEFAULT_SERVER_DATE_FORMAT)),
+            ('asset_end_date', '>=', start_date.strftime(DEFAULT_SERVER_DATE_FORMAT)),
+            ('asset_end_date', '<=', end_date.strftime(DEFAULT_SERVER_DATE_FORMAT)),
         ])
         # DOWN & CANCEL
         for invoice in invoice_lines_ids_stopping_last_month.mapped('invoice_id'):
@@ -280,7 +282,28 @@ class AccountContractDashboard(http.Controller):
                 })
                 new_mrr += next_mrr
         net_new_mrr = new_mrr - churned_mrr + expansion_mrr - down_mrr
-        result = new_mrr, -churned_mrr, expansion_mrr, -down_mrr, net_new_mrr, contract_modifications
+
+        nrr_invoice_ids = []
+        total_nrr = 0
+        current_invoice_ids = request.env['account.invoice'].search([
+            ('user_id', '=', salesman.id),
+            ('date_due', '>=', start_date),
+            ('date_due', '<=', end_date),
+        ])
+
+        for invoice_id in current_invoice_ids:
+            invoice_nrr = sum([x.price_subtotal for x in invoice_id.invoice_line if x.mrr == 0])
+            if invoice_nrr > 0:
+                total_nrr += invoice_nrr
+                invoice_line = invoice_id.invoice_line[0]
+                nrr_invoice_ids.append({
+                    'account_analytic': invoice_line.account_analytic_id.name,
+                    'account_analytic_template': invoice_line.account_analytic_id.template_id.name,
+                    'nrr': str(invoice_nrr),
+                    'currency': currency,
+                })
+
+        result = new_mrr, -churned_mrr, expansion_mrr, -down_mrr, net_new_mrr, contract_modifications, total_nrr, nrr_invoice_ids
 
         return result
 

@@ -320,7 +320,7 @@
       <div id="wrap" class="oe_structure oe_empty" style="background-color: #F0EEEE;">
         <div class="container">
 
-         <input name="salesman_id" type="hidden" t-att-value="salesman.id"/>
+          <input name="salesman_id" type="hidden" t-att-value="salesman.id"/>
 
           <h1>
             Recurring Revenue Dashboard for <t t-esc="salesman.name"/>
@@ -347,6 +347,13 @@
               List of contract modifications
             </h2>
             <div id="contract_modifications"/>
+          </div>
+
+          <div class="box">
+            <h2>
+              List of NRR invoices
+            </h2>
+            <div id="NRR_invoices"/>
           </div>
         </div>
       </div>

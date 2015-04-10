@@ -99,6 +99,22 @@
     </table>
   </t>
 
+  <t t-name="account_contract_dashboard.NRRInvoices">
+    <table class="table table-striped">
+      <tr>
+        <th>Contracts</th>
+        <th>Template</th>
+        <th>NRR</th>
+      </tr>
+      <t t-foreach="invoices" t-as="invoice">
+        <tr>
+          <td><t t-esc="invoice['account_analytic']"/></td>
+          <td><t t-esc="invoice['account_analytic_template']"/></td>
+          <td><t t-esc="invoice['nrr'] + invoice['currency']"/></td>
+        </tr>
+      </t>
+    </table>
+  </t>
 
 
 </templates>
