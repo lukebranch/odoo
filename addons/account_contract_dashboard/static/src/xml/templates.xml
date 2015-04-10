@@ -15,7 +15,7 @@
           <tr>
             <td><t t-esc="plan['name']"/></td>
             <td><t t-esc="plan['nb_customers']"/></td>
-            <td t-if="stat_type != 'nb_contracts'"><t t-esc="plan['value']"/><t t-esc="all_stats[stat_type]['add_symbol']"/></td>
+            <td t-if="stat_type != 'nb_contracts'"><t t-esc="plan['value']"/><t t-esc="all_stats[stat_type]['add_symbol'] != 'currency' ? all_stats[stat_type]['add_symbol']: currency"/></td>
             <td class="col-md-3">
               <div t-if="value_now != 0" class="progress" style="width:80%; height:10px;">
                 <div class="progress-bar" role="progressbar" t-att-aria-valuenow="100*plan['value']/value_now" aria-valuemin="0" aria-valuemax="100" t-att-style="'width: '+100*plan['value']/value_now+'%'">
@@ -32,25 +32,25 @@
   <t t-name="account_contract_dashboard.statsHistory">
     <div class="col-md-3 text-center">
       <h4 class="text-muted smallCaps">Current</h4>
-      <h2><t t-esc="value_now"/><t t-esc="all_stats[stat_type]['add_symbol']"/></h2>
+      <h2><t t-esc="value_now"/><t t-esc="all_stats[stat_type]['add_symbol'] != 'currency' ? all_stats[stat_type]['add_symbol']: currency"/></h2>
     </div>
 
 
     <div class="col-md-3 text-center">
       <h4 class="text-muted smallCaps">1 month ago</h4>
-      <h2><t t-esc="stats_history['value_1_month_ago']['value_2']"/><t t-esc="all_stats[stat_type]['add_symbol']"/> <small t-if="stats_history['value_1_month_ago']['value_2'] != 0" t-attf-class="#{rate(all_stats, stat_type, stats_history['value_1_month_ago']['value_2'], value_now)[1]}"><t t-esc="rate(all_stats, stat_type, stats_history['value_1_month_ago']['value_2'], value_now)[0]"/>%</small></h2>
+      <h2><t t-esc="stats_history['value_1_month_ago']['value_2']"/><t t-esc="all_stats[stat_type]['add_symbol'] != 'currency' ? all_stats[stat_type]['add_symbol']: currency"/> <small t-if="stats_history['value_1_month_ago']['value_2'] != 0" t-attf-class="#{rate(all_stats, stat_type, stats_history['value_1_month_ago']['value_2'], value_now)[1]}"><t t-esc="rate(all_stats, stat_type, stats_history['value_1_month_ago']['value_2'], value_now)[0]"/>%</small></h2>
     </div>
 
 
     <div class="col-md-3 text-center">
       <h4 class="text-muted smallCaps">3 months ago</h4>
-      <h2><t t-esc="stats_history['value_3_months_ago']['value_2']"/><t t-esc="all_stats[stat_type]['add_symbol']"/> <small t-if="stats_history['value_3_months_ago']['value_2'] != 0" t-attf-class="#{rate(all_stats, stat_type, stats_history['value_3_months_ago']['value_2'], value_now)[1]}"><t t-esc="rate(all_stats, stat_type, stats_history['value_3_months_ago']['value_2'], value_now)[0]"/>%</small></h2>
+      <h2><t t-esc="stats_history['value_3_months_ago']['value_2']"/><t t-esc="all_stats[stat_type]['add_symbol'] != 'currency' ? all_stats[stat_type]['add_symbol']: currency"/> <small t-if="stats_history['value_3_months_ago']['value_2'] != 0" t-attf-class="#{rate(all_stats, stat_type, stats_history['value_3_months_ago']['value_2'], value_now)[1]}"><t t-esc="rate(all_stats, stat_type, stats_history['value_3_months_ago']['value_2'], value_now)[0]"/>%</small></h2>
     </div>
 
 
     <div class="col-md-3 text-center">
       <h4 class="text-muted smallCaps">12 months ago</h4>
-      <h2><t t-esc="stats_history['value_12_months_ago']['value_2']"/><t t-esc="all_stats[stat_type]['add_symbol']"/> <small t-if="stats_history['value_12_months_ago']['value_2'] != 0" t-attf-class="#{rate(all_stats, stat_type, stats_history['value_12_months_ago']['value_2'], value_now)[1]}"><t t-esc="rate(all_stats, stat_type, stats_history['value_12_months_ago']['value_2'], value_now)[0]"/>%</small></h2>
+      <h2><t t-esc="stats_history['value_12_months_ago']['value_2']"/><t t-esc="all_stats[stat_type]['add_symbol'] != 'currency' ? all_stats[stat_type]['add_symbol']: currency"/> <small t-if="stats_history['value_12_months_ago']['value_2'] != 0" t-attf-class="#{rate(all_stats, stat_type, stats_history['value_12_months_ago']['value_2'], value_now)[1]}"><t t-esc="rate(all_stats, stat_type, stats_history['value_12_months_ago']['value_2'], value_now)[0]"/>%</small></h2>
     </div>
   </t>
 

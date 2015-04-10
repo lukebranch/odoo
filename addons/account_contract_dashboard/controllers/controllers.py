@@ -13,12 +13,12 @@ default_start_date = date.today() - timedelta(days=30)
 default_end_date = date.today()
 
 stat_types = {
-    'mrr': {'name': 'Monthly Recurring Revenue', 'code': 'mrr', 'dir': 'up', 'prior': 1, 'type': 'last', 'add_symbol': '€'},
-    'net_revenue': {'name': 'Net Revenue', 'code': 'net_revenue', 'dir': 'up', 'prior': 2, 'type': 'sum', 'add_symbol': '€'},
-    'nrr': {'name': 'Non-Recurring Revenue', 'code': 'nrr', 'dir': 'up', 'prior': 3, 'type': 'sum', 'add_symbol': '€'},  # 'down' if fees ?
-    'arpu': {'name': 'Average Revenue per Contract', 'code': 'arpu', 'dir': 'up', 'prior': 4, 'type': 'last', 'add_symbol': '€'},
-    'arr': {'name': 'Annual Run-Rate', 'code': 'arr', 'dir': 'up', 'prior': 5, 'type': 'last', 'add_symbol': '€'},
-    'ltv': {'name': 'Lifetime Value', 'code': 'ltv', 'dir': 'up', 'prior': 6, 'type': 'last', 'add_symbol': '€'},
+    'mrr': {'name': 'Monthly Recurring Revenue', 'code': 'mrr', 'dir': 'up', 'prior': 1, 'type': 'last', 'add_symbol': 'currency'},
+    'net_revenue': {'name': 'Net Revenue', 'code': 'net_revenue', 'dir': 'up', 'prior': 2, 'type': 'sum', 'add_symbol': 'currency'},
+    'nrr': {'name': 'Non-Recurring Revenue', 'code': 'nrr', 'dir': 'up', 'prior': 3, 'type': 'sum', 'add_symbol': 'currency'},  # 'down' if fees ?
+    'arpu': {'name': 'Average Revenue per Contract', 'code': 'arpu', 'dir': 'up', 'prior': 4, 'type': 'last', 'add_symbol': 'currency'},
+    'arr': {'name': 'Annual Run-Rate', 'code': 'arr', 'dir': 'up', 'prior': 5, 'type': 'last', 'add_symbol': 'currency'},
+    'ltv': {'name': 'Lifetime Value', 'code': 'ltv', 'dir': 'up', 'prior': 6, 'type': 'last', 'add_symbol': 'currency'},
     'logo_churn': {'name': 'Logo Churn', 'code': 'logo_churn', 'dir': 'down', 'prior': 7, 'type': 'last', 'add_symbol': '%'},
     'revenue_churn': {'name': 'Revenue Churn', 'code': 'revenue_churn', 'dir': 'down', 'prior': 8, 'type': 'last', 'add_symbol': '%'},
     'nb_contracts': {'name': 'Contracts', 'code': 'nb_contracts', 'dir': 'up', 'prior': 9, 'type': 'last', 'add_symbol': ''},
@@ -28,6 +28,10 @@ forecast_types = {
     'mrr': {'name': 'Forecasted Annual MRR Growth', 'code': 'forecast_mrr', 'prior': 1},
     'contracts': {'name': 'Forecasted Annual Contracts Growth', 'code': 'forecast_contracts', 'prior': 2},
 }
+
+
+def get_currency():
+    return request.env['res.company'].search([], order='id')[0].currency_id.symbol
 
 
 def get_pruned_tick_values(ticks, nb_desired_ticks):
@@ -108,13 +112,12 @@ class AccountContractDashboard(http.Controller):
             'stat_type': stat_type,
             'contract_templates': request.env['account.analytic.account'].search([('type', '=', 'template')]),
             'filtered_contract_template_ids': filtered_contract_template_ids,
-            'currency': '€',
+            'currency': get_currency(),
             'report_name': stat_types[stat_type]['name'],
             'start_date': start_date.strftime('%Y-%m-%d'),
             'end_date': end_date.strftime('%Y-%m-%d'),
             'value_now': value_now,
             'display_stats_by_plan': False if stat_type in ['nrr', 'arpu', 'logo_churn'] else True,
-            'currency': '€',
             'href_post_args': href_post_args,
             'find_res_id': request.env['ir.model.data'].xmlid_to_res_id,
         })
@@ -123,7 +126,7 @@ class AccountContractDashboard(http.Controller):
     def forecast(self, **kw):
 
         return http.request.render('account_contract_dashboard.forecast', {
-            'currency': request.env['res.company'].search([])[0].currency_id.symbol,
+            'currency': get_currency(),
         })
 
     @http.route('/account_contract_dashboard/choose_salesman', auth='user', website=True)
@@ -272,7 +275,7 @@ class AccountContractDashboard(http.Controller):
 
         if forecast_type == 'forecast_mrr':
             return {
-                'currency': request.env['res.company'].search([])[0].currency_id.symbol,
+                'currency': get_currency(),
                 'starting_value': mrr,
                 'growth_linear': net_new_mrr,
                 'growth_expon': 15,
@@ -320,7 +323,7 @@ class AccountContractDashboard(http.Controller):
             end_date - relativedelta(months=+12),
             filtered_contract_template_ids=filtered_contract_template_ids)
 
-        return results, stat_types
+        return results, stat_types, get_currency()
 
     @http.route('/account_contract_dashboard/get_stats_by_plan', type="json", auth='user', website=True)
     def get_stats_by_plan(self, stat_type, start_date, end_date, filtered_contract_template_ids=None):
@@ -350,7 +353,7 @@ class AccountContractDashboard(http.Controller):
 
         results = sorted((results), key=lambda k: k['value'], reverse=True)
 
-        return results, stat_types
+        return results, stat_types, get_currency()
 
     @http.route('/account_contract_dashboard/calculate_graph_stat', type="json", auth='user', website=True)
     def calculate_graph_stat(self, stat_type, start_date, end_date, filtered_contract_template_ids, complete=False, nb_points=30):
@@ -416,7 +419,7 @@ class AccountContractDashboard(http.Controller):
                 '1': net_new_mrr,
             })
 
-        return results
+        return results, get_currency()
 
     @http.route('/account_contract_dashboard/calculate_stats_diff_30_days_ago', type="json", auth='user', website=True)
     def calculate_stats_diff_30_days_ago(self, stat_type, start_date, end_date, filtered_contract_template_ids):
@@ -463,12 +466,19 @@ class AccountContractDashboard(http.Controller):
         elif stat_types[stat_type]['dir'] == 'down':
             color = 'oRed' if perc > 0 else 'oGreen'
 
+        added_symbol = ''
+        if add_symbol:
+            if stat_types[stat_type]['add_symbol'] == 'currency':
+                added_symbol = get_currency()
+            else:
+                added_symbol = stat_types[stat_type]['add_symbol']
         result = {
-            'value_1': str(value_1) + stat_types[stat_type]['add_symbol'] if add_symbol else value_1,
-            'value_2': str(value_2) + stat_types[stat_type]['add_symbol'] if add_symbol else value_2,
+            'value_1': str(value_1) + added_symbol,
+            'value_2': str(value_2) + added_symbol,
             'perc': perc,
             'color': color,
         }
+        print(result)
         return result
 
     def calculate_stat_aggregate(self, stat_type, start_date, end_date, filtered_contract_template_ids=None):

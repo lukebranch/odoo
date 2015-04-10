@@ -180,6 +180,7 @@
                     'stats_history': result[0],
                     'stat_type': stat_type,
                     'all_stats': result[1],
+                    'currency': result[2],
                     'rate': compute_rate,
                     'value_now': parseInt($('#value_now').attr('value')),
                   });
@@ -233,7 +234,7 @@
               'complete': true,
               'filtered_contract_template_ids': filtered_contract_template_ids,
           }).then(function(result){
-              loadChart_mrr_growth_stat('#mrr_growth_chart_div', result);
+              loadChart_mrr_growth_stat('#mrr_growth_chart_div', result[0], result[1]);
               $('#mrr_growth_chart_div div.loader').hide();
           });
       });
@@ -259,6 +260,7 @@
                     'stats_by_plan': result[0],
                     'stat_type': stat_type,
                     'all_stats': result[1],
+                    'currency': result[2],
                     'value_now': $('#value_now').attr('value'),
                   });
                   $('#stats_by_plan').replaceWith(html);
@@ -575,7 +577,7 @@
       }
 
 
-      function loadChart_mrr_growth_stat(div_to_display, result){
+      function loadChart_mrr_growth_stat(div_to_display, result, currency){
 
           var myData = [
               {
@@ -626,7 +628,7 @@
                   .rotateLabels(55);
 
             chart.yAxis
-                .axisLabel('MRR (€)')
+                .axisLabel('MRR ('+currency+')')
                 .tickFormat(d3.format('.02f'));
 
             var svg = d3.select(div_to_display)
