@@ -225,6 +225,7 @@ class AccountContractDashboard(http.Controller):
                     # DOWN
                     contract_modifications.append({
                         'type': 'Downgrade',
+                        'partner': invoice_line.partner_id.name,
                         'account_analytic': invoice_line.account_analytic_id.name,
                         'account_analytic_template': invoice_line.account_analytic_id.template_id.name,
                         'previous_mrr': str(previous_mrr),
@@ -236,6 +237,7 @@ class AccountContractDashboard(http.Controller):
                 # CANCEL
                 contract_modifications.append({
                     'type': 'Churned MRR',
+                    'partner': invoice_line.partner_id.name,
                     'account_analytic': invoice_line.account_analytic_id.name,
                     'account_analytic_template': invoice_line.account_analytic_id.template_id.name,
                     'previous_mrr': str(previous_mrr),
@@ -263,6 +265,7 @@ class AccountContractDashboard(http.Controller):
                     # UP
                     contract_modifications.append({
                         'type': 'Upgrade',
+                        'partner': invoice_line.partner_id.name,
                         'account_analytic': invoice_line.account_analytic_id.name,
                         'account_analytic_template': invoice_line.account_analytic_id.template_id.name,
                         'previous_mrr': str(previous_mrr),
@@ -274,6 +277,7 @@ class AccountContractDashboard(http.Controller):
                 # NEW
                 contract_modifications.append({
                     'type': 'New MRR',
+                    'partner': invoice_line.partner_id.name,
                     'account_analytic': invoice_line.account_analytic_id.name,
                     'account_analytic_template': invoice_line.account_analytic_id.template_id.name,
                     'previous_mrr': str(0),
@@ -297,6 +301,7 @@ class AccountContractDashboard(http.Controller):
                 total_nrr += invoice_nrr
                 invoice_line = invoice_id.invoice_line[0]
                 nrr_invoice_ids.append({
+                    'partner': invoice_line.partner_id.name,
                     'account_analytic': invoice_line.account_analytic_id.name,
                     'account_analytic_template': invoice_line.account_analytic_id.template_id.name,
                     'nrr': str(invoice_nrr),
