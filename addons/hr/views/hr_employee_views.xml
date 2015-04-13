@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<openerp>
-    <data>
+<odoo>
 
         <!-- Top menu item -->
-        <menuitem name="Human Resources"
-            id="menu_hr_root"
+        <menuitem id="menu_hr_root"
+            name="Human Resources"
             groups="base.group_hr_manager,base.group_hr_user,base.group_user"
             icon="fa-user"
             sequence="90"/>
@@ -46,21 +45,20 @@
                             <page string="Public Information">
                                 <group>
                                     <group string="Contact Information">
-                                        <field name="address_id" on_change="onchange_address_id(address_id)"
-                                            context="{'show_address': 1}"
+                                        <field name="address_id" context="{'show_address': 1}"
                                             options='{"always_reload": True, "highlight_first_line": True}'/>
                                         <field name="mobile_phone"/>
                                         <field name="work_location"/>
                                     </group>
                                     <group string="Position">
-                                        <field name="department_id" groups="hr.group_multi_departments" on_change="onchange_department_id(department_id)"/>
+                                        <field name="department_id" groups="hr.group_multi_departments"/>
                                         <field name="job_id"/>
                                         <field name="parent_id"/>
                                         <field name="coach_id"/>
                                     </group>
                                     <group>
-                                        <field name="company_id" groups="base.group_multi_company" on_change="onchange_company(company_id)"/>
-                                        <field name="user_id" on_change="onchange_user(user_id)" string="Related User"
+                                        <field name="company_id" groups="base.group_multi_company"/>
+                                        <field name="user_id" string="Related User"
                                             context="{'default_groups_ref': ['base.group_user']}"/>
                                     </group>
                                 </group>
@@ -125,7 +123,7 @@
         </record>
 
         <record id="view_employee_filter" model="ir.ui.view">
-            <field name="name">Employees</field>
+            <field name="name">hr.employee.search</field>
             <field name="model">hr.employee</field>
             <field name="arch" type="xml">
                 <search string="Employees">
@@ -144,10 +142,10 @@
                 </search>
              </field>
          </record>
-        <!-- HR Kanban View  -->
 
-    <record model="ir.ui.view" id="hr_kanban_view_employees">
-        <field name="name">HR - Employess Kanban</field>
+    <!-- HR Kanban View  -->
+    <record id="hr_kanban_view_employees" model="ir.ui.view">
+        <field name="name">hr.employee.kanban</field>
         <field name="model">hr.employee</field>
         <field name="priority">10</field>
         <field name="arch" type="xml">
@@ -170,7 +168,7 @@
                                 </h4>
                                 <ul>
                                     <li id="last_login">
-                                        <span t-if="record.last_login.raw_value &amp;&amp; record.last_login.raw_value.is().today()" class="oe_kanban_button" style="font-size: 100%%">
+                                        <span t-if="record.last_login.raw_value &amp;&amp; moment(record.last_login.raw_value).diff(moment()) > 0" class="oe_kanban_button" style="font-size: 100%%">
                                               <t t-esc="moment(record.last_login.raw_value).format('LT')"/>
                                         </span>
                                     </li>
@@ -195,9 +193,9 @@
                     </t>
                 </templates>
             </kanban>
-
         </field>
     </record>
+
         <record id="open_view_employee_tree" model="ir.actions.act_window">
             <field name="name">Employees Structure</field>
             <field name="res_model">hr.employee</field>
@@ -340,5 +338,4 @@
             <field eval="'ir.actions.act_window,%d'%hr_employee_normal_action_tree" name="value"/>
         </record>
 
-    </data>
-</openerp>
+</odoo>
