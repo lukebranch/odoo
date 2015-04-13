@@ -9,12 +9,12 @@
       openerp.website.if_dom_contains('#datetimepicker_start, #datetimepicker_end', function() {
           $('#datetimepicker_start').datetimepicker({
             format: 'YYYY-MM-DD',
-            viewMode: 'months',
+            viewMode: 'years',
               pickTime: false,
           });
           $('#datetimepicker_end').datetimepicker({
             format: 'YYYY-MM-DD',
-            viewMode: 'months',
+            viewMode: 'years',
               pickTime: false,
           });
           $("#datetimepicker_start").on("dp.change", function (e) {
