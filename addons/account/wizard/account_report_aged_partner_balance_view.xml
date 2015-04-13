@@ -42,8 +42,7 @@
              <field name="target">new</field>
        </record>
 
-        <menuitem icon="STOCK_PRINT"
-            name="Aged Partner Balance"
+        <menuitem name="Aged Partner Balance"
             action="action_account_aged_balance_view"
             id="menu_aged_trial_balance"
             parent="account.next_id_22"/>

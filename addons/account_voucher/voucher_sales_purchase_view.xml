@@ -189,8 +189,7 @@
             <field name="act_window_id" ref="action_sale_receipt"/>
         </record>
 
-        <menuitem id="menu_action_sale_receipt" icon="STOCK_JUSTIFY_FILL"
-            action="action_sale_receipt"
+        <menuitem id="menu_action_sale_receipt" action="action_sale_receipt"
             parent="account.menu_finance_receivables"
             sequence="10"/>
 
@@ -345,8 +344,7 @@
             <field name="act_window_id" ref="action_purchase_receipt"/>
         </record>
 
-        <menuitem id="menu_action_purchase_receipt" icon="STOCK_JUSTIFY_FILL"
-            action="action_purchase_receipt" parent="account.menu_finance_payables" sequence="3"/>
+        <menuitem id="menu_action_purchase_receipt" action="action_purchase_receipt" parent="account.menu_finance_payables" sequence="3"/>
 
     </data>
 </openerp>

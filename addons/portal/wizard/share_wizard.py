@@ -102,8 +102,7 @@ class share_wizard_portal(osv.TransientModel):
         menu_data = {'name': action_def['name'],
                      'sequence': 10,
                      'action': 'ir.actions.act_window,'+str(action_id),
-                     'parent_id': root_menu_id,
-                     'icon': 'STOCK_JUSTIFY_FILL'}
+                     'parent_id': root_menu_id}
         menu_id =  self.pool.get('ir.ui.menu').create(cr, UID_ROOT, menu_data)
         return menu_id
 

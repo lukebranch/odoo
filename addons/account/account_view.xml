@@ -1295,7 +1295,6 @@
         </record>
         <menuitem
             action="action_account_moves_all_a"
-            icon="STOCK_JUSTIFY_FILL"
             id="menu_action_account_moves_all"
             parent="account.menu_finance_entries"
             sequence="1"
@@ -1535,7 +1534,6 @@
             </field>
         </record>
         <menuitem
-            icon="STOCK_JUSTIFY_FILL"
             action="action_move_journal_line"
             id="menu_action_move_journal_line_form"
             parent="account.menu_finance_entries"

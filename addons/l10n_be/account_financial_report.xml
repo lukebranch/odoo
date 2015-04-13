@@ -774,7 +774,7 @@
              <field name="target">new</field>
              <field name="context" eval="{'default_account_report_id':ref('account_financial_report_belgium_bs')}"/>
         </record>
-        <menuitem icon="STOCK_PRINT" name="Balance Sheet" action="action_account_report_be_bs" id="menu_account_report_be_bs" parent="menu_finance_belgian_statement" sequence="1"/>
+        <menuitem name="Balance Sheet" action="action_account_report_be_bs" id="menu_account_report_be_bs" parent="menu_finance_belgian_statement" sequence="1"/>
 
         <record id="action_account_report_be_pl" model="ir.actions.act_window">
              <field name="name">Comptes de Charges</field>
@@ -787,7 +787,7 @@
              <field name="context">{}</field>
              <field name="context" eval="{'default_account_report_id':ref('account_financial_report_belgiumpl0')}"/>
         </record>
-        <menuitem icon="STOCK_PRINT" name="Profit And Loss" action="action_account_report_be_pl" id="menu_account_report_be_pl" parent="menu_finance_belgian_statement" sequence="2"/>
+        <menuitem name="Profit And Loss" action="action_account_report_be_pl" id="menu_account_report_be_pl" parent="menu_finance_belgian_statement" sequence="2"/>
         
     </data>
 </openerp>

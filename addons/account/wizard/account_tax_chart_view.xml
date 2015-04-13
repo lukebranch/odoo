@@ -35,7 +35,6 @@
         </record>
 
         <menuitem
-            icon="STOCK_INDENT"
             action="action_account_tax_chart"
             id="menu_action_tax_code_tree"
             parent="menu_finance_charts"

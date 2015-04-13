@@ -30,7 +30,6 @@
         </record>
 
         <menuitem
-                icon="STOCK_PRINT"
                 name="Trial Balance"
                 parent="account.final_accounting_reports"
                 action="action_account_balance_menu"

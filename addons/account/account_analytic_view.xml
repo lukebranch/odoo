@@ -127,7 +127,6 @@
             parent="account.menu_finance_charts"
             action="analytic.action_account_analytic_chart"
             id="menu_action_analytic_account_tree2"
-            icon="STOCK_INDENT"
             groups="analytic.group_analytic_accounting"/>
         <menuitem action="analytic.action_account_analytic_account_form" id="account_analytic_def_account"
             parent="menu_analytic_accounting"

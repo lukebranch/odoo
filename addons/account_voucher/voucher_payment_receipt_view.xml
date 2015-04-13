@@ -289,7 +289,7 @@
         </record>
 
 
-        <menuitem action="action_vendor_payment" icon="STOCK_JUSTIFY_FILL" sequence="4"
+        <menuitem action="action_vendor_payment" sequence="4"
             id="menu_action_vendor_payment"  parent="account.menu_finance_payables"/>
 
         <!-- Register Payment Form (old Pay Invoice wizard) -->
@@ -574,7 +574,7 @@
             <field name="act_window_id" ref="action_vendor_receipt"/>
         </record>
 
-        <menuitem action="action_vendor_receipt" icon="STOCK_JUSTIFY_FILL" sequence="12"
+        <menuitem action="action_vendor_receipt" sequence="12"
             id="menu_action_vendor_receipt"  parent="account.menu_finance_receivables"/>
 
     </data>

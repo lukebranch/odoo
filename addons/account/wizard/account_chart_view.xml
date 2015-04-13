@@ -37,7 +37,7 @@
             <field name="target">new</field>
         </record>
 
-        <menuitem icon="STOCK_INDENT" action="action_account_chart"
+        <menuitem action="action_account_chart"
             id="menu_action_account_tree2"
             parent="account.menu_finance_charts" />
     </data>
