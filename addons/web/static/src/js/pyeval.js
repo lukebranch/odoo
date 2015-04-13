@@ -396,6 +396,28 @@
             }
             return py.PY_call(datetime.datetime, params);
         },
+        __add__: function (other) {
+            if (!py.PY_isInstance(other, datetime.timedelta)) {
+                return py.NotImplemented;
+            }
+            var s = tmxxx(this.year, this.month, this.day + other.days,
+                          this.hour, this.minute, this.second + other.seconds,
+                          this.microsecond + other.microseconds);
+
+            return py.PY_call(datetime.datetime,
+              [s.year, s.month, s.day, s.hour, s.minute, s.second, s.microsecond]
+            );
+        },
+        __sub__: function (other) {
+            if (py.PY_isInstance(other, datetime.timedelta)) {
+                return py.PY_add(this, py.PY_negative(other));
+            }
+            if (py.PY_isInstance(other, datetime.datetime)) {
+                var ms = this.toJSON() - other.toJSON();
+                return py.PY_call(datetime.timedelta, {'milliseconds': py.float.fromJSON(ms)});
+            }
+            return py.NotImplemented;
+        },
         strftime: function () {
             var self = this;
             var args = py.PY_parseArgs(arguments, 'format');
@@ -561,6 +583,7 @@
         var d = py.PY_call(py.PY_getAttr(dt_class, 'utcnow'));
         return py.PY_call(py.PY_getAttr(d, 'strftime'), [args.format]);
     });
+    time.altzone = py.float.fromJSON(new Date().getTimezoneOffset()*60);
 
     var args = _.map(('year month day '
                     + 'years months weeks days '
