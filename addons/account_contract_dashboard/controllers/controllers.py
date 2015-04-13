@@ -287,8 +287,8 @@ class AccountContractDashboard(http.Controller):
         total_nrr = 0
         current_invoice_ids = request.env['account.invoice'].search([
             ('user_id', '=', salesman.id),
-            ('date_due', '>=', start_date),
-            ('date_due', '<=', end_date),
+            ('date_invoice', '>=', start_date),
+            ('date_invoice', '<=', end_date),
         ])
 
         for invoice_id in current_invoice_ids:
@@ -541,7 +541,7 @@ class AccountContractDashboard(http.Controller):
                     SELECT SUM(line.price_subtotal) AS sum
                     FROM account_invoice_line AS line, account_invoice AS invoice
                     WHERE
-                        (invoice.date_due BETWEEN %s AND %s) AND
+                        (invoice.date_invoice BETWEEN %s AND %s) AND
                         line.invoice_id = invoice.id AND
                         invoice.type IN ('out_invoice') AND
                         invoice.currency_id = 1 AND
@@ -552,7 +552,7 @@ class AccountContractDashboard(http.Controller):
                     SELECT SUM(line.price_subtotal) AS sum
                     FROM account_invoice_line AS line, account_invoice AS invoice, account_analytic_account AS analytic_account
                     WHERE
-                        (invoice.date_due BETWEEN %s AND %s) AND
+                        (invoice.date_invoice BETWEEN %s AND %s) AND
                         line.invoice_id = invoice.id AND
                         invoice.type IN ('out_invoice') AND
                         invoice.currency_id = 1 AND
@@ -569,7 +569,7 @@ class AccountContractDashboard(http.Controller):
                     SELECT SUM(line.price_subtotal) AS sum
                     FROM account_invoice_line AS line, account_invoice AS invoice
                     WHERE
-                        (invoice.date_due BETWEEN %s AND %s) AND
+                        (invoice.date_invoice BETWEEN %s AND %s) AND
                         line.asset_start_date IS NULL AND
                         line.invoice_id = invoice.id AND
                         invoice.type IN ('out_invoice') AND
@@ -581,7 +581,7 @@ class AccountContractDashboard(http.Controller):
                     SELECT SUM(line.price_subtotal) AS sum
                     FROM account_invoice_line AS line, account_invoice AS invoice, account_analytic_account AS analytic_account
                     WHERE
-                        (invoice.date_due BETWEEN %s AND %s) AND
+                        (invoice.date_invoice BETWEEN %s AND %s) AND
                         line.mrr IS NULL AND
                         line.invoice_id = invoice.id AND
                         invoice.type IN ('out_invoice') AND
