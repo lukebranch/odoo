@@ -20,7 +20,6 @@
         <link href="static/src/css/project_timesheet.css" rel="stylesheet"/>
         <script type="text/javascript" id="loading-script" t-raw="init">
             $(function(){  
-              $.material.init();
               odoo.define('project_timesheet.project_timesheet', function(require){
                 var test = require('project_timeshee.ui');
                 var pt = new test();

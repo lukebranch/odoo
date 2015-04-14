@@ -62,6 +62,9 @@ div a:focus{
 .pt_navbar_element{
 	line-height: 50px;
 }
+.pt_navbar_element .fa{
+	line-height: 50px;
+}
 
 .well a{
 	color: white;

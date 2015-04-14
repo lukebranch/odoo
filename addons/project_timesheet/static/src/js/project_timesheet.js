@@ -2,7 +2,7 @@ odoo.define('project_timeshee.ui', function (require ) {
 "use strict";
 
 var core = require('web.core');
-var Session = require('web.Session');
+var session = require('web.session');
 var Widget = require('web.Widget');
 var time_module = require('web.time');
 var Model = require('web.Model');
@@ -10,274 +10,144 @@ var web_data = require('web.data');
 
 var QWeb = core.qweb;
 
-	//Main widget to instantiate the app
-	var ProjectTimesheet = Widget.extend({
-		start: function(){
+    //Main widget to instantiate the app
+    var ProjectTimesheet = Widget.extend({
+        start: function(){
             console.log("start");
-			var self = this;
+            var self = this;
+            // DEV lines, to remove
+            localStorage.removeItem("pt_current_server");
+            //localStorage.removeItem("pt_current_user");
+            // DEV
+            // Case: The user has previously connected to an Odoo instance.
+            if(localStorage.getItem("pt_current_server")){
+                self.server = localStorage.getItem("pt_current_server");
+                // Load session, if there is any :
+                session.setup(self.server, {use_cors : true});
+                //self.session._session_authenticate('hr-ts','admin','admin').then(function(){
+                    session.session_reload().then(function(){
+                        if(session && session.username !== null){
+                            self.username = self.session.username;
+                            self.stored_data = JSON.parse(localStorage.getItem("pt_data"));
+                            self.user_local_data = _.findWhere(self.stored_data, {session_user : self.username, session_server : self.session.server});
+                            self.data = self.user_local_data.data;
+                            localstorage.setItem("pt_current_user", self.username);
 
-			// Load session, if there is any :
-			this.session = new Session();
-            this.session.session_reload().then(function(){
+                        }
+                        // There is no session
+                        else{
+                            // There is no session at the moment, but the user has logged previously, or has a dummy user
+                            if(localStorage.getItem("pt_current_user")){
+                                self.username = localStorage.getItem("pt_current_user");
+                                self.stored_data = JSON.parse(localStorage.getItem("pt_data"));
+                                self.user_local_data = _.findWhere(self.stored_data, {session_user : self.username});
+                                self.data = self.user_local_data.data;
+                            }
+                            // Probably never happens; The user has never used the app earlier (but he had a pt_current_server...)
+                            else{
 
-                // Case: The user is connected to an Odoo instance and we retrieve the localstorage data based on his username and server
-                if(self.session && self.session.uid !== null){
-                    // Set demo data in local storage. TO REMOVE LATER
-                    self.username = self.session.username;
-                    
-                    // Comment or uncomment following lines to reset demo data
-                    if(localStorage.getItem("pt_data") === null){
-                        var timestamp = (new Date()).getTime();
-                        var startup_data = [
-                            {
-                                "session_user": self.username,
-                                "session_uid": self.session.uid,
-                                "session_server": self.session.server,
-                                "data":{
-                                    "next_aal_id":1,
-                                    "next_project_id":1,
-                                    "next_task_id":1,
-                                    "module_key" : "Project_timesheet_UI_",
-                                    "original_timestamp" : timestamp,
-                                    "settings":{
-                                        "default_project_id":undefined,
-                                        "minimal_duration":0.25,
-                                        "time_unit":0.25
-                                    },
-                                    "projects":[],
-                                    "tasks": [],
-                                    "account_analytic_lines":[],
-                                    "day_plan":[]
-                                }
-                            },
-                        ];
-                       localStorage.setItem("pt_data", JSON.stringify(startup_data));
-                    }
-
-                	// Load (demo) data from local storage
-                	self.stored_data = JSON.parse(localStorage.getItem("pt_data"));
-                 	self.user_local_data = _.findWhere(self.stored_data, {session_user : self.username, session_server : self.session.server});
-                 	self.data = self.user_local_data.data;
-
-                    localStorage.setItem("pt_current_user", self.username);
-                    localStorage.setItem("pt_current_server", self.session.server);
-                }
-                // Case: The user is not connected to an Odoo instance, but he has at least connected once earlier.
-                // we retrieve the localstorage data from the previous connection 
-                else if(localStorage.getItem("pt_current_user")  !== null && localStorage.getItem("pt_current_server") !== null){
-                    var current_user = localStorage.getItem("pt_current_user");
-                    var current_server = localStorage.getItem("pt_current_server");
-                    self.username = current_user;
-
+                            }
+                        }
+                        self.load_template();
+                        self.build_widgets();
+                        if(self.session && self.session.uid !== null){
+                            self.sync_screen.sync(function(){
+                                self.activities_screen.renderElement();
+                            });
+                        }
+                    });
+                //});
+            }
+            // The user has never connected to an Odoo Instance
+            else{
+                // The user has used the app at least once earlier
+                if(localStorage.getItem("pt_current_user")){
+                    // Retrieve the user's data
+                    self.username = localStorage.getItem("pt_current_user");
                     self.stored_data = JSON.parse(localStorage.getItem("pt_data"));
-                    self.user_local_data = _.findWhere(self.stored_data, {session_user : current_user, session_server : current_server});
+                    self.user_local_data = _.findWhere(self.stored_data, {session_user : self.username});
                     self.data = self.user_local_data.data;
                 }
-                //Case: The user is not and has never been connected to an Odoo instance. We create a default username and server name.
-                // They will be updated when the user connects to an Odoo instance.
                 else{
-                    alert("No session detected !");
-
-                    //Case : The user has used the app earlier at least once.                    
-                    if(localStorage.getItem("pt_current_user") !== null){
-                        // In theory it should be "$no_user$"
-                        self.username = localStorage.getItem("pt_current_user");
-                        self.stored_data = JSON.parse(localStorage.getItem("pt_data"));
-                        self.user_local_data = _.findWhere(self.stored_data, {session_user : current_user});
-                        self.data = self.user_local_data.data;
-                    }
-
-                    // Case: First connection ever
-                    else{
-                        var timestamp = (new Date()).getTime();
-                        self.username = "$no_user$";
-                        localStorage.setItem("pt_current_user", self.username);
-                        
-                        // Data initialization
-                        self.data = {
-                            "next_aal_id":1,
-                            "next_project_id":1,
-                            "next_task_id":1,
-                            "module_key" : "Project_timesheet_UI_",
-                            "original_timestamp" : timestamp,
-                            "settings":{
-                                "default_project_id":undefined,
-                                "minimal_duration":0.25,
-                                "time_unit":0.25
-                            },
-                            "projects":[],
-                            "tasks": [],
-                            "account_analytic_lines":[],
-                            "day_plan":[]
-                        }
-                        localStorage.setItem("pt_data", JSON.stringify(self.data));
-                    }
+                    // Create a dummy user that will be used until the user connects to an odoo instance
+                    var timestamp = (new Date()).getTime();
+                    self.username = "$no_user$";
+                    // Data initialization
+                    var startup_data = [
+                        {
+                            "session_user": self.username,
+                            "data":{
+                                "next_aal_id":1,
+                                "next_project_id":1,
+                                "next_task_id":1,
+                                "module_key" : "Project_timesheet_UI_",
+                                "original_timestamp" : timestamp,
+                                "settings":{
+                                    "default_project_id":undefined,
+                                    "minimal_duration":0.25,
+                                    "time_unit":0.25
+                                },
+                                "projects":[],
+                                "tasks": [],
+                                "account_analytic_lines":[],
+                                "day_plan":[]
+                            }
+                        },
+                    ];
+                    self.data = startup_data[0].data;
+                    localStorage.setItem("pt_data", JSON.stringify(startup_data));
+                    localStorage.setItem("pt_current_user", self.username);
                 }
-
-             	//Load templates for widgets
-            	self.load_template().then(function(){
-					self.build_widgets();
-                    if(self.session.uid !== null){
+                self.load_template().then(function(){
+                    self.build_widgets();
+                    if(self.session && self.session.uid !== null){
                         self.sync_screen.sync(function(){
                             self.activities_screen.renderElement();
                         });
                     }
-				});
+                });
+            } 
+        },
+        load_template: function(){
+            return $.ajax({
+                url : "static/src/xml/project_timesheet.xml",
+                success: function(xml){
+                    QWeb.add_template(xml);
+                }
             });
-		},
-		load_template: function(){
-            var self = this;
-            return this.session.rpc('/web/proxy/load', {path: "/project_timesheet/static/src/xml/project_timesheet.xml"}).then(function(xml) {
-                QWeb.add_template(xml);
-            });
+
+
+
         },
         build_widgets: function(){
-        	this.activities_screen = new Activities_screen(this);
-        	this.activities_screen.appendTo(this.$el);
-        	this.activities_screen.show();
+            this.activities_screen = new Activities_screen(this);
+            this.activities_screen.appendTo(this.$el);
+            this.activities_screen.show();
 
-        	this.day_planner_screen = new Day_planner_screen(this);
-        	this.day_planner_screen.appendTo(this.$el);
-        	this.day_planner_screen.hide();
+            this.day_planner_screen = new Day_planner_screen(this);
+            this.day_planner_screen.appendTo(this.$el);
+            this.day_planner_screen.hide();
 
-        	this.settings_screen = new Settings_screen(this);
-        	this.settings_screen.appendTo(this.$el);
-        	this.settings_screen.hide();
+            this.settings_screen = new Settings_screen(this);
+            this.settings_screen.appendTo(this.$el);
+            this.settings_screen.hide();
 
-        	this.edit_activity_screen = new Edit_activity_screen(this);
-        	this.edit_activity_screen.appendTo(this.$el);
-        	this.edit_activity_screen.hide();
+            this.edit_activity_screen = new Edit_activity_screen(this);
+            this.edit_activity_screen.appendTo(this.$el);
+            this.edit_activity_screen.hide();
 
             this.sync_screen = new Sync_screen(this);
             this.sync_screen.appendTo(this.$el);
             this.sync_screen.hide();
         },
         update_localStorage: function(){
-        	localStorage.setItem("pt_data", JSON.stringify(this.stored_data));
+            localStorage.setItem("pt_data", JSON.stringify(this.stored_data));
         },
+    });
 
-        //TAC : TO remove later, it's for testing !
-        test_sess: function(){
-            console.log("start");
-            var self = this;
-
-            // Load session, if there is any :
-            this.session = new Session();
-            this.session.session_reload().then(function(){
-
-                // Case: The user is connected to an Odoo instance and we retrieve the localstorage data based on his username and server
-                if(self.session && self.session.uid !== null){
-                    // Set demo data in local storage. TO REMOVE LATER
-                    self.username = self.session.username;
-                    
-                    // Comment or uncomment following lines to reset demo data
-                    if(localStorage.getItem("pt_data") === null){
-                        var timestamp = (new Date()).getTime();
-                        var startup_data = [
-                            {
-                                "session_user": self.username,
-                                "session_uid": self.session.uid,
-                                "session_server": self.session.server,
-                                "data":{
-                                    "next_aal_id":1,
-                                    "next_project_id":1,
-                                    "next_task_id":1,
-                                    "module_key" : "Project_timesheet_UI_",
-                                    "original_timestamp" : timestamp,
-                                    "settings":{
-                                        "default_project_id":undefined,
-                                        "minimal_duration":0.25,
-                                        "time_unit":0.25
-                                    },
-                                    "projects":[],
-                                    "tasks": [],
-                                    "account_analytic_lines":[],
-                                    "day_plan":[]
-                                }
-                            },
-                        ];
-                       localStorage.setItem("pt_data", JSON.stringify(startup_data));
-                    }
-
-                    // Load (demo) data from local storage
-                    self.stored_data = JSON.parse(localStorage.getItem("pt_data"));
-                    self.user_local_data = _.findWhere(self.stored_data, {session_user : self.username, session_server : self.session.server});
-                    self.data = self.user_local_data.data;
-
-                    localStorage.setItem("pt_current_user", self.username);
-                    localStorage.setItem("pt_current_server", self.session.server);
-                }
-                // Case: The user is not connected to an Odoo instance, but he has at least connected once earlier.
-                // we retrieve the localstorage data from the previous connection 
-                else if(localStorage.getItem("pt_current_user")  !== null && localStorage.getItem("pt_current_server") !== null){
-                    var current_user = localStorage.getItem("pt_current_user");
-                    var current_server = localStorage.getItem("pt_current_server");
-                    self.username = current_user;
-
-                    self.stored_data = JSON.parse(localStorage.getItem("pt_data"));
-                    self.user_local_data = _.findWhere(self.stored_data, {session_user : current_user, session_server : current_server});
-                    self.data = self.user_local_data.data;
-                }
-                //Case: The user is not and has never been connected to an Odoo instance. We create a default username and server name.
-                // They will be updated when the user connects to an Odoo instance.
-                else{
-                    alert("No session detected !");
-
-                    //Case : The user has used the app earlier at least once.                    
-                    if(localStorage.getItem("pt_current_user") !== null){
-                        // In theory it should be "$no_user$"
-                        self.username = localStorage.getItem("pt_current_user");
-                        self.stored_data = JSON.parse(localStorage.getItem("pt_data"));
-                        self.user_local_data = _.findWhere(self.stored_data, {session_user : current_user, session_server : current_server});
-                        self.data = self.user_local_data.data;
-                    }
-
-                    // Case: First connection ever
-                    else{
-                        var timestamp = (new Date()).getTime();
-                        self.username = "$no_user$";
-                        localStorage.setItem("pt_current_user", self.username);
-                        
-                        // Data initialization
-                        self.data = {
-                            "next_aal_id":1,
-                            "next_project_id":1,
-                            "next_task_id":1,
-                            "module_key" : "Project_timesheet_UI_",
-                            "original_timestamp" : timestamp,
-                            "settings":{
-                                "default_project_id":undefined,
-                                "minimal_duration":0.25,
-                                "time_unit":0.25
-                            },
-                            "projects":[],
-                            "tasks": [],
-                            "account_analytic_lines":[],
-                            "day_plan":[]
-                        }
-                        localStorage.setItem("pt_data", JSON.stringify(startup_data));
-                    }
-                }
-
-                //Load templates for widgets
-
-                    if(self.session.uid !== null){
-                        self.sync_screen.sync(function(){
-                            self.activities_screen.renderElement();
-                        });
-                    }
-                    else{
-                        self.activities_screen.renderElement();
-                    }
-
-            });
-        },
-
-	});
-
-	// Basic screen widget, inherited by all screens
-	var BasicScreenWidget = Widget.extend({
-		events:{
+    // Basic screen widget, inherited by all screens
+    var BasicScreenWidget = Widget.extend({
+        events:{
             "click .pt_day_planner_link" : "goto_day_planner",
             "click .pt_settings_link" : "goto_settings",
             "click .pt_activities_link" : "goto_activities",
@@ -289,29 +159,29 @@ var QWeb = core.qweb;
             "touchstart .pt_drawer_menu,.pt_drawer_menu_zone" : "on_menu_touch_start",
             "touchmove .pt_drawer_menu,.pt_drawer_menu_zone" : "on_touchmove",
         },
-		init: function(parent){
-			this._super(parent);
-			this.data = this.getParent().data;
-		},
-		show: function(){
+        init: function(parent){
+            this._super(parent);
+            this.data = this.getParent().data;
+        },
+        show: function(){
             this.$el.show();
         },
         hide: function(){
             this.$el.hide();
         },
-		goto_day_planner: function(){
+        goto_day_planner: function(){
             this.hide();
             this.getParent().day_planner_screen.renderElement();
             this.getParent().day_planner_screen.show();
         },
         goto_settings: function(){
-        	this.hide();
+            this.hide();
             this.getParent().settings_screen.renderElement();
             this.getParent().settings_screen.initialize_project_selector();
             this.getParent().settings_screen.show();
         },
         goto_activities: function(){
-        	this.hide();
+            this.hide();
             this.getParent().activities_screen.renderElement();
             this.getParent().activities_screen.show();
         },
@@ -371,22 +241,22 @@ var QWeb = core.qweb;
 
         // Methods that might be moved later if necessary :
         get_project_name: function(project_id){
-        	var project = _.findWhere(this.data.projects, {id : project_id});
-        	if (!_.isUndefined(project)){
-        		return project.name;
-        	}
-        	else{
-        		return "No project selected yet";
-        	}
+            var project = _.findWhere(this.data.projects, {id : project_id});
+            if (!_.isUndefined(project)){
+                return project.name;
+            }
+            else{
+                return "No project selected yet";
+            }
         },
         get_task_name: function(task_id){
-        	var task = _.findWhere(this.data.tasks, {id : task_id});
-        	if (!_.isUndefined(task)){
-        		return task.name;
-        	}
-        	else{
-        		return "No task selected yet";
-        	}
+            var task = _.findWhere(this.data.tasks, {id : task_id});
+            if (!_.isUndefined(task)){
+                return task.name;
+            }
+            else{
+                return "No task selected yet";
+            }
         },
         get_project_name_from_task_id: function(task_id){
             var task = _.findWhere(this.data.tasks, {id : task_id});
@@ -404,89 +274,89 @@ var QWeb = core.qweb;
         //Utility methods to format and validate time
         
         // Takes a decimal hours and converts it to hh:mm string representation
-	    // e.g. 1.5 => "01:30"
-	    unit_amount_to_hours_minutes: function(unit_amount){
-	        if(_.isUndefined(unit_amount) || unit_amount === 0){
-	            return "00:00";
-	        }
+        // e.g. 1.5 => "01:30"
+        unit_amount_to_hours_minutes: function(unit_amount){
+            if(_.isUndefined(unit_amount) || unit_amount === 0){
+                return "00:00";
+            }
 
-	        var minutes = Math.round((unit_amount % 1) * 60);
-	        var hours = Math.floor(unit_amount);
+            var minutes = Math.round((unit_amount % 1) * 60);
+            var hours = Math.floor(unit_amount);
 
-	        if(minutes < 10){
-	            minutes = "0" + minutes.toString();
-	        }
-	        else{
-	            minutes = minutes.toString();
-	        }
-	        if(hours < 10){
-	            hours = "0" + hours.toString();
-	        }
-	        else{
-	            hours = hours.toString();
-	        }
+            if(minutes < 10){
+                minutes = "0" + minutes.toString();
+            }
+            else{
+                minutes = minutes.toString();
+            }
+            if(hours < 10){
+                hours = "0" + hours.toString();
+            }
+            else{
+                hours = hours.toString();
+            }
 
-	        return hours + ":" + minutes;
-	    },
+            return hours + ":" + minutes;
+        },
 
-	    // Takes a string as input and tries to parse it as a hh:mm duration/ By default, strings without ":" are considered to be hh. 
-	    // We use % 1 to avoid accepting NaN as an integer.
-	    validate_duration: function(hh_mm){
-	        var time = hh_mm.split(":");
-	        if(time.length === 1){
-	            var hours = parseFloat(time[0]);
-	            if(isNaN(hours)){
-	                return undefined;
-	            }
+        // Takes a string as input and tries to parse it as a hh:mm duration/ By default, strings without ":" are considered to be hh. 
+        // We use % 1 to avoid accepting NaN as an integer.
+        validate_duration: function(hh_mm){
+            var time = hh_mm.split(":");
+            if(time.length === 1){
+                var hours = parseFloat(time[0]);
+                if(isNaN(hours)){
+                    return undefined;
+                }
                 else{
                     return hours.toString();
                 }
-	        }
-	        else if(time.length === 2){
-	            var hours = parseInt(time[0]);
-	            var minutes = parseInt(time[1]);
-	            if((hours % 1 === 0) && (minutes % 1 === 0) && minutes < 61){
-	                if(minutes < 10){
-	                    minutes = "0" + minutes.toString();
-	                }
-	                else{
-	                    minutes = minutes.toString();
-	                }
-	                if(hours < 10){
-	                    hours = "0" + hours.toString();
-	                }
-	                else{
-	                    hours = hours.toString();
-	                }
+            }
+            else if(time.length === 2){
+                var hours = parseInt(time[0]);
+                var minutes = parseInt(time[1]);
+                if((hours % 1 === 0) && (minutes % 1 === 0) && minutes < 61){
+                    if(minutes < 10){
+                        minutes = "0" + minutes.toString();
+                    }
+                    else{
+                        minutes = minutes.toString();
+                    }
+                    if(hours < 10){
+                        hours = "0" + hours.toString();
+                    }
+                    else{
+                        hours = hours.toString();
+                    }
 
-	                return hours + ":" + minutes;
-	            }
-	            else{
-	                return undefined;
-	            }
-	        }
-	        else{
-	            return undefined;
-	        }
-	    },
+                    return hours + ":" + minutes;
+                }
+                else{
+                    return undefined;
+                }
+            }
+            else{
+                return undefined;
+            }
+        },
 
-	    hh_mm_to_unit_amount: function(hh_mm){
-	        var time = hh_mm.split(":");
-	        if(time.length === 1){
-	            return parseFloat(time[0]);
-	        }
-	        else if(time.length === 2){
-	            var hours = parseInt(time[0]);
-	            var minutes = parseInt(time[1]);
-	            return Math.round((hours + (minutes / 60 )) * 100) / 100;
-	        }
-	        else{
-	            return undefined;
-	        }       
-	    }
-	});
+        hh_mm_to_unit_amount: function(hh_mm){
+            var time = hh_mm.split(":");
+            if(time.length === 1){
+                return parseFloat(time[0]);
+            }
+            else if(time.length === 2){
+                var hours = parseInt(time[0]);
+                var minutes = parseInt(time[1]);
+                return Math.round((hours + (minutes / 60 )) * 100) / 100;
+            }
+            else{
+                return undefined;
+            }       
+        }
+    });
 
-	var Activities_screen = BasicScreenWidget.extend({
+    var Activities_screen = BasicScreenWidget.extend({
         template: "activities_screen",
         init: function(parent) {
             var self = this;
@@ -541,7 +411,7 @@ var QWeb = core.qweb;
         },
         // Go to the edit screen to edit a specific activity
         edit_activity: function(event){
-			this.getParent().edit_activity_screen.re_render(event.currentTarget.dataset.activity_id);
+            this.getParent().edit_activity_screen.re_render(event.currentTarget.dataset.activity_id);
             this.hide();
             this.getParent().edit_activity_screen.show();
         },
@@ -682,7 +552,8 @@ var QWeb = core.qweb;
     var Day_planner_screen = BasicScreenWidget.extend({
         template: "day_planner_screen",
         init: function(parent) {
-        	this._super(parent);
+            var self = this;
+            this._super(parent);
             this.screen_name = "Day Planner";
             _.extend(self.events,
                 {
@@ -707,7 +578,7 @@ var QWeb = core.qweb;
     var Settings_screen = BasicScreenWidget.extend({
         template: "settings_screen",
         init: function(parent) {
-        	var self = this;
+            var self = this;
             this._super(parent);
             this.screen_name = "Settings";
             _.extend(self.events,
@@ -802,12 +673,12 @@ var QWeb = core.qweb;
             }
         }
     });
-	//TODO : clean up select2 inittialize method and re-rendering logic
+    //TODO : clean up select2 inittialize method and re-rendering logic
     var Edit_activity_screen = BasicScreenWidget.extend({
         template: "edit_activity_screen",
         init: function(parent) {
-        	var self = this;
-        	this._super(parent);
+            var self = this;
+            this._super(parent);
             this.screen_name = "Edit Activity";
             _.extend(self.events,
                 {
@@ -830,22 +701,22 @@ var QWeb = core.qweb;
         },
         initialize_project_selector: function(){
             var self = this;
-        	// Initialization of select2 for projects
-        	function format(item) {return item.name}
-        	function formatRes(item){
-        		if(item.isNew){
-        			return "Create Project : " + item.name;
-        		}
-        		else{
-        			return item.name;
-        		}
-        	}
-        	this.$('.pt_activity_project').select2({
-        		data: {results : self.data.projects , text : 'name'},
-        		formatSelection: format,
-				formatResult: formatRes,
+            // Initialization of select2 for projects
+            function format(item) {return item.name}
+            function formatRes(item){
+                if(item.isNew){
+                    return "Create Project : " + item.name;
+                }
+                else{
+                    return item.name;
+                }
+            }
+            this.$('.pt_activity_project').select2({
+                data: {results : self.data.projects , text : 'name'},
+                formatSelection: format,
+                formatResult: formatRes,
                 createSearchChoicePosition : 'bottom',
-				createSearchChoice: function(user_input, new_choice){
+                createSearchChoice: function(user_input, new_choice){
                     //Avoid duplictate projects in one project
                     var duplicate = _.find(self.data.projects, function(project){
                         return (project.name.toUpperCase() === user_input.trim().toUpperCase());
@@ -860,31 +731,31 @@ var QWeb = core.qweb;
                     };
                     return res;
                 },
-				initSelection : function(element, callback){
-					var data = {id: self.activity.project_id, name : self.get_project_name(self.activity.project_id)};
-					callback(data);
-				}
-        	});
+                initSelection : function(element, callback){
+                    var data = {id: self.activity.project_id, name : self.get_project_name(self.activity.project_id)};
+                    callback(data);
+                }
+            });
         },
         // Initialization of select2 for tasks
         initialize_task_selector: function(){
             var self = this;
-        	function format(item) {return item.name}
-        	function formatRes(item){
-        		if(item.isNew){
-        			return "Create Task : " + item.name;
-        		}
-        		else{
-        			return item.name;
-        		}
-        	}
+            function format(item) {return item.name}
+            function formatRes(item){
+                if(item.isNew){
+                    return "Create Task : " + item.name;
+                }
+                else{
+                    return item.name;
+                }
+            }
             self.task_list = _.where(self.data.tasks, {project_id : self.activity.project_id});
-        	this.$('.pt_activity_task').select2({
-        		data: {results : self.task_list , text : 'name'},
-        		formatSelection: format,
-				formatResult: formatRes,
+            this.$('.pt_activity_task').select2({
+                data: {results : self.task_list , text : 'name'},
+                formatSelection: format,
+                formatResult: formatRes,
                 createSearchChoicePosition : 'bottom',
-				createSearchChoice: function(user_input, new_choice){
+                createSearchChoice: function(user_input, new_choice){
                     //Avoid duplictate tasks in one project
                     var duplicate = _.find(self.task_list, function(task){
                         return (task.name.toUpperCase() === user_input.trim().toUpperCase());
@@ -892,49 +763,49 @@ var QWeb = core.qweb;
                     if (duplicate){
                         return undefined;
                     }
-					var res = {
-						id : self.data.module_key + self.getParent().username + self.data.original_timestamp + "_task." + self.data.next_task_id,
-						name : user_input.trim(),
-						isNew: true,
+                    var res = {
+                        id : self.data.module_key + self.getParent().username + self.data.original_timestamp + "_task." + self.data.next_task_id,
+                        name : user_input.trim(),
+                        isNew: true,
                         project_id: self.activity.project_id
-					};
-					return res;
-				},
+                    };
+                    return res;
+                },
                 initSelection : function(element, callback){
                     var data = {id: self.activity.task_id, name : self.get_task_name(self.activity.task_id)};
                     callback(data);
                 }
-        	});
+            });
         },
         on_change_task: function(event){
             var self = this;
-        	var selected_task = {
-    			name : event.added.name,
-    			id : event.added.id,
+            var selected_task = {
+                name : event.added.name,
+                id : event.added.id,
                 project_id: event.added.project_id
-        	};
-        	if(event.added.isNew){
-        		self.data.next_task_id++;
+            };
+            if(event.added.isNew){
+                self.data.next_task_id++;
                 selected_task.to_sync = true;
-        		self.data.tasks.push(selected_task);
+                self.data.tasks.push(selected_task);
                 self.task_list.push(selected_task);
-        		self.getParent().update_localStorage();
-    		}
-    		self.activity.task_id = selected_task.id;
+                self.getParent().update_localStorage();
+            }
+            self.activity.task_id = selected_task.id;
         },
         on_change_project: function(event){
             var self = this;
-        	var selected_project = {
-    			name : event.added.name,
-    			id : event.added.id
-        	};
-        	if(event.added.isNew){
-        		self.data.next_project_id++;
+            var selected_project = {
+                name : event.added.name,
+                id : event.added.id
+            };
+            if(event.added.isNew){
+                self.data.next_project_id++;
                 selected_project.to_sync = true;
-        		self.data.projects.push(selected_project);
-        		self.getParent().update_localStorage();
-    		}
-    		self.activity.project_id = selected_project.id;
+                self.data.projects.push(selected_project);
+                self.getParent().update_localStorage();
+            }
+            self.activity.project_id = selected_project.id;
             // If the project has been changed, we reset the task.
             self.activity.task_id = undefined;
             self.renderElement();
@@ -961,9 +832,9 @@ var QWeb = core.qweb;
         // Function to re-render the screen with a new activity.
         // we use clone to work on a temporary version of activity.
         re_render: function(activity_id){
-        	if(!_.isUndefined(activity_id)){
-	            this.activity = _.clone(_.findWhere(this.data.account_analytic_lines,  {id:activity_id}));
-			}
+            if(!_.isUndefined(activity_id)){
+                this.activity = _.clone(_.findWhere(this.data.account_analytic_lines,  {id:activity_id}));
+            }
             else if(!_.isUndefined(this.data.settings.default_project_id)){
                 this.activity.project_id = this.data.settings.default_project_id;
             }
@@ -991,7 +862,12 @@ var QWeb = core.qweb;
             old_activity.project_id = this.activity.project_id;
             old_activity.task_id = this.activity.task_id;
             old_activity.desc = this.activity.desc;
-            old_activity.unit_amount = this.activity.unit_amount;
+            if(this.activity.unit_amount >= 0){
+                old_activity.unit_amount = this.activity.unit_amount;
+            }
+            else{
+                old_activity.unit_amount = 0;
+            }
             old_activity.write_date = time_module.datetime_to_str(new Date());
             old_activity.to_sync = true;
             
@@ -1026,7 +902,7 @@ var QWeb = core.qweb;
 
         delete_activity: function(){
             if (!_.isUndefined(this.activity.id)){
-                aal_to_remove = _.findWhere(this.data.account_analytic_lines, {id : this.activity.id});
+                var aal_to_remove = _.findWhere(this.data.account_analytic_lines, {id : this.activity.id});
                 this.data.account_analytic_lines.splice(_.indexOf(this.data.account_analytic_lines, aal_to_remove), 1);
             }
             this.reset_activity();
@@ -1043,9 +919,26 @@ var QWeb = core.qweb;
             _.extend(self.events,
                 {
                     "click .pt_test_btn" : "test_fct",
+                    "click .pt_send_login" : "send_login"
                 }
             );
-            this.session = this.getParent().session;
+            this.session = session;
+        },
+        send_login: function(){
+            var self = this;
+            var login = this.$(".pt_login").val();
+            var password = this.$(".pt_password").val();
+            var db_name = this.$(".pt_db_name").val();
+            var server_address = this.$(".pt_server_address").val();
+            var protocol = this.$(".pt_protocol").val();
+            session.origin = protocol + server_address;
+            session.setup(protocol + server_address, {use_cors : true});
+            session._session_authenticate(db_name, login, password).then(function(){
+                console.log('Login Successful');
+                self.renderElement();
+            },function(){
+                console.log('Login failed. Ouch.');
+            });
         },
         test_fct: function(){
             var self = this;
@@ -1067,7 +960,7 @@ var QWeb = core.qweb;
                 _.each(sv_projects, function(sv_project){
                     // Check if the project exists in LS.
                     // If it does we simply update the name, otherwise we copy the project in LS.
-                    var ls_project = _.findWhere(data.projects, {id : sv_project[0]})
+                    var ls_project = _.findWhere(data.projects, {id : sv_project[0]});
                     if (_.isUndefined(ls_project)){
                         data.projects.push({
                             id : sv_project[0],
