@@ -1,7 +1,7 @@
-# -*- encoding: utf-8 -*-
+# -*- coding: utf-8 -*-
 {
     'name': 'Website Sale Digital - Sell digital products',
-    'version': '0.1',
+    'version': '1.0',
     'description': """
 Sell digital product using attachments to virtual products
 """,
@@ -12,10 +12,11 @@ Sell digital product using attachments to virtual products
     ],
     'installable': True,
     'data': [
-        'views/website_sale_digital.xml',
-        'views/website_sale_digital_view.xml',
+        'views/templates.xml',
+        'views/product_template_view.xml',
     ],
     'demo': [
-        'data/demo.xml',
+        'data/product_template_demo.xml',
+        'data/ir_attachment_demo.xml'
     ],
 }
