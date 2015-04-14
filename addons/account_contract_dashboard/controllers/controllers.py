@@ -548,7 +548,7 @@ class AccountContractDashboard(http.Controller):
                     WHERE
                         (invoice.date_invoice BETWEEN %s AND %s) AND
                         line.invoice_id = invoice.id AND
-                        invoice.type IN ('out_invoice') AND
+                        invoice.type IN ('out_invoice', 'out_refund') AND
                         invoice.currency_id = 1 AND
                         invoice.state NOT IN ('draft', 'cancel')
                 """, [start_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), end_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT)])
@@ -559,7 +559,7 @@ class AccountContractDashboard(http.Controller):
                     WHERE
                         (invoice.date_invoice BETWEEN %s AND %s) AND
                         line.invoice_id = invoice.id AND
-                        invoice.type IN ('out_invoice') AND
+                        invoice.type IN ('out_invoice', 'out_refund') AND
                         invoice.currency_id = 1 AND
                         invoice.state NOT IN ('draft', 'cancel') AND
                         line.account_analytic_id = analytic_account.id AND
@@ -577,7 +577,7 @@ class AccountContractDashboard(http.Controller):
                         (invoice.date_invoice BETWEEN %s AND %s) AND
                         line.asset_start_date IS NULL AND
                         line.invoice_id = invoice.id AND
-                        invoice.type IN ('out_invoice') AND
+                        invoice.type IN ('out_invoice', 'out_refund') AND
                         invoice.currency_id = 1 AND
                         invoice.state NOT IN ('draft', 'cancel')
                 """, [start_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT), end_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT)])
@@ -589,7 +589,7 @@ class AccountContractDashboard(http.Controller):
                         (invoice.date_invoice BETWEEN %s AND %s) AND
                         line.mrr IS NULL AND
                         line.invoice_id = invoice.id AND
-                        invoice.type IN ('out_invoice') AND
+                        invoice.type IN ('out_invoice', 'out_refund') AND
                         invoice.currency_id = 1 AND
                         invoice.state NOT IN ('draft', 'cancel') AND
                         line.account_analytic_id = analytic_account.id AND
@@ -612,7 +612,7 @@ class AccountContractDashboard(http.Controller):
                     FROM account_invoice_line AS line, account_invoice AS invoice
                     WHERE (date %s BETWEEN line.asset_start_date AND line.asset_end_date) AND
                         invoice.id = line.invoice_id AND
-                        invoice.type IN ('out_invoice') AND
+                        invoice.type IN ('out_invoice', 'out_refund') AND
                         invoice.currency_id = 1 AND
                         line.account_analytic_id IS NOT NULL AND
                         invoice.state NOT IN ('draft', 'cancel')
@@ -623,7 +623,7 @@ class AccountContractDashboard(http.Controller):
                     FROM account_invoice_line AS line, account_invoice AS invoice, account_analytic_account AS analytic_account
                     WHERE (date %s BETWEEN line.asset_start_date AND line.asset_end_date) AND
                         invoice.id = line.invoice_id AND
-                        invoice.type IN ('out_invoice') AND
+                        invoice.type IN ('out_invoice', 'out_refund') AND
                         invoice.currency_id = 1 AND
                         invoice.state NOT IN ('draft', 'cancel') AND
                         line.account_analytic_id IS NOT NULL AND
@@ -640,7 +640,7 @@ class AccountContractDashboard(http.Controller):
                     FROM account_invoice_line AS line, account_invoice AS invoice
                     WHERE date %s BETWEEN line.asset_start_date AND line.asset_end_date AND
                         invoice.id = line.invoice_id AND
-                        invoice.type IN ('out_invoice') AND
+                        invoice.type IN ('out_invoice', 'out_refund') AND
                         invoice.currency_id = 1 AND
                         invoice.state NOT IN ('draft', 'cancel')
                 """, [date.strftime(DEFAULT_SERVER_DATE_FORMAT)])
@@ -650,7 +650,7 @@ class AccountContractDashboard(http.Controller):
                     FROM account_invoice_line AS line, account_invoice AS invoice, account_analytic_account AS analytic_account
                     WHERE date %s BETWEEN line.asset_start_date AND line.asset_end_date AND
                         invoice.id = line.invoice_id AND
-                        invoice.type IN ('out_invoice') AND
+                        invoice.type IN ('out_invoice', 'out_refund') AND
                         invoice.currency_id = 1 AND
                         invoice.state NOT IN ('draft', 'cancel') AND
                         line.account_analytic_id = analytic_account.id AND
@@ -667,7 +667,7 @@ class AccountContractDashboard(http.Controller):
                     WHERE date %s - interval '1 months' BETWEEN line.asset_start_date AND line.asset_end_date AND
                         invoice.id = line.invoice_id AND
                         line.account_analytic_id IS NOT NULL AND
-                        invoice.type IN ('out_invoice') AND
+                        invoice.type IN ('out_invoice', 'out_refund') AND
                         invoice.currency_id = 1 AND
                         invoice.state NOT IN ('draft', 'cancel')
                 """, [date.strftime(DEFAULT_SERVER_DATETIME_FORMAT)])
@@ -677,7 +677,7 @@ class AccountContractDashboard(http.Controller):
                     FROM account_invoice_line AS line, account_invoice AS invoice, account_analytic_account AS analytic_account
                     WHERE date %s - interval '1 months' BETWEEN line.asset_start_date AND line.asset_end_date AND
                         invoice.id = line.invoice_id AND
-                        invoice.type IN ('out_invoice') AND
+                        invoice.type IN ('out_invoice', 'out_refund') AND
                         invoice.currency_id = 1 AND
                         invoice.state NOT IN ('draft', 'cancel') AND
                         line.account_analytic_id IS NOT NULL AND
@@ -692,7 +692,7 @@ class AccountContractDashboard(http.Controller):
                     FROM account_invoice_line AS line, account_invoice AS invoice
                     WHERE (date %s - interval '1 months' BETWEEN line.asset_start_date AND line.asset_end_date) AND
                         invoice.id = line.invoice_id AND
-                        invoice.type IN ('out_invoice') AND
+                        invoice.type IN ('out_invoice', 'out_refund') AND
                         invoice.currency_id = 1 AND
                         invoice.state NOT IN ('draft', 'cancel') AND
                         line.account_analytic_id IS NOT NULL AND
@@ -708,7 +708,7 @@ class AccountContractDashboard(http.Controller):
                     FROM account_invoice_line AS line, account_invoice AS invoice, account_analytic_account AS analytic_account
                     WHERE (date %s - interval '1 months' BETWEEN line.asset_start_date AND line.asset_end_date) AND
                         invoice.id = line.invoice_id AND
-                        invoice.type IN ('out_invoice') AND
+                        invoice.type IN ('out_invoice', 'out_refund') AND
                         invoice.currency_id = 1 AND
                         invoice.state NOT IN ('draft', 'cancel') AND
                         line.account_analytic_id IS NOT NULL AND
@@ -731,7 +731,7 @@ class AccountContractDashboard(http.Controller):
                     FROM account_invoice_line AS line, account_invoice AS invoice
                     WHERE (date %s - interval '1 months' BETWEEN line.asset_start_date AND line.asset_end_date) AND
                         invoice.id = line.invoice_id AND
-                        invoice.type IN ('out_invoice') AND
+                        invoice.type IN ('out_invoice', 'out_refund') AND
                         invoice.currency_id = 1 AND
                         invoice.state NOT IN ('draft', 'cancel') AND
                         line.account_analytic_id IS NOT NULL AND
@@ -747,7 +747,7 @@ class AccountContractDashboard(http.Controller):
                     FROM account_invoice_line AS line, account_invoice AS invoice, account_analytic_account AS analytic_account
                     WHERE (date %s - interval '1 months' BETWEEN line.asset_start_date AND line.asset_end_date) AND
                         invoice.id = line.invoice_id AND
-                        invoice.type IN ('out_invoice') AND
+                        invoice.type IN ('out_invoice', 'out_refund') AND
                         invoice.currency_id = 1 AND
                         invoice.state NOT IN ('draft', 'cancel') AND
                         line.account_analytic_id IS NOT NULL AND
@@ -818,7 +818,7 @@ class AccountContractDashboard(http.Controller):
                     FROM account_invoice_line AS line, account_invoice AS invoice
                     WHERE (date %s BETWEEN line.asset_start_date AND line.asset_end_date) AND
                         invoice.id = line.invoice_id AND
-                        invoice.type IN ('out_invoice') AND
+                        invoice.type IN ('out_invoice', 'out_refund') AND
                         invoice.currency_id = 1 AND
                         invoice.state NOT IN ('draft', 'cancel') AND
                         line.account_analytic_id IS NOT NULL AND
@@ -834,7 +834,7 @@ class AccountContractDashboard(http.Controller):
                     FROM account_invoice_line AS line, account_invoice AS invoice, account_analytic_account AS analytic_account
                     WHERE (date %s BETWEEN line.asset_start_date AND line.asset_end_date) AND
                         invoice.id = line.invoice_id AND
-                        invoice.type IN ('out_invoice') AND
+                        invoice.type IN ('out_invoice', 'out_refund') AND
                         invoice.currency_id = 1 AND
                         invoice.state NOT IN ('draft', 'cancel') AND
                         line.account_analytic_id = analytic_account.id AND
@@ -858,7 +858,7 @@ class AccountContractDashboard(http.Controller):
                         FROM account_invoice_line AS line, account_invoice AS invoice
                         WHERE asset_start_date BETWEEN date %s - interval '1 months' + interval '1 days' and date %s AND
                             invoice.id = line.invoice_id AND
-                            invoice.type IN ('out_invoice') AND
+                            invoice.type IN ('out_invoice', 'out_refund') AND
                             invoice.state NOT IN ('draft', 'cancel')
                         GROUP BY account_analytic_id
                         ) AS new_line,
@@ -867,7 +867,7 @@ class AccountContractDashboard(http.Controller):
                         FROM account_invoice_line AS line, account_invoice AS invoice
                         WHERE asset_end_date BETWEEN date %s - interval '2 months' + interval '1 days' and date %s AND
                             invoice.id = line.invoice_id AND
-                            invoice.type IN ('out_invoice') AND
+                            invoice.type IN ('out_invoice', 'out_refund') AND
                             invoice.state NOT IN ('draft', 'cancel')
                         GROUP BY account_analytic_id
                         ) AS old_line
@@ -888,7 +888,7 @@ class AccountContractDashboard(http.Controller):
                         FROM account_invoice_line AS line, account_invoice AS invoice, account_analytic_account AS analytic_account
                         WHERE asset_start_date BETWEEN date %s - interval '1 months' + interval '1 days' and date %s AND
                             invoice.id = line.invoice_id AND
-                            invoice.type IN ('out_invoice') AND
+                            invoice.type IN ('out_invoice', 'out_refund') AND
                             invoice.state NOT IN ('draft', 'cancel') AND
                             line.account_analytic_id = analytic_account.id AND
                             analytic_account.template_id IN %s
@@ -899,7 +899,7 @@ class AccountContractDashboard(http.Controller):
                         FROM account_invoice_line AS line, account_invoice AS invoice, account_analytic_account AS analytic_account
                         WHERE asset_end_date BETWEEN date %s - interval '2 months' + interval '1 days' and date %s AND
                             invoice.id = line.invoice_id AND
-                            invoice.type IN ('out_invoice') AND
+                            invoice.type IN ('out_invoice', 'out_refund') AND
                             invoice.state NOT IN ('draft', 'cancel') AND
                             line.account_analytic_id = analytic_account.id AND
                             analytic_account.template_id IN %s
@@ -930,7 +930,7 @@ class AccountContractDashboard(http.Controller):
                     FROM account_invoice_line AS line, account_invoice AS invoice
                     WHERE (date %s - interval '1 months' BETWEEN line.asset_start_date AND line.asset_end_date) AND
                         invoice.id = line.invoice_id AND
-                        invoice.type IN ('out_invoice') AND
+                        invoice.type IN ('out_invoice', 'out_refund') AND
                         invoice.currency_id = 1 AND
                         invoice.state NOT IN ('draft', 'cancel') AND
                         line.account_analytic_id IS NOT NULL AND
@@ -946,7 +946,7 @@ class AccountContractDashboard(http.Controller):
                     FROM account_invoice_line AS line, account_invoice AS invoice, account_analytic_account AS analytic_account
                     WHERE (date %s - interval '1 months' BETWEEN line.asset_start_date AND line.asset_end_date) AND
                         invoice.id = line.invoice_id AND
-                        invoice.type IN ('out_invoice') AND
+                        invoice.type IN ('out_invoice', 'out_refund') AND
                         invoice.currency_id = 1 AND
                         invoice.state NOT IN ('draft', 'cancel') AND
                         line.account_analytic_id = analytic_account.id AND

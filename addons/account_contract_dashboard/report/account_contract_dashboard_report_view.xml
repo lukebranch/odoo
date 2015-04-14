@@ -26,7 +26,7 @@
                     <separator/>
                     <filter string="EUR currency" name="EUR" domain="[('invoice_id.currency_id', '=', 1)]" help="Invoice in EUR only"/>
                     <separator/>
-                    <filter string="OUT invoices" name="OUT" domain="[('invoice_id.type', '=', 'out_invoice')]"/>
+                    <filter string="OUT invoices" name="OUT" domain="[('invoice_id.type', 'in', ('out_invoice', 'out_refund'))]"/>
                     <separator/>
                     <filter string="Active invoices" name="ACTIVE" domain="[('invoice_id.state', 'not in', ('draft', 'cancel'))]"/>
                 </group>
