@@ -205,29 +205,27 @@ class AccountContractDashboard(http.Controller):
             ('asset_end_date', '>=', start_date.strftime(DEFAULT_SERVER_DATE_FORMAT)),
             ('asset_end_date', '<=', end_date.strftime(DEFAULT_SERVER_DATE_FORMAT)),
         ])
+
         # DOWN & CANCEL
-        for invoice in invoice_lines_ids_stopping_last_month.mapped('invoice_id'):
-            invoice_line_ids = invoice_lines_ids_stopping_last_month.filtered(lambda x: x.invoice_id == invoice)
-            invoice_line = invoice_line_ids[0]
-            if not invoice_line:
-                continue
-            # Is there any invoice_line in the next 30 days for this contract ?
-            # Careful : what happened if invoice_lines from multiple invoices during next 30 days ?
-            next_invoice_line_ids = request.env['account.invoice.line'].search([
-                ('asset_start_date', '>=', invoice_line.asset_end_date),
-                ('asset_start_date', '<', (datetime.strptime(invoice_line.asset_end_date, DEFAULT_SERVER_DATE_FORMAT) + relativedelta(months=+1)).strftime(DEFAULT_SERVER_DATE_FORMAT)),
-                ('account_analytic_id', '=', invoice_line.account_analytic_id.id)
+        for contract in invoice_lines_ids_stopping_last_month.mapped('account_analytic_id'):
+            previous_il_ids = invoice_lines_ids_stopping_last_month.filtered(lambda x: x.account_analytic_id == contract)
+            previous_mrr = sum([x['mrr'] for x in previous_il_ids.read(['mrr'])])
+            previous_il_id = previous_il_ids[0]
+
+            next_il_ids = request.env['account.invoice.line'].search([
+                ('asset_start_date', '>=', previous_il_id.asset_end_date),
+                ('asset_start_date', '<', (datetime.strptime(previous_il_id.asset_end_date, DEFAULT_SERVER_DATE_FORMAT) + relativedelta(months=+1)).strftime(DEFAULT_SERVER_DATE_FORMAT)),
+                ('account_analytic_id', '=', previous_il_id.account_analytic_id.id)
             ])
-            previous_mrr = sum([x['mrr'] for x in invoice_line_ids.read(['mrr'])])
-            if next_invoice_line_ids:
-                next_mrr = sum([x['mrr'] for x in next_invoice_line_ids.read(['mrr'])])
+            if next_il_ids:
+                next_mrr = sum([x['mrr'] for x in next_il_ids.read(['mrr'])])
                 if next_mrr < previous_mrr:
                     # DOWN
                     contract_modifications.append({
                         'type': 'Downgrade',
-                        'partner': invoice_line.partner_id.name,
-                        'account_analytic': invoice_line.account_analytic_id.name,
-                        'account_analytic_template': invoice_line.account_analytic_id.template_id.name,
+                        'partner': previous_il_id.partner_id.name,
+                        'account_analytic': previous_il_id.account_analytic_id.name,
+                        'account_analytic_template': previous_il_id.account_analytic_id.template_id.name,
                         'previous_mrr': str(previous_mrr),
                         'current_mrr': str(next_mrr),
                         'currency': currency,
@@ -237,54 +235,73 @@ class AccountContractDashboard(http.Controller):
                 # CANCEL
                 contract_modifications.append({
                     'type': 'Churned MRR',
-                    'partner': invoice_line.partner_id.name,
-                    'account_analytic': invoice_line.account_analytic_id.name,
-                    'account_analytic_template': invoice_line.account_analytic_id.template_id.name,
+                    'partner': previous_il_id.partner_id.name,
+                    'account_analytic': previous_il_id.account_analytic_id.name,
+                    'account_analytic_template': previous_il_id.account_analytic_id.template_id.name,
                     'previous_mrr': str(previous_mrr),
                     'current_mrr': str(0),
                     'currency': currency,
                 })
                 churned_mrr += previous_mrr
         # UP & NEW
-        for invoice in invoice_line_ids_starting_last_month.mapped('invoice_id'):
-            invoice_line_ids = invoice_line_ids_starting_last_month.filtered(lambda x: x.invoice_id == invoice)
-            invoice_line = invoice_line_ids[0]
-            if not invoice_line:
-                continue
+        for contract in invoice_line_ids_starting_last_month.mapped('account_analytic_id'):
+            next_il_ids = invoice_line_ids_starting_last_month.filtered(lambda x: x.account_analytic_id == contract)
+            next_mrr = sum([x['mrr'] for x in next_il_ids.read(['mrr'])])
+            next_il_id = next_il_ids[0]
+
+            previous_il_ids = request.env['account.invoice.line'].search([
+                ('asset_end_date', '<=', next_il_id.asset_start_date),
+                ('asset_end_date', '>', (datetime.strptime(next_il_id.asset_start_date, DEFAULT_SERVER_DATE_FORMAT) - relativedelta(months=+1)).strftime(DEFAULT_SERVER_DATE_FORMAT)),
+                ('account_analytic_id', '=', next_il_id.account_analytic_id.id)]
+            )
+
             # Was there any invoice_line in the last 30 days for this contract ?
             # Careful : what happened if invoice_lines from multiple invoices during last 30 days ?
-            previous_invoice_line_ids = request.env['account.invoice.line'].search([
-                ('asset_end_date', '<=', invoice_line.asset_start_date),
-                ('asset_end_date', '>', (datetime.strptime(invoice_line.asset_start_date, DEFAULT_SERVER_DATE_FORMAT) - relativedelta(months=+1)).strftime(DEFAULT_SERVER_DATE_FORMAT)),
-                ('account_analytic_id', '=', invoice_line.account_analytic_id.id)]
-            )
-            next_mrr = sum([x['mrr'] for x in invoice_line_ids.read(['mrr'])])
-            if previous_invoice_line_ids:
-                previous_mrr = sum([x['mrr'] for x in previous_invoice_line_ids.read(['mrr'])])
+            if previous_il_ids:
+                previous_mrr = sum([x['mrr'] for x in previous_il_ids.read(['mrr'])])
                 if previous_mrr < next_mrr:
                     # UP
                     contract_modifications.append({
                         'type': 'Upgrade',
-                        'partner': invoice_line.partner_id.name,
-                        'account_analytic': invoice_line.account_analytic_id.name,
-                        'account_analytic_template': invoice_line.account_analytic_id.template_id.name,
+                        'partner': next_il_id.partner_id.name,
+                        'account_analytic': next_il_id.account_analytic_id.name,
+                        'account_analytic_template': next_il_id.account_analytic_id.template_id.name,
                         'previous_mrr': str(previous_mrr),
                         'current_mrr': str(next_mrr),
                         'currency': currency,
                     })
                     expansion_mrr += (next_mrr - previous_mrr)
             else:
-                # NEW
-                contract_modifications.append({
-                    'type': 'New MRR',
-                    'partner': invoice_line.partner_id.name,
-                    'account_analytic': invoice_line.account_analytic_id.name,
-                    'account_analytic_template': invoice_line.account_analytic_id.template_id.name,
-                    'previous_mrr': str(0),
-                    'current_mrr': str(next_mrr),
-                    'currency': currency,
-                })
-                new_mrr += next_mrr
+                active_invoice_line_ids = request.env['account.invoice.line'].search([
+                    ('asset_start_date', '<', next_il_id.asset_start_date),
+                    ('asset_end_date', '>', next_il_id.asset_start_date),
+                    ('account_analytic_id', '=', next_il_id.account_analytic_id.id)]
+                )
+                if active_invoice_line_ids:
+                    print('ACTIVE for %s: %s' % (next_il_id.account_analytic_id.name, active_invoice_line_ids))
+                    # UP
+                    contract_modifications.append({
+                        'type': 'Upgrade',
+                        'partner': next_il_id.partner_id.name,
+                        'account_analytic': next_il_id.account_analytic_id.name,
+                        'account_analytic_template': next_il_id.account_analytic_id.template_id.name,
+                        'previous_mrr': str(0),
+                        'current_mrr': str(next_mrr),
+                        'currency': currency,
+                    })
+                    expansion_mrr += next_mrr
+                else:
+                    # NEW
+                    contract_modifications.append({
+                        'type': 'New MRR',
+                        'partner': next_il_id.partner_id.name,
+                        'account_analytic': next_il_id.account_analytic_id.name,
+                        'account_analytic_template': next_il_id.account_analytic_id.template_id.name,
+                        'previous_mrr': str(0),
+                        'current_mrr': str(next_mrr),
+                        'currency': currency,
+                    })
+                    new_mrr += next_mrr
         net_new_mrr = new_mrr - churned_mrr + expansion_mrr - down_mrr
 
         nrr_invoice_ids = []
