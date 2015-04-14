@@ -1,5 +1,5 @@
-<openerp>
-    <data>
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
 
         <!-- Graph report -->
         <record id="view_evaluation_report_graph" model="ir.ui.view">
@@ -52,7 +52,6 @@
         </record>
 
         <!-- Holidays: Leave Request -->
-
         <record id="view_holiday_new_calendar" model="ir.ui.view">
             <field name="name">Leave Request</field>
             <field name="model">hr.holidays</field>
@@ -67,7 +66,7 @@
         </record>
 
         <!-- Holidays: Allocation Request -->
-        <record model="ir.ui.view" id="edit_holiday_new">
+        <record id="edit_holiday_new" model="ir.ui.view">
             <field name="name">Leave Request</field>
             <field name="model">hr.holidays</field>
             <field name="arch" type="xml">
@@ -91,8 +90,8 @@
                                 <label for="number_of_days_temp" string="Duration"/>
                             <div>
                                 <group col="3" attrs="{'invisible': [('type', '=', 'add')]}">
-                                    <field name="date_from" nolabel="1" on_change="onchange_date_from(date_to, date_from)" attrs="{'required':[('type', '=', 'remove')]}" class="oe_inline"/><label string="-" class="oe_inline"/>
-                                    <field name="date_to" nolabel="1" on_change="onchange_date_to(date_to, date_from)"  attrs="{'required':[('type', '=', 'remove')]}" class="oe_inline"/>
+                                    <field name="date_from" nolabel="1" attrs="{'required':[('type', '=', 'remove')]}" class="oe_inline"/><label string="-" class="oe_inline"/>
+                                    <field name="date_to" nolabel="1" attrs="{'required':[('type', '=', 'remove')]}" class="oe_inline"/>
                                 </group>
                                 <div>
                                     <field name="number_of_days_temp" class="oe_inline"/> days
@@ -100,8 +99,8 @@
                             </div>
                         </group>
                         <group>
-                            <field name="holiday_type" on_change="onchange_type(holiday_type)" attrs="{'readonly':[('type', '=', 'remove'),('state','!=','draft')]}" string="Mode" groups="base.group_hr_user" context="{'employee_id':employee_id}" />
-                            <field name="employee_id" attrs="{'required':[('holiday_type','=','employee')],'invisible':[('holiday_type','=','category')]}" on_change="onchange_employee(employee_id)" groups="base.group_hr_user"/>
+                            <field name="holiday_type" attrs="{'readonly':[('type', '=', 'remove'),('state','!=','draft')]}" string="Mode" groups="base.group_hr_user" context="{'employee_id':employee_id}" />
+                            <field name="employee_id" attrs="{'required':[('holiday_type','=','employee')],'invisible':[('holiday_type','=','category')]}" groups="base.group_hr_user"/>
                             <field name="category_id" attrs="{'required':[('holiday_type','=','category')], 'readonly': [('type', '=', 'remove'),('state','!=','draft'), ('state','!=','confirm')], 'invisible':[('holiday_type','=','employee')]}"/>
                             <field name="department_id" groups="base.group_hr_user" attrs="{'readonly':['|','|' ,('type','=','add'),('holiday_type','=','category'),('state','=', 'validate')],'invisible':[('holiday_type','=','category')]}"/>
                             <field name="payslip_status" groups="base.group_hr_manager" attrs="{'invisible':[('type','=','add')]}" widget="toggle_button"/>
@@ -121,7 +120,7 @@
             </field>
         </record>
 
-        <record model="ir.ui.view" id="view_holiday_allocation_tree">
+        <record id="view_holiday_allocation_tree" model="ir.ui.view">
             <field name="name">hr.holidays.allocation.tree</field>
             <field name="model">hr.holidays</field>
             <field name="arch" type="xml">
@@ -142,7 +141,7 @@
                 </tree>
             </field>
         </record>
-        <record model="ir.ui.view" id="view_holiday_allocation_tree_customize">
+        <record id="view_holiday_allocation_tree_customize" model="ir.ui.view">
             <field name="name">hr.holidays.allocation.tree.customize</field>
             <field name="model">hr.holidays</field>
             <field name="arch" type="xml">
@@ -151,8 +150,8 @@
                     <field name="holiday_type"/>
                     <field name="holiday_status_id"/>
                     <field name="name" readonly="1"/>
-                    <field name="date_from" required="1" on_change="onchange_date_from(date_to, date_from)"/>
-                    <field name="date_to" required="1" on_change="onchange_date_to(date_to, date_from)"/>
+                    <field name="date_from" required="1"/>
+                    <field name="date_to" required="1"/>
                     <field name="number_of_days_temp" string="Allocated Days" sum="Remaining Days"/>
                     <field name="state"/>
                     <button name="toggle_payslip_status" field_name="payslip_status" type="object"
@@ -163,7 +162,7 @@
             </field>
         </record>
 
-        <record model="ir.ui.view" id="view_holiday_simple">
+        <record id="view_holiday_simple" model="ir.ui.view">
             <field name="name">hr.holidays.report_tree</field>
             <field name="model">hr.holidays</field>
             <field name="priority">20</field>
@@ -185,7 +184,7 @@
             </field>
         </record>
 
-        <record model="ir.ui.view" id="view_holiday_employee">
+        <record id="view_holiday_employee" model="ir.ui.view">
             <field name="name">hr.holidays.report_employee_tree</field>
             <field name="model">hr.holidays</field>
             <field name="priority">21</field>
@@ -207,7 +206,7 @@
             </field>
         </record>
 
-        <record model="ir.ui.view" id="view_holiday">
+        <record id="view_holiday" model="ir.ui.view">
             <field name="name">hr.holidays.tree</field>
             <field name="model">hr.holidays</field>
             <field name="arch" type="xml">
@@ -235,7 +234,7 @@
 
         <menuitem name="Leaves" parent="hr.menu_hr_root" id="menu_open_ask_holidays" sequence="20"/>
 
-        <record model="ir.actions.act_window" id="open_ask_holidays">
+        <record id="open_ask_holidays" model="ir.actions.act_window">
             <field name="name">Leave Request</field>
             <field name="res_model">hr.holidays</field>
             <field name="view_type">form</field>
@@ -262,21 +261,21 @@
             </field>
         </record>
 
-        <record model="ir.actions.act_window.view" id="action_open_ask_holidays_tree">
+        <record id="action_open_ask_holidays_tree" model="ir.actions.act_window.view">
             <field name="sequence" eval="2"/>
             <field name="view_mode">tree</field>
             <field name="view_id" ref="view_holiday"/>
             <field name="act_window_id" ref="open_ask_holidays"/>
         </record>
 
-        <record model="ir.actions.act_window.view" id="action_open_ask_holidays_form">
+        <record id="action_open_ask_holidays_form" model="ir.actions.act_window.view">
             <field name="sequence" eval="3"/>
             <field name="view_mode">form</field>
             <field name="view_id" ref="edit_holiday_new"/>
             <field name="act_window_id" ref="open_ask_holidays"/>
         </record>
 
-        <record model="ir.actions.act_window.view" id="action_open_ask_holidays_calendar">
+        <record id="action_open_ask_holidays_calendar" model="ir.actions.act_window.view">
             <field name="sequence" eval="1"/>
             <field name="view_mode">calendar</field>
             <field name="view_id" ref="view_holiday_new_calendar"/>
@@ -285,7 +284,7 @@
 
         <menuitem parent="menu_open_ask_holidays" id="menu_open_ask_holidays_new" action="open_ask_holidays"/>
 
-        <record model="ir.actions.act_window" id="request_approve_holidays">
+        <record id="request_approve_holidays" model="ir.actions.act_window">
             <field name="name">Requests to Approve</field>
             <field name="res_model">hr.holidays</field>
             <field name="view_type">form</field>
@@ -304,14 +303,14 @@
             <field name="search_view_id" ref="view_hr_holidays_filter"/>
         </record>
 
-        <record model="ir.actions.act_window.view" id="action_request_approve_holidays_tree">
+        <record id="action_request_approve_holidays_tree" model="ir.actions.act_window.view">
             <field name="sequence" eval="1"/>
             <field name="view_mode">tree</field>
             <field name="view_id" ref="view_holiday"/>
             <field name="act_window_id" ref="request_approve_holidays"/>
         </record>
 
-        <record model="ir.actions.act_window.view" id="action_request_approve_holidays_form">
+        <record id="action_request_approve_holidays_form" model="ir.actions.act_window.view">
             <field name="sequence" eval="2"/>
             <field name="view_mode">form</field>
             <field name="view_id" ref="edit_holiday_new"/>
@@ -320,7 +319,7 @@
 
         <menuitem name="Leave Requests to Approve" parent="menu_open_ask_holidays" id="menu_request_approve_holidays" action="request_approve_holidays" groups="base.group_hr_user"/>
 
-        <record model="ir.actions.act_window" id="open_allocation_holidays">
+        <record id="open_allocation_holidays" model="ir.actions.act_window">
             <field name="name">Allocation Requests</field>
             <field name="res_model">hr.holidays</field>
             <field name="view_type">form</field>
@@ -337,14 +336,14 @@
             <field name="search_view_id" ref="view_hr_holidays_filter"/>
         </record>
 
-        <record model="ir.actions.act_window.view" id="action_open_allocation_holidays_tree">
+        <record id="action_open_allocation_holidays_tree" model="ir.actions.act_window.view">
             <field name="sequence" eval="1"/>
             <field name="view_mode">tree</field>
             <field name="view_id" ref="view_holiday_allocation_tree"/>
             <field name="act_window_id" ref="open_allocation_holidays"/>
         </record>
 
-        <record model="ir.actions.act_window.view" id="action_open_allocation_holidays_form">
+        <record id="action_open_allocation_holidays_form" model="ir.actions.act_window.view">
             <field name="sequence" eval="2"/>
             <field name="view_mode">form</field>
             <field name="view_id" ref="edit_holiday_new"/>
@@ -353,7 +352,7 @@
 
         <menuitem parent="menu_open_ask_holidays" id="menu_open_allocation_holidays" action="open_allocation_holidays"/>
 
-        <record model="ir.actions.act_window" id="request_approve_allocation">
+        <record id="request_approve_allocation" model="ir.actions.act_window">
             <field name="name">Allocation Requests to Approve</field>
             <field name="res_model">hr.holidays</field>
             <field name="view_type">form</field>
@@ -371,14 +370,14 @@
             <field name="search_view_id" ref="view_hr_holidays_filter"/>
         </record>
 
-        <record model="ir.actions.act_window.view" id="action_request_approve_allocation_tree">
+        <record id="action_request_approve_allocation_tree" model="ir.actions.act_window.view">
             <field name="sequence" eval="1"/>
             <field name="view_mode">tree</field>
             <field name="view_id" ref="view_holiday_allocation_tree"/>
             <field name="act_window_id" ref="request_approve_allocation"/>
         </record>
 
-        <record model="ir.actions.act_window.view" id="action_request_approve_allocation_form">
+        <record id="action_request_approve_allocation_form" model="ir.actions.act_window.view">
             <field name="sequence" eval="2"/>
             <field name="view_mode">form</field>
             <field name="view_id" ref="edit_holiday_new"/>
@@ -387,7 +386,7 @@
 
         <menuitem parent="menu_open_ask_holidays" id="menu_request_approve_allocation" action="request_approve_allocation" groups="base.group_hr_manager"/>
 
-        <record model="ir.actions.act_window" id="open_company_allocation">
+        <record id="open_company_allocation" model="ir.actions.act_window">
             <field name="name">Leaves Summary</field>
             <field name="res_model">hr.holidays</field>
             <field name="view_type">form</field>
@@ -411,7 +410,7 @@
 
         <menuitem name="Leaves Summary" parent="menu_open_ask_holidays" id="menu_open_company_allocation" action="open_company_allocation" sequence="40"/>
 
-        <record model="ir.actions.act_window" id="open_employee_leaves">
+        <record id="open_employee_leaves" model="ir.actions.act_window">
             <field name="name">Employee's Leaves</field>
             <field name="res_model">hr.holidays</field>
             <field name="view_type">form</field>
@@ -436,7 +435,7 @@
             </field>
         </record>
 
-        <record model="ir.ui.view" id="edit_holiday_status_form">
+        <record id="edit_holiday_status_form" model="ir.ui.view">
             <field name="name">hr.holidays.status.form</field>
             <field name="model">hr.holidays.status</field>
             <field name="arch" type="xml">
@@ -457,7 +456,7 @@
             </field>
         </record>
 
-        <record model="ir.ui.view" id="view_holiday_status_tree">
+        <record id="view_holiday_status_tree" model="ir.ui.view">
             <field name="name">hr.holidays.status.tree</field>
             <field name="model">hr.holidays.status</field>
             <field name="arch" type="xml">
@@ -470,7 +469,7 @@
             </field>
         </record>
 
-        <record model="ir.ui.view" id="view_holiday_status_normal_tree">
+        <record id="view_holiday_status_normal_tree" model="ir.ui.view">
             <field name="name">hr.holidays.status.normal.tree</field>
             <field name="model">hr.holidays.status</field>
             <field name="priority">35</field>
@@ -551,5 +550,4 @@
             view_mode="tree,form,calendar,gantt"
             view_type="form"/>
 
-    </data>
-</openerp>
+</odoo>

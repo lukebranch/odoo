@@ -1,39 +1,20 @@
 # -*- coding: utf-8 -*-
-##############################################################################
-#
-#    OpenERP, Open Source Management Solution
-#    Copyright (C) 2004-2010 Tiny SPRL (<http://tiny.be>).
-#
-#    This program is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU Affero General Public License as
-#    published by the Free Software Foundation, either version 3 of the
-#    License, or (at your option) any later version.
-#
-#    This program is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU Affero General Public License for more details.
-#
-#    You should have received a copy of the GNU Affero General Public License
-#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-##############################################################################
 
+from openerp import fields, models
 from openerp import tools
-from openerp.osv import fields,osv
 
-class hr_holidays_remaining_leaves_user(osv.osv):
+
+class HrHolidaysRemainingLeavesUser(models.Model):
     _name = "hr.holidays.remaining.leaves.user"
     _description = "Total holidays by type"
     _auto = False
-    _columns = {
-        'name': fields.char('Employee'),
-        'no_of_leaves': fields.integer('Remaining leaves'),
-        'user_id': fields.many2one('res.users', 'User'),
-        'leave_type': fields.char('Leave Type'),
-        }
 
-    def init(self, cr):
+    name = fields.Char(string='Employee')
+    no_of_leaves = fields.Integer(string='Remaining leaves')
+    user_id = fields.Many2one(comodel_name='res.users', string='User')
+    leave_type = fields.Char(string='Leave Type')
+
+    def init(seld, cr):
         tools.drop_view_if_exists(cr, 'hr_holidays_remaining_leaves_user')
         cr.execute("""
             CREATE or REPLACE view hr_holidays_remaining_leaves_user as (
