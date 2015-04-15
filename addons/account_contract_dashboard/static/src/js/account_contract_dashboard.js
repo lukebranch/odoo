@@ -305,7 +305,7 @@
 
               displayContractsModifications(result['contract_modifications']);
               displayNRRInvoices(result['nrr_invoices']);
-              debugger;
+              
               var html = openerp.qweb.render('account_contract_dashboard.salesmanSummary', {
                 'mrr': result['net_new'],
                 'nrr': result['nrr'],

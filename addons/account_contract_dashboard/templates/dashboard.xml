@@ -312,9 +312,6 @@
             </h1>
           </div>
           <div t-if="salesman" class="box">
-            <h2>
-              Summary
-            </h2>
             <div id="mrr_growth_salesman"/>
             <div class="clearfix"/>
           </div>

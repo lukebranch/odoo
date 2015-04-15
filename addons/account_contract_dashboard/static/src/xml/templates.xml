@@ -79,13 +79,16 @@
   </t>
 
   <t t-name="account_contract_dashboard.salesmanSummary">
-    <div class="text-center">
-      <h3>
-        MRR : <t t-esc="Math.round(mrr*100)/100"/><t t-esc="currency"/>
-      </h3>
-      <h3>
-        NRR : <t t-esc="Math.round(nrr*100)/100"/><t t-esc="currency"/>
-      </h3>
+      <div class="col-md-6" style="font-weight: 800;">
+        <h3>
+          MRR : <t t-esc="Math.round(mrr*100)/100"/><t t-esc="currency"/>
+        </h3>
+      </div>
+
+      <div class="col-md-6 mb32" style="font-weight: 800;">
+        <h3 class="pull-right">
+          NRR : <t t-esc="Math.round(nrr*100)/100"/><t t-esc="currency"/>
+        </h3>
     </div>
   </t>
 

@@ -12,7 +12,7 @@
 - add index in init of module :
 	create index account_invoice_line_aai_assets_index on account_invoice_line(account_analytic_id, asset_start_date, asset_end_date);
 
-- add asset_start_date, asset_end_date, mrr for invoice_line saas
+V add asset_start_date, asset_end_date, mrr for invoice_line saas
 
 - template js pour dashboard salesman : remove "summary", place mrr on the left with number and nrr on the right
 - invoice_analysis et pas invoice_line_analysis pour le button-to-backend
