@@ -1,26 +1,18 @@
 ####################################
 
-In https://docs.google.com/a/openerp.com/file/d/0B5BDHVRYo-q5TUN4OXYxY1NkaEE/edit?usp=drivesdk 
-	--> Unit of measure in "Customers" in plan table ?
-	--> Same filters : also on products ?
+1) merger la PR 80
+2) modifier les champs dans revenue-recognition pour prendre en compte les nouveaux champs (signed)
+3) merger revenue-recognition
+4) script de migration
+5) modifier le code de Damien pour ajouter une asset_category_id sur les contrats
+6) merger contracts
+7) merger baremetrics
 
-- for more filtering, button on /stat to report/invoice analysis with groupby default on category
-- use @MAT field
-? do not use negative mrr (asset, nothing to do with revenue recognition)
-? net revenue
-	--> either billing (all invoice)
-	--> either non-recurring + prorata of monthly recurrent*nb_months
 
-- marketing : faire la page de présentation sur odoo.com
-- vérifier la formule du churn (revenue churn + mrr growth), see @ll
 - add index in init of module :
 	create index account_invoice_line_aai_assets_index on account_invoice_line(account_analytic_id, asset_start_date, asset_end_date);
 
-V script de migration : add asset_category_id for product ONLY for OE and partnership
-V corriger les données : si ca finit le 01 du mois, changer la date à un jour plus tot
-- boutton --> avoir le même chiffre 
-- ? group_by sales team
+- add asset_start_date, asset_end_date, mrr for invoice_line saas
 
-############# OPTIMIZATIONS
-
-- Monthly Recurring Revenue Growth graph with mousemove event
+- template js pour dashboard salesman : remove "summary", place mrr on the left with number and nrr on the right
+- invoice_analysis et pas invoice_line_analysis pour le button-to-backend

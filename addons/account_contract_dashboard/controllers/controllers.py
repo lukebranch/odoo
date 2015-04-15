@@ -147,8 +147,8 @@ class AccountContractDashboard(http.Controller):
             'currency': get_currency(),
         })
 
-    @http.route('/account_contract_dashboard/choose_salesman', auth='user', website=True)
-    def choose_salesman(self, **kw):
+    @http.route('/account_contract_dashboard/salesman', auth='user', website=True)
+    def salesman_dashboard(self, **kw):
 
         salesman_ids = []
 
@@ -161,25 +161,38 @@ class AccountContractDashboard(http.Controller):
             salesman_ids.append(request.env['res.users'].browse(entry['user_id']))
         salesman_ids = sorted([x for x in salesman_ids], key=lambda k: k['name'])
 
-        return http.request.render('account_contract_dashboard.choose_salesman', {
-            'salesman_ids': salesman_ids,
-        })
-
-    @http.route('/account_contract_dashboard/salesman/<int:salesman_id>', auth='user', website=True)
-    def salesman_dashboard(self, salesman_id, **kw):
-
-        salesman = request.env['res.users'].browse(salesman_id)
         date = datetime.strptime('2015-03-31', DEFAULT_SERVER_DATE_FORMAT)
 
         period = datetime.strptime(kw.get('period'), '%Y-%m') if kw.get('period') else default_end_date
+        salesman = request.env['res.users'].browse(int(kw.get('salesman'))) if kw.get('salesman') else None
 
         return http.request.render('account_contract_dashboard.salesman', {
+            'salesman_ids': salesman_ids,
             'salesman': salesman,
             'period': period.strftime('%Y-%m'),
         })
 
     @http.route('/account_contract_dashboard/get_values_salesman', type="json", auth='user', website=True)
     def get_values_salesman(self, salesman_id, start_date=None):
+
+        def get_diff_and_color(value1, value2):
+            diff = value1 - value2
+            diff = str(diff) if diff < 0 else '+' + str(diff)
+            color = 'oBlack'
+            if value1 > value2:
+                color = 'oGreen'
+            elif value1 < value2:
+                color = 'oRed'
+            return diff, color
+
+        def get_icon(modification_type):
+            icon_by_type = {
+                'churn': 'oRed glyphicon glyphicon-remove',
+                'new': 'oGreen glyphicon glyphicon-ok',
+                'down': 'oRed glyphicon glyphicon-arrow-down',
+                'up': 'oGreen glyphicon glyphicon-arrow-up',
+            }
+            return icon_by_type[modification_type]
 
         salesman = request.env['res.users'].browse(int(salesman_id))
 
@@ -220,12 +233,14 @@ class AccountContractDashboard(http.Controller):
             if not next_il_ids:
                 # CANCEL
                 contract_modifications.append({
-                    'type': 'Churned MRR',
+                    'type': get_icon('churn'),
                     'partner': previous_il_id.partner_id.name,
                     'account_analytic': previous_il_id.account_analytic_id.name,
                     'account_analytic_template': previous_il_id.account_analytic_id.template_id.name,
                     'previous_mrr': str(previous_mrr),
                     'current_mrr': str(0),
+                    'diff': get_diff_and_color(0, previous_mrr)[0],
+                    'color': get_diff_and_color(0, previous_mrr)[1],
                     'currency': currency,
                 })
                 churned_mrr += previous_mrr
@@ -251,12 +266,14 @@ class AccountContractDashboard(http.Controller):
                 if int(previous_mrr) < int(next_mrr):
                     # UP
                     contract_modifications.append({
-                        'type': 'Upgrade',
+                        'type': get_icon('up'),
                         'partner': next_il_id.partner_id.name,
                         'account_analytic': next_il_id.account_analytic_id.name,
                         'account_analytic_template': next_il_id.account_analytic_id.template_id.name,
                         'previous_mrr': str(previous_mrr),
                         'current_mrr': str(next_mrr),
+                        'diff': get_diff_and_color(next_mrr, previous_mrr)[0],
+                        'color': get_diff_and_color(next_mrr, previous_mrr)[1],
                         'currency': currency,
                     })
                     expansion_mrr += (next_mrr - previous_mrr)
@@ -264,12 +281,14 @@ class AccountContractDashboard(http.Controller):
                 elif int(previous_mrr) > int(next_mrr):
                     # DOWN
                     contract_modifications.append({
-                        'type': 'Downgrade',
+                        'type': get_icon('down'),
                         'partner': next_il_id.partner_id.name,
                         'account_analytic': next_il_id.account_analytic_id.name,
                         'account_analytic_template': next_il_id.account_analytic_id.template_id.name,
                         'previous_mrr': str(previous_mrr),
                         'current_mrr': str(next_mrr),
+                        'diff': get_diff_and_color(next_mrr, previous_mrr)[0],
+                        'color': get_diff_and_color(next_mrr, previous_mrr)[1],
                         'currency': currency,
                     })
                     down_mrr -= (next_mrr - previous_mrr)
@@ -285,24 +304,28 @@ class AccountContractDashboard(http.Controller):
                     # be considered as upgrade.
                     # UP
                     contract_modifications.append({
-                        'type': 'Upgrade/New',
+                        'type': get_icon('up'),
                         'partner': next_il_id.partner_id.name,
                         'account_analytic': next_il_id.account_analytic_id.name,
                         'account_analytic_template': next_il_id.account_analytic_id.template_id.name,
                         'previous_mrr': str(0),
                         'current_mrr': str(next_mrr),
+                        'diff': get_diff_and_color(next_mrr, 0)[0],
+                        'color': get_diff_and_color(next_mrr, 0)[1],
                         'currency': currency,
                     })
                     expansion_mrr += next_mrr
                 else:
                     # NEW
                     contract_modifications.append({
-                        'type': 'New MRR',
+                        'type': get_icon('new'),
                         'partner': next_il_id.partner_id.name,
                         'account_analytic': next_il_id.account_analytic_id.name,
                         'account_analytic_template': next_il_id.account_analytic_id.template_id.name,
                         'previous_mrr': str(0),
                         'current_mrr': str(next_mrr),
+                        'diff': get_diff_and_color(next_mrr, 0)[0],
+                        'color': get_diff_and_color(next_mrr, 0)[1],
                         'currency': currency,
                     })
                     new_mrr += next_mrr
@@ -329,7 +352,17 @@ class AccountContractDashboard(http.Controller):
                     'currency': currency,
                 })
 
-        result = new_mrr, -churned_mrr, expansion_mrr, -down_mrr, net_new_mrr, contract_modifications, total_nrr, nrr_invoice_ids
+        result = {
+            'new': new_mrr,
+            'churn': -churned_mrr,
+            'up': expansion_mrr,
+            'down': -down_mrr,
+            'net_new': net_new_mrr,
+            'contract_modifications': contract_modifications,
+            'nrr': total_nrr,
+            'nrr_invoices': nrr_invoice_ids,
+            'currency': currency,
+        }
 
         return result
 

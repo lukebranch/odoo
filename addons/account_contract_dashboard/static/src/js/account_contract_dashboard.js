@@ -25,6 +25,14 @@
           });
       });
 
+      openerp.website.if_dom_contains('#datetimepicker_period', function() {
+        $('#datetimepicker_period').datetimepicker({
+          viewMode: 'years',
+          format: 'YYYY-MM',
+          pickTime: false,
+        });
+      });
+
       // 1. MAIN DASHBOARD - Stat box with graph inside
       openerp.website.if_dom_contains('div.stat-box, div.forecast-box', function() {
 
@@ -280,17 +288,8 @@
 
       });
 
-      // 2.3 STAT DASHBOARD - MRR GROWTH
+      // 2.3 STAT DASHBOARD - MRR GROWTH for Salesman
       openerp.website.if_dom_contains('#mrr_growth_salesman', function() {
-
-          $('#datetimepicker_period').datetimepicker({
-              viewMode: 'years',
-              format: 'YYYY-MM',
-              pickTime: false,
-            });
-
-          // var start_date = $('input[name="start_date"]').val();
-          // var end_date = $('input[name="end_date"]').val();
 
           var salesman_id = $('input[name="salesman_id"]').val();
           var period = $('input[name="period"]').val();
@@ -304,8 +303,15 @@
               loadChart_mrr_salesman('#mrr_growth_salesman', result);
               $('#mrr_growth_salesman div.loader').hide();
 
-              displayContractsModifications(result[5]);
-              displayNRRInvoices(result[7]);
+              displayContractsModifications(result['contract_modifications']);
+              displayNRRInvoices(result['nrr_invoices']);
+              debugger;
+              var html = openerp.qweb.render('account_contract_dashboard.salesmanSummary', {
+                'mrr': result['net_new'],
+                'nrr': result['nrr'],
+                'currency': result['currency']
+              });
+              $('#mrr_growth_salesman').before(html);
           });
       });
 
@@ -666,27 +672,27 @@
               values: [
                 { 
                   "label" : "New MRR" ,
-                  "value" : result[0]
+                  "value" : result['new']
                 } , 
                 { 
                   "label" : "Churned MRR" , 
-                  "value" : result[1]
+                  "value" : result['churn']
                 } , 
                 { 
                   "label" : "Expansion MRR" , 
-                  "value" : result[2]
+                  "value" : result['up']
                 } , 
                 { 
                   "label" : "Down MRR" , 
-                  "value" : result[3]
+                  "value" : result['down']
                 } , 
                 { 
                   "label" : "Net New MRR" ,
-                  "value" : result[4]
+                  "value" : result['net_new']
                 } , 
                 { 
                   "label" : "NRR" ,
-                  "value" : result[6]
+                  "value" : result['nrr']
                 } ,
               ]
             }

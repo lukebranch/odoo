@@ -47,7 +47,7 @@ openerp.account_contract_dashboard = function (instance) {
 
     instance.web.account_contract_dashboard_salesman = instance.web.IframeBackend.extend({
         init: function(parent) {
-            this._super(parent, '/account_contract_dashboard/choose_salesman');
+            this._super(parent, '/account_contract_dashboard/salesman');
         }
     });
 

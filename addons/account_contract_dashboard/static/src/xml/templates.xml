@@ -78,46 +78,70 @@
     </div>
   </t>
 
+  <t t-name="account_contract_dashboard.salesmanSummary">
+    <div class="text-center">
+      <h3>
+        MRR : <t t-esc="Math.round(mrr*100)/100"/><t t-esc="currency"/>
+      </h3>
+      <h3>
+        NRR : <t t-esc="Math.round(nrr*100)/100"/><t t-esc="currency"/>
+      </h3>
+    </div>
+  </t>
+
   <t t-name="account_contract_dashboard.contractModifications">
-    <table class="table table-striped">
-      <tr>
-        <th>Partner</th>
-        <th>Contract</th>
-        <th>Template</th>
-        <th>Type</th>
-        <th>Previous MRR</th>
-        <th>Current MRR</th>
-      </tr>
-      <t t-foreach="modifications" t-as="modification">
+
+    <div t-if="modifications.length == 0">
+      <i>There is no contract modification during this period.</i> 
+    </div>
+
+    <div t-if="modifications.length > 0" class="table-responsive"> 
+      <table style="width: auto;" class="table table-hover">
         <tr>
-          <td><t t-esc="modification['partner']"/></td>
-          <td><t t-esc="modification['account_analytic']"/></td>
-          <td><t t-esc="modification['account_analytic_template']"/></td>
-          <td><t t-esc="modification['type']"/></td>
-          <td><t t-esc="modification['previous_mrr'] + modification['currency']"/></td>
-          <td><t t-esc="modification['current_mrr'] + modification['currency']"/></td>
+          <th></th>
+          <th>Partner</th>
+          <th>Contract</th>
+          <th>Template</th>
+          <th>Previous MRR</th>
+          <th>Current MRR</th>
         </tr>
-      </t>
-    </table>
+        <t t-foreach="modifications" t-as="modification">
+          <tr>
+            <td><i t-att-class="modification['type']"/></td>
+            <td><t t-esc="modification['partner']"/></td>
+            <td><t t-esc="modification['account_analytic']"/></td>
+            <td><t t-esc="modification['account_analytic_template']"/></td>
+            <td><t t-esc="modification['previous_mrr'] + modification['currency']"/></td>
+            <td><t t-esc="modification['current_mrr'] + modification['currency']"/> (<span t-att-class="modification['color']"><t t-esc="modification['diff'] + modification['currency']"/></span>)</td>
+          </tr>
+        </t>
+      </table>
+    </div>
   </t>
 
   <t t-name="account_contract_dashboard.NRRInvoices">
-    <table class="table table-striped">
-      <tr>
-        <th>Partner</th>
-        <th>Contract</th>
-        <th>Template</th>
-        <th>NRR</th>
-      </tr>
-      <t t-foreach="invoices" t-as="invoice">
+    <div t-if="invoices.length == 0">
+      <i>There is no NRR invoice during this period.</i> 
+    </div>
+
+    <div t-if="invoices.length > 0" class="table-responsive">
+      <table style="width: auto;" class="table table-hover">
         <tr>
-          <td><t t-esc="invoice['partner']"/></td>
-          <td><t t-esc="invoice['account_analytic']"/></td>
-          <td><t t-esc="invoice['account_analytic_template']"/></td>
-          <td><t t-esc="invoice['nrr'] + invoice['currency']"/></td>
+          <th>Partner</th>
+          <th>Contract</th>
+          <th>Template</th>
+          <th>NRR</th>
         </tr>
-      </t>
-    </table>
+        <t t-foreach="invoices" t-as="invoice">
+          <tr>
+            <td><t t-esc="invoice['partner']"/></td>
+            <td><t t-esc="invoice['account_analytic']"/></td>
+            <td><t t-esc="invoice['account_analytic_template']"/></td>
+            <td><t t-esc="invoice['nrr'] + invoice['currency']"/></td>
+          </tr>
+        </t>
+      </table>
+    </div>
   </t>
 
 

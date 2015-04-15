@@ -37,7 +37,7 @@
 
         <div class="row mt32 mb32">
           <div class="col-md-6 pull-left">
-            <a href="account_contract_dashboard/choose_salesman">Dashboard by salesman</a>
+            <a href="account_contract_dashboard/salesman">Dashboard by salesman</a>
           </div>
           <t t-call="account_contract_dashboard.dashboard_options"/>
         </div>
@@ -83,13 +83,6 @@
     <div id="wrap" class="oe_structure oe_empty" style="background-color: #F0EEEE;">
       <div class="container">
           
-<!--           <div class="row">              
-            <div class="col-sm-12 text-center">
-              <h1 class="text-muted "><t t-esc="report_name"/></h1>
-            </div>
-          </div>
-
-          <hr/> -->
           <t t-set="form_action" t-value="'/account_contract_dashboard/detailed/%s' % stat_type"/>
 
           <div class="row mt32 mb32">
@@ -286,70 +279,53 @@
     </t>
   </template>
 
-
-  <template id="choose_salesman" name="Recurring Revenue Dashboard for Salesman" page="True">
-    <t t-name="account_contract_dashboard.choose_salesman"/>
-    <t t-call="account_contract_dashboard.layout">
-      <div id="wrap" class="oe_structure oe_empty" style="background-color: #F0EEEE;">
-        <div class="container">
-
-          <h1>
-            Choose your salesman:
-          </h1>
-
-          <div>
-            <a href="/account_contract_dashboard/">Back to dashboard</a>
-          </div>
-          
-          <div class="row box">
-            <t t-foreach="salesman_ids" t-as="salesman">
-              <div>
-                <a t-att-href="'/account_contract_dashboard/salesman/%s' % salesman.id"><t t-esc="salesman.name"/></a>
-              </div>
-            </t>
-          </div>
-
-        </div>
-      </div>
-    </t>
-  </template>
-
-    <template id="salesman" name="Recurring Revenue Dashboard for Salesman" page="True">
+  <template id="salesman" name="Recurring Revenue Dashboard for Salesman" page="True">
     <t t-name="account_contract_dashboard.salesman"/>
     <t t-call="account_contract_dashboard.layout">
       <div id="wrap" class="oe_structure oe_empty" style="background-color: #F0EEEE;">
         <div class="container">
-
-          <input name="salesman_id" type="hidden" t-att-value="salesman.id"/>
-
-          <h1>
-            Recurring Revenue Dashboard for <t t-esc="salesman.name"/>
-          </h1>
+          <div t-if="salesman">
+            <input name="salesman_id" type="hidden" t-att-value="salesman.id"/>
+          </div>
           <div class="row">
-            <div>
-              <a href="/account_contract_dashboard/choose_salesman">Back to all</a>
-            </div>
             <div class="pull-right">
-              <form t-att-action="'/account_contract_dashboard/salesman/%s' % salesman.id">
-                <input id="datetimepicker_period" name="period" t-att-value="period"/> <button class="btn btn-primary" type="submit">Update</button>
+              <form action="/account_contract_dashboard/salesman">
+                <div class="row">
+                  <input id="datetimepicker_period" name="period" t-att-value="period"/> <button class="btn btn-primary" type="submit">Update</button>
+                </div>
+                <div class="row">
+                  <select name="salesman">
+                    <t t-foreach="salesman_ids" t-as="sman">
+                      <option t-att-selected="'selected' if salesman and salesman.id == sman.id else ''" t-att-value="sman.id"><t t-esc="sman.name"/></option>
+                    </t>
+                  </select>
+                </div>
               </form>
             </div>
           </div>
-          <div class="box">
+          <div t-if="not salesman">
+            <h1> Pick a salesman and a period</h1>
+          </div>
+          <div t-if="salesman">
+            <h1>
+              Recurring Revenue Dashboard for <t t-esc="salesman.name"/>
+            </h1>
+          </div>
+          <div t-if="salesman" class="box">
             <h2>
               Summary
             </h2>
             <div id="mrr_growth_salesman"/>
             <div class="clearfix"/>
           </div>
-          <div class="box">
+          <div t-if="salesman" class="box">
             <h2>
               List of contract modifications
             </h2>
             <div id="contract_modifications"/>
           </div>
 
-          <div class="box">
+          <div t-if="salesman" class="box">
             <h2>
               List of NRR invoices
             </h2>
