@@ -74,11 +74,13 @@ var PlannerLauncher = Widget.extend({
         this.$(".oe_planner_progress").tooltip({html: true, title: this.planner.tooltip_planner, placement: 'bottom', delay: {'show': 500}});
         this.dialog.on("planner_progress_changed", this, function(percent){
             self.update_parent_progress_bar(percent);
-            var $bar = this.$(".progress");
             if (percent === 100) {
-                $bar.css("display", "none");
-            } else if(this.$(".progress:hidden")) {
-                $bar.css("display", "block");
+                self.$('.progress').addClass('hide');
+                self.$el.css('width', 'auto');
+            } else {
+                self.$('.progress').removeClass('hide');
+                self.$el.css('width', '100px');
+                self.webclient.menu.reflow();
             }
         });
         this.dialog.appendTo(document.body);
