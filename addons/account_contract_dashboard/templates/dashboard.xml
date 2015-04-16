@@ -1,0 +1,323 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+  <data>
+
+  <template id="dashboard_options">
+      <div class="col-sm-6 pull-right">
+        <form t-att-action="form_action">
+          <div class="mb8">
+            <a t-att-class="'' if filtered_contract_template_ids else 'collapsed'" data-toggle="collapse" href="#collapse_filter_contracts">
+              Filter on contracts
+            </a>
+          </div>
+
+          <div role="tablist" aria-multiselectable="true">
+            <div id="collapse_filter_contracts" t-att-class="'panel-collapse collapse in' if filtered_contract_template_ids else 'panel-collapse collapse'" role="tabpanel">
+              <t t-foreach="contract_templates" t-as="template">
+                <div class="checkbox">
+                  <input type="checkbox" t-att-checked="'checked' if str(template.id) in filtered_contract_template_ids else ''" name="contract_template_filter" t-att-value="template.id"><t t-esc="template.name"/></input>
+                </div>
+              </t>
+            </div>
+          </div>
+          <div>
+            <input id="datetimepicker_start" name="start_date" t-att-value="start_date"/> to <input name="end_date" t-att-value="end_date" id="datetimepicker_end"/> <button class="btn btn-primary" type="submit">Update</button>
+          </div>
+        </form>
+      </div>
+  </template>
+
+  <template id="dashboard" name="Recurring Revenue Dashboard" page="True">
+    <t t-name="account_contract_dashboard.dashboard"/>
+    <t t-call="account_contract_dashboard.layout">
+    <div id="wrap" class="oe_structure oe_empty" style="background-color: #F0EEEE;">
+      <div class="container">
+        <t t-set="form_action" t-value="'/account_contract_dashboard'"/>
+
+
+        <div class="row mt32 mb32">
+          <div class="col-md-6 pull-left">
+            <a href="account_contract_dashboard/salesman">Dashboard by salesman</a>
+          </div>
+          <t t-call="account_contract_dashboard.dashboard_options"/>
+        </div>
+        
+        <hr/>
+
+        <div class="row">
+          <t t-foreach="all_stats" t-as="stat">
+            <div class="col-sm-4">
+              <a class="fill-div" t-att-href="'account_contract_dashboard/detailed/%s?%s' % (stat['code'], href_post_args)">
+                <div class="box stat-box" t-att-name="stat['name']" t-att-code="stat['code']">
+                  <div class="loading">
+                    <i class="fa fa-spin fa-spinner fa-pulse" style="font-size: 3em;"></i>
+                  </div>
+                </div>
+              </a>
+            </div>
+          </t>
+
+          <t t-foreach="all_forecast" t-as="forecast">
+            <div class="col-sm-6">
+              <a class="fill-div button-to-backend" href="account_contract_dashboard/forecast" t-att-menu-id="find_res_id('account_contract_dashboard.menu_action_contract_dashboard_report_forecast')">
+                <div class="box forecast-box" t-att-name="forecast['name']" t-att-code="forecast['code']">
+                  <div class="loading">
+                    <i class="fa fa-spin fa-spinner fa-pulse" style="font-size: 3em;"></i>
+                  </div>
+                </div>
+              </a>
+            </div>
+          </t>
+        </div>
+
+      </div>
+
+    </div>
+    </t>
+  </template>
+
+  <template id="detailed_dashboard" name="Detailed Dashboard" page="True">
+    <t t-name="account_contract_dashboard.detailed_dashboard"/>
+    <t t-call="account_contract_dashboard.layout">
+    <div id="wrap" class="oe_structure oe_empty" style="background-color: #F0EEEE;">
+      <div class="container">
+          
+          <t t-set="form_action" t-value="'/account_contract_dashboard/detailed/%s' % stat_type"/>
+
+          <div class="row mt32 mb32">
+            <t t-call="account_contract_dashboard.dashboard_options"/>
+          </div>
+
+          <button class="btn btn-primary button-to-backend" t-att-data-action-id="find_res_id('account_contract_dashboard.action_invoice_line_entries_report')">Detailed Analysis</button>
+
+
+          <div class="row box graph-detailed">
+            <div class="col-sm-12">
+              <div id="value_now" t-att-value="value_now['value_2']" class="hidden"/>
+              <h1 class="metric_current oBlue mt32 mb32"><t t-esc="format_number(value_now['value_2'])"/><t t-esc="all_stats[stat_type]['add_symbol'] if all_stats[stat_type]['add_symbol'] != 'currency' else currency"/></h1>
+            </div>
+            <input type="hidden" name="stat_type" t-att-value="stat_type"/>
+            <div id="stat_chart_div">
+            </div>
+          </div>
+
+          <div id="stat-history-box" class="row box">
+          </div>
+
+          <div t-if="stat_type == 'mrr'" class="row box">
+            <div class="col-sm-12 mrr_growth_chart">
+              <h3>Monthly Recurring Revenue Growth</h3>
+              <div id="mrr_growth_chart_div">
+              </div>
+            </div>
+          </div>
+
+          <div id="stats_by_plan" t-if="display_stats_by_plan" class="row box">
+          </div>
+
+      </div>
+
+    </div>
+    </t>
+  </template>
+
+  <template id="forecast" name="Metrics Forecasting" page="True">
+    <t t-name="account_contract_dashboard.forecast"/>
+    <t t-call="account_contract_dashboard.layout">
+    <div id="wrap" class="oe_structure oe_empty" style="background-color: #F0EEEE;">
+      <div class="container">
+          <div class="row box">
+            <h3 class="text-center mt32 mb32" id="revenue_forecast_summary"></h3>
+            <div class="col-sm-4 forecast-options">
+              <table>
+                <tr>
+                  <td>Starting MRR:</td>
+                  <td class="pull-right">
+                    <div class="input-group">
+                      <span class="input-group-addon"><t t-esc="currency"/></span>
+                      <input class="form-control" type="number" id="starting_mrr"/>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>Growth Type:</td><td><input name="revenue_growth_type" type="radio" value="linear" checked="checked"> Linear</input> <br/> <input name="revenue_growth_type" type="radio" value="exponential"> Exponential</input></td>
+                </tr>
+                <tr>
+                  <td>Revenue Growth:</td>
+                  <td class="pull-right">
+                    <div class="input-group">
+                      <span class="input-group-addon"><t t-esc="currency"/></span>
+                      <input class="form-control" type="number" id="revenue_growth_linear"/>
+                    </div>
+
+                    <div style="display: none;" class="input-group">
+                      <span class="input-group-addon">%</span>
+                      <input class="form-control" type="number" id="revenue_growth_expon"/>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>Revenue Churn:</td>
+                  <td class="pull-right">
+                    <div class="input-group">
+                      <span class="input-group-addon">%</span>
+                      <input class="form-control" type="number" id="revenue_churn"/>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>Projection Time:</td>
+                  <td class="pull-right">
+                    <div class="input-group">
+                      <span class="input-group-addon">Months</span>
+                      <input class="form-control" type="number" id="revenue_projection_time"/>
+                    </div>
+                  </td>
+                </tr>
+              </table>
+              
+              
+            </div>
+            <div id="revenue_forecast_chart_div" class="col-sm-8"></div>
+          </div>
+
+
+          <div class="row box">
+            <h3 class="text-center mt32 mb32" id="contracts_forecast_summary"></h3>
+            <div class="col-sm-4 forecast-options">
+              <table>
+                <tr>
+                  <td>Starting Contract:</td>
+                  <td class="pull-right">
+                    <div class="input-group">
+                      <input class="form-control" type="number" id="starting_contracts"/>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>Growth Type:</td><td><input name="contracts_growth_type" type="radio" value="linear" checked="checked"> Linear</input> <br/> <input name="contracts_growth_type" type="radio" value="exponential"> Exponential</input></td>
+                </tr>
+                <tr>
+                  <td>Contracts Growth:</td>
+                  <td class="pull-right">
+                    <div class="input-group">
+                      <input class="form-control" type="number" id="contracts_growth_linear"/>
+                    </div>
+                    <div style="display: none;" class="input-group">
+                      <span class="input-group-addon">%</span>
+                      <input class="form-control" type="number" id="contracts_growth_expon"/>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>Contracts Churn:</td>
+                  <td class="pull-right">
+                    <div class="input-group">
+                      <span class="input-group-addon">%</span>
+                      <input class="form-control" type="number" id="contracts_churn"/>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>Projection Time:</td>
+                  <td class="pull-right">
+                    <div class="input-group">
+                      <span class="input-group-addon">Months</span>
+                      <input class="form-control" type="number" id="contracts_projection_time"/>
+                    </div>
+                  </td>
+                </tr>
+              </table>
+            </div>
+            <div id="contracts_forecast_chart_div" class="col-sm-8"></div>
+          </div>
+      </div>
+    </div>
+    </t>
+  </template>
+
+  <template id="salesman" name="Recurring Revenue Dashboard for Salesman" page="True">
+    <t t-name="account_contract_dashboard.salesman"/>
+    <t t-call="account_contract_dashboard.layout">
+      <div id="wrap" class="oe_structure oe_empty" style="background-color: #F0EEEE;">
+        <div class="container">
+          <div t-if="salesman">
+            <input name="salesman_id" type="hidden" t-att-value="salesman.id"/>
+          </div>
+          <div class="row">
+            <div class="pull-right">
+              <form action="/account_contract_dashboard/salesman">
+                <div class="row">
+                  <input id="datetimepicker_period" name="period" t-att-value="period"/> <button class="btn btn-primary" type="submit">Update</button>
+                </div>
+                <div class="row">
+                  <select name="salesman">
+                    <t t-foreach="salesman_ids" t-as="sman">
+                      <option t-att-selected="'selected' if salesman and salesman.id == sman.id else ''" t-att-value="sman.id"><t t-esc="sman.name"/></option>
+                    </t>
+                  </select>
+                </div>
+              </form>
+            </div>
+          </div>
+          <div t-if="not salesman">
+            <h1> Pick a salesman and a period</h1>
+          </div>
+          <div t-if="salesman">
+            <h1>
+              Recurring Revenue Dashboard for <t t-esc="salesman.name"/>
+            </h1>
+          </div>
+          <div t-if="salesman" class="box">
+            <div id="mrr_growth_salesman"/>
+            <div class="clearfix"/>
+          </div>
+          <div t-if="salesman" class="box">
+            <h2>
+              List of contract modifications
+            </h2>
+            <div id="contract_modifications"/>
+          </div>
+
+          <div t-if="salesman" class="box">
+            <h2>
+              List of NRR invoices
+            </h2>
+            <div id="NRR_invoices"/>
+          </div>
+        </div>
+      </div>
+    </t>
+  </template>
+
+
+  <template id="account_contract_dashboard.layout" name="Account Contract Dashboard Layout">&lt;!DOCTYPE html&gt;
+      <html>
+          <head>
+              <meta charset="utf-8"/>
+              <t t-call-assets="web.assets_common"/>
+              <t t-call-assets="website.assets_frontend"/>
+
+              <link href="/account_contract_dashboard/static/src/css/account_contract_dashboard.css" rel="stylesheet"/> 
+              <script type="text/javascript" src="/account_contract_dashboard/static/src/js/account_contract_dashboard.js"></script>
+
+              <!-- DATETIME PICKER -->
+              <link rel="stylesheet" href="/web/static/lib/bootstrap-datetimepicker/css/bootstrap-datetimepicker.css"/>
+              <script type="text/javascript" src="/web/static/lib/bootstrap-datetimepicker/src/js/bootstrap-datetimepicker.js"></script>
+              <link href="/web/static/lib/nvd3/nv.d3.css" rel="stylesheet"></link>
+
+              <!-- NVD3 -->
+              <script type="text/javascript" src="/web/static/lib/nvd3/d3.v3.js"></script>
+              <script type="text/javascript" src="/web/static/lib/nvd3/nv.d3.js"></script>
+          </head>
+          <body>
+              <main>
+                  <t t-raw="0"/>
+              </main>
+          </body>
+      </html>
+  </template> 
+
+
+  </data>
+</openerp>

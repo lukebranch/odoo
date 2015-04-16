@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<templates id="template" xml:space="preserve">
+
+  <t t-name="account_contract_dashboard.statsByPlan">
+    <div t-if="stats_by_plan.length > 0" class="row box">
+      <table class="table table-striped">
+        <tr>
+          <th>Plan</th>
+          <th># of Contracts</th>
+          <th t-if="stat_type != 'nb_contracts'"><t t-esc="all_stats[stat_type]['name']"/></th>
+          <th></th>
+        </tr>
+        <t t-foreach="stats_by_plan" t-as="plan">
+          <tr>
+            <td><t t-esc="plan['name']"/></td>
+            <td><t t-esc="plan['nb_customers']"/></td>
+            <td t-if="stat_type != 'nb_contracts'"><t t-esc="plan['value']"/><t t-esc="all_stats[stat_type]['add_symbol'] != 'currency' ? all_stats[stat_type]['add_symbol']: currency"/></td>
+            <td class="col-md-3">
+              <div t-if="value_now != 0" class="progress" style="width:80%; height:10px;">
+                <div class="progress-bar" role="progressbar" t-att-aria-valuenow="100*plan['value']/value_now" aria-valuemin="0" aria-valuemax="100" t-att-style="'width: '+100*plan['value']/value_now+'%'">
+                  <span class="sr-only"><t t-esc="100*plan['value']/value_now"/>% Complete (success)</span>
+                </div>
+              </div>
+            </td>
+          </tr>
+        </t>
+      </table>
+    </div>
+  </t>
+
+  <t t-name="account_contract_dashboard.statsHistory">
+    <div class="col-md-3 text-center">
+      <h4 class="text-muted smallCaps">Current</h4>
+      <h2><t t-esc="value_now"/><t t-esc="all_stats[stat_type]['add_symbol'] != 'currency' ? all_stats[stat_type]['add_symbol']: currency"/></h2>
+    </div>
+
+
+    <div class="col-md-3 text-center">
+      <h4 class="text-muted smallCaps">1 month ago</h4>
+      <h2><t t-esc="stats_history['value_1_month_ago']['value_2']"/><t t-esc="all_stats[stat_type]['add_symbol'] != 'currency' ? all_stats[stat_type]['add_symbol']: currency"/> <small t-if="stats_history['value_1_month_ago']['value_2'] != 0" t-attf-class="#{rate(all_stats, stat_type, stats_history['value_1_month_ago']['value_2'], value_now)[1]}"><t t-esc="rate(all_stats, stat_type, stats_history['value_1_month_ago']['value_2'], value_now)[0]"/>%</small></h2>
+    </div>
+
+
+    <div class="col-md-3 text-center">
+      <h4 class="text-muted smallCaps">3 months ago</h4>
+      <h2><t t-esc="stats_history['value_3_months_ago']['value_2']"/><t t-esc="all_stats[stat_type]['add_symbol'] != 'currency' ? all_stats[stat_type]['add_symbol']: currency"/> <small t-if="stats_history['value_3_months_ago']['value_2'] != 0" t-attf-class="#{rate(all_stats, stat_type, stats_history['value_3_months_ago']['value_2'], value_now)[1]}"><t t-esc="rate(all_stats, stat_type, stats_history['value_3_months_ago']['value_2'], value_now)[0]"/>%</small></h2>
+    </div>
+
+
+    <div class="col-md-3 text-center">
+      <h4 class="text-muted smallCaps">12 months ago</h4>
+      <h2><t t-esc="stats_history['value_12_months_ago']['value_2']"/><t t-esc="all_stats[stat_type]['add_symbol'] != 'currency' ? all_stats[stat_type]['add_symbol']: currency"/> <small t-if="stats_history['value_12_months_ago']['value_2'] != 0" t-attf-class="#{rate(all_stats, stat_type, stats_history['value_12_months_ago']['value_2'], value_now)[1]}"><t t-esc="rate(all_stats, stat_type, stats_history['value_12_months_ago']['value_2'], value_now)[0]"/>%</small></h2>
+    </div>
+  </t>
+
+  <t t-name="account_contract_dashboard.statBoxContent">
+    <div style="position: relative;">
+      <h2 style="color: #2693d5;"><t t-esc="formatNumber(value)"/><t t-esc="added_symbol"/></h2>
+        <div class="trend">
+          <h4 t-att-class="'mb0 ' + color"><t t-esc="perc"/>%</h4>
+          <span style="font-size: 10px;">30 Days Ago</span>
+        </div>
+    </div>
+    <div class="graph-box" t-att-id="chart_div_id"></div>
+    <div>
+        <h4 class="text-center mt32"><t t-esc="box_name"/></h4>
+    </div>
+  </t>
+
+  <t t-name="account_contract_dashboard.forecastBoxContent">
+    <div style="position: relative;">
+      <h2 style="color: #2693d5;"><t t-esc="formatNumber(value)"/><t t-esc="currency"/></h2>
+    </div>
+    <div class="graph-box" t-att-id="chart_div_id"></div>
+    <div>
+        <h4 class="text-center mt32"><t t-esc="box_name"/></h4>
+    </div>
+  </t>
+
+  <t t-name="account_contract_dashboard.salesmanSummary">
+      <div class="col-md-6" style="font-weight: 800;">
+        <h3>
+          MRR : <t t-esc="Math.round(mrr*100)/100"/><t t-esc="currency"/>
+        </h3>
+      </div>
+
+      <div class="col-md-6 mb32" style="font-weight: 800;">
+        <h3 class="pull-right">
+          NRR : <t t-esc="Math.round(nrr*100)/100"/><t t-esc="currency"/>
+        </h3>
+    </div>
+  </t>
+
+  <t t-name="account_contract_dashboard.contractModifications">
+
+    <div t-if="modifications.length == 0">
+      <i>There is no contract modification during this period.</i> 
+    </div>
+
+    <div t-if="modifications.length > 0" class="table-responsive"> 
+      <table style="width: auto;" class="table table-hover">
+        <tr>
+          <th></th>
+          <th>Partner</th>
+          <th>Contract</th>
+          <th>Template</th>
+          <th>Previous MRR</th>
+          <th>Current MRR</th>
+        </tr>
+        <t t-foreach="modifications" t-as="modification">
+          <tr>
+            <td><i t-att-class="modification['type']"/></td>
+            <td><t t-esc="modification['partner']"/></td>
+            <td><t t-esc="modification['account_analytic']"/></td>
+            <td><t t-esc="modification['account_analytic_template']"/></td>
+            <td><t t-esc="modification['previous_mrr'] + modification['currency']"/></td>
+            <td><t t-esc="modification['current_mrr'] + modification['currency']"/> (<span t-att-class="modification['color']"><t t-esc="modification['diff'] + modification['currency']"/></span>)</td>
+          </tr>
+        </t>
+      </table>
+    </div>
+  </t>
+
+  <t t-name="account_contract_dashboard.NRRInvoices">
+    <div t-if="invoices.length == 0">
+      <i>There is no NRR invoice during this period.</i> 
+    </div>
+
+    <div t-if="invoices.length > 0" class="table-responsive">
+      <table style="width: auto;" class="table table-hover">
+        <tr>
+          <th>Partner</th>
+          <th>Contract</th>
+          <th>Template</th>
+          <th>NRR</th>
+        </tr>
+        <t t-foreach="invoices" t-as="invoice">
+          <tr>
+            <td><t t-esc="invoice['partner']"/></td>
+            <td><t t-esc="invoice['account_analytic']"/></td>
+            <td><t t-esc="invoice['account_analytic_template']"/></td>
+            <td><t t-esc="invoice['nrr'] + invoice['currency']"/></td>
+          </tr>
+        </t>
+      </table>
+    </div>
+  </t>
+
+
+</templates>
+

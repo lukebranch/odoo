@@ -1,0 +1,159 @@
+svg {
+  padding-top: 2px;
+  float: left;
+}
+
+.no-padding {
+  padding-top: 0px !important;
+}
+
+div.forecast-options td {
+  font-weight: 800;
+}
+
+div.forecast-options {
+  border: 2px solid #c3cacd;
+  border-radius: 5px;
+  padding: 1em;
+}
+
+div.forecast-options td {
+  padding-bottom: 10px;
+  padding-top: 1em;
+}
+
+div.box {
+  padding: 10px;
+  color: #676a6c;
+  background-color: #FFFFFF;
+  border-radius: 5px;
+  -webkit-box-shadow: 0 2px 0 rgba(0, 0, 0, 0.25);
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.25);
+  background-size: cover;
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+  position: relative;
+}
+
+div.stat-box, div.forecast-box {
+  min-height: 140px;
+}
+div.stat-box:hover, div.forecast-box:hover {
+  background-color: silver;
+}
+
+div.stat-box .nvd3 .nv-groups path.nv-area, div.forecast-box .nvd3 .nv-groups path.nv-area {
+  fill-opacity: 0.2;
+}
+
+div.stat-box .nvd3 .nv-groups path.nv-line, div.forecast-box .nvd3 .nv-groups path.nv-line {
+  stroke-opacity: 0.8;
+  stroke-width: 4px;
+}
+
+div.graph-detailed .nvd3 .nv-groups path.nv-line {
+  stroke-width: 3px;
+}
+
+div.graph-detailed .nvd3.nv-scatter .nv-groups .nv-point,
+div.graph-detailed .nvd3 .nv-groups .nv-point {
+  stroke-width: 5px;
+  fill-opacity: .95 !important;
+  stroke-opacity: .95 !important;
+}
+
+div.graph-box {
+  position: absolute;
+  opacity: 0.3;
+  padding: 20px 0px 0;
+  width: 100%;
+  top: 0;
+  left: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+div.col-sm-4, div.col-sm-6 {
+  padding-right: 8px;
+  padding-left: 8px;
+}
+
+
+
+div.box h1, h2, h3, h4 {
+  margin-top: 5px;
+  font-weight: 800;
+}
+
+.trend {
+  position: absolute;
+  z-index: 1;
+  right: 0px;
+  top: 0px;
+  text-align: center;
+}
+
+.metric_current {
+  font-size: 4.5rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+a.fill-div {
+  display: block;
+  height: 100%;
+  width: 100%;
+  text-decoration: none;
+}
+
+.mrr_growth_chart i {
+  position: relative;
+  top: 35px;
+  padding: 0 3%;
+}
+
+.mrr_growth_chart h4 {
+  color: #999;
+}
+
+.mrr_growth_chart strong {
+  font-size: 3.125rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.oGreen {
+  color: #26b548;
+}
+
+.oBlue {
+  color: #2693d5;
+}
+
+.oRed {
+  color: #df2e28;
+}
+
+.oYellow {
+  color: #fed049;
+}
+
+.oBlack {
+  color: #000000;
+}
+
+.upper {
+  text-transform: uppercase;
+}
+
+.smallCaps {
+  font-variant: small-caps;
+}
+
+.loading {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  margin-left: -18px;
+  margin-top: -21px;
+}
