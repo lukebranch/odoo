@@ -699,13 +699,20 @@ class Database(http.Controller):
         pwd_is_admin = False
         if(openerp.tools.config['admin_passwd'] == 'admin'):
             pwd_is_admin = True
-        return env.get_template("database_manager.html").render({
-            'databases': dbs,
-            'debug': request.debug,
-            'list_lang': list_lang,
-            'pwd_is_admin': pwd_is_admin,
-            'error': kw['error'] if 'error' in kw else False,
-        })
+        if(dbs):
+            return env.get_template("database_manager.html").render({
+                'databases': dbs,
+                'debug': request.debug,
+                'list_lang': list_lang,
+                'pwd_is_admin': pwd_is_admin,
+                'error': kw['error'] if 'error' in kw else False,
+            })
+        else:
+            return env.get_template("database_welcome.html").render({
+                'debug': request.debug,
+                'list_lang': list_lang,
+                'pwd_is_admin': pwd_is_admin,
+            })
 
     @http.route('/web/database/get_list', type='json', auth="none")
     def get_list(self):
