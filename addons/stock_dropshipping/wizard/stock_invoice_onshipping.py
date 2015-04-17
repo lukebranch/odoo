@@ -1,36 +1,17 @@
 # -*- coding: utf-8 -*-
-##############################################################################
-#
-#    OpenERP, Open Source Management Solution
-#    Copyright (C) 2004-2010 Tiny SPRL (<http://tiny.be>).
-#
-#    This program is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU Affero General Public License as
-#    published by the Free Software Foundation, either version 3 of the
-#    License, or (at your option) any later version.
-#
-#    This program is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU Affero General Public License for more details.
-#
-#    You should have received a copy of the GNU Affero General Public License
-#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-##############################################################################
 
-from openerp.osv import fields, osv
+from openerp import api, fields, models
 from openerp.tools.translate import _
 
-class stock_invoice_onshipping(osv.osv_memory):
+class StockInvoiceOnshipping(models.TransientModel):
     _inherit = "stock.invoice.onshipping"
-    
-    def _get_journal_type(self, cr, uid, context=None):
-        if context is None:
-            context = {}
+
+    @api.model
+    def _get_journal_type(self):
+        context = self.env.context
         res_ids = context and context.get('active_ids', [])
-        pick_obj = self.pool.get('stock.picking')
-        pickings = pick_obj.browse(cr, uid, res_ids, context=context)
+        Picking = self.env['stock.picking']
+        pickings = Picking.browse(res_ids)
         pick = pickings and pickings[0]
         src_usage = pick.move_lines[0].location_id.usage
         dest_usage = pick.move_lines[0].location_dest_id.usage
@@ -41,9 +22,7 @@ class stock_invoice_onshipping(osv.osv_memory):
             else:
                 return 'sale'
         else:
-            return super(stock_invoice_onshipping, self)._get_journal_type(cr, uid, context=context)
-        
-        
-    _defaults = {
-        'journal_type': _get_journal_type,
-        }
+            return super(StockInvoiceOnshipping, self)._get_journal_type()
+
+    journal_type = fields.Selection([('purchase_refund', 'Refund Purchase'), ('purchase', 'Create Supplier Invoice'),
+                                     ('sale_refund', 'Refund Sale'), ('sale', 'Create Customer Invoice')], 'Journal Type', default=_get_journal_type, readonly=True)
