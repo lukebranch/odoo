@@ -60,8 +60,11 @@
             ev.preventDefault();
             var link = $('.js_language_selector a[data-default-lang]')[0];
             if (link) {
-                link.search += (link.search ? '&' : '?') + 'enable_editor=1';
-                window.location = link.attributes.href.value;
+                window.location.href = _.str.sprintf("/website/lang/%(lang)s?r=%(url)s%(hash)s", {
+                    lang: link.dataset.lang,
+                    url: link.href + (link.search ? '&' : '?') + 'enable_editor=1',
+                    hash: location.hash
+                });
             }
         },
         translate: function () {
