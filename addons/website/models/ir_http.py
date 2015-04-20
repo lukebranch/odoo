@@ -119,7 +119,7 @@ class ir_http(orm.AbstractModel):
                         if request.lang not in langs:
                             # Try to find a similar lang. Eg: fr_BE and fr_FR
                             short = request.lang.split('_')[0]
-                            langs_withshort = [lg[0] for lg in request.website.get_languages() if lg[0].startswith(short)]
+                            langs_withshort = [lg[0] for lg in langs if lg[0].startswith(short)]
                             if len(langs_withshort):
                                 request.lang = langs_withshort[0]
                             else:
@@ -133,6 +133,8 @@ class ir_http(orm.AbstractModel):
                         redirect = request.redirect(path + '?' + request.httprequest.query_string)
                         redirect.set_cookie('website_lang', request.lang)
                         return redirect
+                else:
+                    request.lang = cook_lang in langs and cook_lang or request.lang
 
             request.context['lang'] = request.lang
             if not request.context.get('tz'):

@@ -285,7 +285,7 @@ class Website(openerp.addons.web.controllers.main.Home):
         modules = [x['name'] for x in module_obj.read(request.cr, request.uid, module_ids, ['name'], context=request.context)]
         return WebClient().translations(mods=modules, lang=lang)
 
-    @http.route('/website/attach', type='http', auth='user', methods=['POST'], website=True)
+    @http.route('/website/attach', type='http', auth='user', methods=['POST'], website=True, multilang=False)
     def attach(self, func, upload=None, url=None, disable_optimization=None):
         # the upload argument doesn't allow us to access the files if more than
         # one file is uploaded, as upload references the first file
@@ -441,7 +441,7 @@ class Website(openerp.addons.web.controllers.main.Home):
         '/website/image/<xmlid>/<field>/<int:max_width>x<int:max_height>',
         '/website/image/<model>/<id>/<field>',
         '/website/image/<model>/<id>/<field>/<int:max_width>x<int:max_height>'
-        ], auth="public", website=True)
+        ], auth="public", website=True, multilang=False)
     def website_image(self, model=None, id=None, field=None, xmlid=None, max_width=None, max_height=None):
         """ Fetches the requested field and ensures it does not go above
         (max_width, max_height), resizing it if necessary.
