@@ -43,21 +43,6 @@ class StockMove(osv.osv):
         if move.raw_material_production_id and move.location_dest_id.usage == 'production' and move.raw_material_production_id.product_id.track_production and not move.consumed_for:
             raise osv.except_osv(_('Warning!'), _("Because the product %s requires it, you must assign a serial number to your raw material %s to proceed further in your production. Please use the 'Produce' button to do so.") % (move.raw_material_production_id.product_id.name, move.product_id.name))
 
-    def _check_phantom_bom(self, cr, uid, move, context=None):
-        """check if product associated to move has a phantom bom
-            return list of ids of mrp.bom for that product """
-        user_company = self.pool.get('res.users').browse(cr, uid, uid, context=context).company_id.id
-        #doing the search as SUPERUSER because a user with the permission to write on a stock move should be able to explode it
-        #without giving him the right to read the boms.
-        domain = [
-            '|', ('product_id', '=', move.product_id.id),
-            '&', ('product_id', '=', False), ('product_tmpl_id.product_variant_ids', '=', move.product_id.id),
-            ('type', '=', 'phantom'),
-            '|', ('date_start', '=', False), ('date_start', '<=', time.strftime(DEFAULT_SERVER_DATETIME_FORMAT)),
-            '|', ('date_stop', '=', False), ('date_stop', '>=', time.strftime(DEFAULT_SERVER_DATETIME_FORMAT)),
-            ('company_id', '=', user_company)]
-        return self.pool.get('mrp.bom').search(cr, SUPERUSER_ID, domain, context=context)
-
     def _action_explode(self, cr, uid, move, context=None):
         """ Explodes pickings.
         @param move: Stock moves
@@ -70,12 +55,18 @@ class StockMove(osv.osv):
         uom_obj = self.pool.get("product.uom")
         to_explode_again_ids = []
         processed_ids = []
-        bis = self._check_phantom_bom(cr, uid, move, context=context)
-        if bis:
-            bom_point = bom_obj.browse(cr, SUPERUSER_ID, bis[0], context=context)
+        if 'sale_line_id' in move.procurement_id._columns.keys() and move.procurement_id.sale_line_id:
+            property_ids = map(int, move.procurement_id.sale_line_id.property_ids or [])
+        elif 'purchase_line_id' in move.procurement_id._columns.keys() and move.procurement_id.purchase_line_id:
+            property_ids = map(int, move.procurement_id.purchase_line_id.property_ids or [])
+        else:
+            property_ids = []
+        bis = bom_obj._bom_find(cr, SUPERUSER_ID, product_id=move.product_id.id, properties=property_ids)
+        bom_point = bom_obj.browse(cr, SUPERUSER_ID, bis, context=context)
+        if bis and bom_point.type == 'phantom':
             factor = uom_obj._compute_qty(cr, SUPERUSER_ID, move.product_uom.id, move.product_uom_qty, bom_point.product_uom.id) / bom_point.product_qty
-            res = bom_obj._bom_explode(cr, SUPERUSER_ID, bom_point, move.product_id, factor, [], context=context)
-            
+            res = bom_obj._bom_explode(cr, SUPERUSER_ID, bom_point, move.product_id, factor, property_ids, context=context)
+
             for line in res[0]:
                 product = prod_obj.browse(cr, uid, line['product_id'], context=context)
                 if product.type != 'service':
