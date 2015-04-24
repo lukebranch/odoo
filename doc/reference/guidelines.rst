@@ -88,6 +88,7 @@ The complete tree should looks like
     |-- __openerp__.py
     |-- controllers/
     |   |-- __init__.py
+    |   |-- <inherited_module_name>.py
     |   `-- main.py
     |-- data/
     |   |-- <main_model>_data.xml
@@ -312,7 +313,7 @@ Idioms
 - Use the ``UserError`` defined in ``openerp.exceptions`` instead of overriding ``Warning``, or find a more appropriate exception in *exceptions.py* (only from v9).
 - Document your code (docstring on methods, simple comments for the tricky part of the code)
 - Use meaningful variable/class/method names
-
+- Every method used to compute data for a 'stat button' should use a `read_group` or a SQL query. This aims to improve performance (by computing data in only on query)
 
 
 Symbols
