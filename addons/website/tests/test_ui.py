@@ -1,6 +1,6 @@
 import openerp.tests
 
-
+@openerp.tests.category('website')
 class TestUi(openerp.tests.HttpCase):
     def test_01_public_homepage(self):
         self.phantom_js("/", "console.log('ok')", "odoo.__DEBUG__.services['website.snippets.animation']")

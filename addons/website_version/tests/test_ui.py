@@ -1,6 +1,6 @@
 import openerp.tests
 
-
+@openerp.tests.category('website')
 @openerp.tests.common.at_install(False)
 @openerp.tests.common.post_install(True)
 class TestUi(openerp.tests.HttpCase):
