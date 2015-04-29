@@ -1236,7 +1236,9 @@ class stock_picking(osv.osv):
         prod2move_ids = {}
         still_to_do = []
         #make a dictionary giving for each product, the moves and related quantity that can be used in operation links
-        for move in [x for x in picking.move_lines if x.state not in ('done', 'cancel')]:
+        move_lines = [x for x in picking.move_lines if x.state not in ('done', 'cancel')]
+        move_lines = sorted(move_lines, key=lambda x: (x.date_expected, x.id))
+        for move in move_lines:
             if not prod2move_ids.get(move.product_id.id):
                 prod2move_ids[move.product_id.id] = [{'move': move, 'remaining_qty': move.product_qty}]
             else:
