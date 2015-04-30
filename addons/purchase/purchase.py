@@ -794,24 +794,24 @@ class purchase_order(osv.osv):
         :param list(browse_record) order_lines: purchase order line records for which picking
                                                 and moves should be created.
         :param int picking_id: optional ID of a stock picking to which the created stock moves
-                               will be added. A new picking will be created if omitted.
+                               will be added. A new picking will be created if omitted. (TODO: not so optional)
         :return: None
         """
         stock_move = self.pool.get('stock.move')
+        pick_obj = self.pool['stock.picking']
         todo_moves = []
         new_group = self.pool.get("procurement.group").create(cr, uid, {'name': order.name, 'partner_id': order.partner_id.id}, context=context)
 
+        moves_vals = []
         for order_line in order_lines:
             if not order_line.product_id:
                 continue
 
             if order_line.product_id.type in ('product', 'consu'):
                 for vals in self._prepare_order_line_move(cr, uid, order, order_line, picking_id, new_group, context=context):
-                    move = stock_move.create(cr, uid, vals, context=context)
-                    todo_moves.append(move)
-
-        todo_moves = stock_move.action_confirm(cr, uid, todo_moves)
-        stock_move.force_assign(cr, uid, todo_moves)
+                    moves_vals += [(0, 0, vals)]
+        pick_obj.write(cr, uid, [picking_id], {'move_lines': moves_vals}, context=context)
+        pick_obj.action_confirm(cr, uid, [picking_id], context=context)
 
     def test_moves_done(self, cr, uid, ids, context=None):
         '''PO is done at the delivery side if all the incoming shipments are done'''
