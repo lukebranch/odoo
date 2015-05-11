@@ -37,7 +37,7 @@
                 </field>
                 <xpath expr="//group[@name='properties']" position="before">
                     <group groups="stock_account.group_inventory_valuation" attrs="{'invisible': [('type','=','service')]}">
-                        <separator string="Inventory Valuation" colspan="4"/>
+                        <separator string="Inventory Valuation" attrs="{'invisible':[('type', 'in', ('service', 'consu'))]}" colspan="4"/>
                         <group colspan="2" col="2">
                             <field name="valuation" attrs="{'invisible':[('type', 'in', ('service', 'consu'))]}"/>
                         </group>
