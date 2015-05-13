@@ -1,0 +1,15 @@
+<odoo>
+    <record id="account_analytic_account_form_form" model="ir.ui.view">
+        <field name="name">account.analytic.account.invoice.form</field>
+        <field name="model">account.analytic.account</field>
+        <field name="priority">30</field>
+        <field name="inherit_id" ref="hr_timesheet_invoice.account_analytic_account_form_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//group[@name='invoice_on_timesheets']" position="replace">
+            </xpath>
+            <xpath expr='//div[@name="duration"]' position='after'>
+                <field name="to_invoice" class="oe_inline" widget="selection" attrs="{'required': [('invoice_on_timesheets', '=', True)], 'invisible': [('invoice_on_timesheets','=',False)]}"/>
+             </xpath>
+        </field>
+    </record>
+</odoo>

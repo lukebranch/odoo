@@ -1,0 +1,3 @@
+import account_analytic_account
+import sale_order
+import product_template
