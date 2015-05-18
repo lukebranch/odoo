@@ -419,6 +419,7 @@ Javascript and CSS
 - Use a linter (jshint, ...)
 - Never add minified Javascript Libraries
 - Use camelcase for class declaration
+- Unless your code is supposed to run on every page, target specific pages using the if_dom_contains function of openerp.website. Target an element which is specific to the pages your code needs to run on using JQuery, i.e. : openerp.website.if_dom_contains('.jquery_class_selector', function () { /*your code here*/ });
 
 **For CSS :**
 
