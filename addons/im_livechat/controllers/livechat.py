@@ -20,6 +20,11 @@ class LivechatController(http.Controller):
 
     @http.route('/im_livechat/loader/<string:dbname>/<int:channel_id>', type='http', auth='none')
     def loader(self, dbname, channel_id, **kwargs):
+
+        # TODO JEM : return a js code to load css and js bundles, load the template and display the button
+        # when click on button, get_session like before
+        # set responce header to json or somethong else to avoid console warning
+
         registry, cr, uid, context = openerp.modules.registry.RegistryManager.get(dbname), request.cr, openerp.SUPERUSER_ID, request.context
         info = registry.get('im_livechat.channel').get_info_for_chat_src(cr, uid, channel_id)
         info["dbname"] = dbname

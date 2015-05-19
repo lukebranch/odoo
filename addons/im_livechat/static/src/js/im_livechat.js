@@ -104,6 +104,9 @@
             return ['/im_livechat/static/src/xml/im_livechat.xml', '/im_chat/static/src/xml/im_chat.xml'];
         },
         load_template: function(db, channel, options, rule){
+            /*
+                TODO JEM : optimize the template loading using /web/webclient/qweb route with module name and not file path
+            */
             var self = this;
             // load the qweb templates
             var defs = [];

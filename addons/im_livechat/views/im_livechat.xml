@@ -118,6 +118,12 @@
 
         <!-- the js code to initialize the LiveSupport object -->
         <template id="loader" name="Javascript initializing the LiveSupport">
+            <!--
+                TODO JEM  create a js file (more easy to code than js in xml)
+                The code should use the openerp.loadBundle function to load the 2 bundle, harcoded names.
+                Harcodrd : NO ! -- by default should be 'external' loader. But for insternal pass a param
+                to the loader route. Render template name here ;)
+            -->
             <t t-translate="off">
                 (function() {
                     window.livesupport = new openerp.im_livechat.LiveSupport(
