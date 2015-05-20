@@ -1288,14 +1288,20 @@ class pos_order_line(osv.osv):
         res = dict([(i, {}) for i in ids])
         account_tax_obj = self.pool.get('account.tax')
         cur_obj = self.pool.get('res.currency')
+        users_obj = self.pool.get("res.users")
+        user = users_obj.browse(cr, uid, uid)
         for line in self.browse(cr, uid, ids, context=context):
             taxes_ids = [ tax for tax in line.product_id.taxes_id if tax.company_id.id == line.order_id.company_id.id ]
             price = line.price_unit * (1 - (line.discount or 0.0) / 100.0)
             taxes = account_tax_obj.compute_all(cr, uid, taxes_ids, price, line.qty, product=line.product_id, partner=line.order_id.partner_id or False)
 
             cur = line.order_id.pricelist_id.currency_id
-            res[line.id]['price_subtotal'] = cur_obj.round(cr, uid, cur, taxes['total'])
-            res[line.id]['price_subtotal_incl'] = cur_obj.round(cr, uid, cur, taxes['total_included'])
+            if user.company_id.tax_calculation_rounding_method == 'round_per_line':
+                res[line.id]['price_subtotal'] = cur_obj.round(cr, uid, cur, taxes['total'])
+                res[line.id]['price_subtotal_incl'] = cur_obj.round(cr, uid, cur, taxes['total_included'])
+            else:
+                res[line.id]['price_subtotal'] = taxes['total']
+                res[line.id]['price_subtotal_incl'] = taxes['total_included']
         return res
 
     def onchange_product_id(self, cr, uid, ids, pricelist, product_id, qty=0, partner_id=False, context=None):
@@ -1337,8 +1343,8 @@ class pos_order_line(osv.osv):
         'product_id': fields.many2one('product.product', 'Product', domain=[('sale_ok', '=', True)], required=True, change_default=True),
         'price_unit': fields.float(string='Unit Price', digits_compute=dp.get_precision('Product Price')),
         'qty': fields.float('Quantity', digits_compute=dp.get_precision('Product UoS')),
-        'price_subtotal': fields.function(_amount_line_all, multi='pos_order_line_amount', digits_compute=dp.get_precision('Product Price'), string='Subtotal w/o Tax', store=True),
-        'price_subtotal_incl': fields.function(_amount_line_all, multi='pos_order_line_amount', digits_compute=dp.get_precision('Account'), string='Subtotal', store=True),
+        'price_subtotal': fields.function(_amount_line_all, multi='pos_order_line_amount', digits_compute=dp.get_precision('Account'), string='Subtotal w/o Tax', store=True),
+        'price_subtotal_incl': fields.function(_amount_line_all, multi='pos_order_line_amount', digits_compute=dp.get_precision('Product Price'), string='Subtotal', store=True),
         'discount': fields.float('Discount (%)', digits_compute=dp.get_precision('Account')),
         'order_id': fields.many2one('pos.order', 'Order Ref', ondelete='cascade'),
         'create_date': fields.datetime('Creation Date', readonly=True),
