@@ -91,7 +91,6 @@ class PaymentAcquirer(osv.Model):
         'fees_int_var': fields.float('Variable international fees (in percents)'),
         'sequence': fields.integer('Sequence', help="Determine the display order"),
         's2s_support': fields.boolean('Support S2S Transactions'),
-        'journal_id': fields.many2one('account.journal', 'Journal', help="Account journal used for payment if you use automatic payment."),
     }
 
     _defaults = {
@@ -410,7 +409,6 @@ class PaymentTransaction(osv.Model):
         'partner_reference': fields.char('Partner Reference',
                                          help='Reference of the customer in the acquirer database'),
         'html_3ds': fields.char('3D Secure HTML'),
-        'invoice_id': fields.many2one('account.invoice', 'Invoice')
     }
 
     def _check_reference(self, cr, uid, ids, context=None):

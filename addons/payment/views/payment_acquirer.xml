@@ -25,7 +25,6 @@
                                 <field name="auto_confirm"/>
                             </group>
                             <group>
-                                <field name="journal_id" attrs="{'required': [('s2s_support','=',True)]}"/>
                                 <field name="fees_active"/>
                                 <field name="fees_dom_fixed"
                                     attrs="{'invisible': [('fees_active', '=', False)]}"/>
