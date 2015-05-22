@@ -552,7 +552,7 @@ instance.web.ViewManager =  instance.web.Widget.extend({
                 });
             }
             this.action = action;
-            this.action_manager = parent;
+            this.ActionManager = parent;
             dataset = new instance.web.DataSetSearch(this, action.res_model, action.context, action.domain);
             if (action.res_id) {
                 dataset.ids.push(action.res_id);
@@ -714,8 +714,8 @@ instance.web.ViewManager =  instance.web.Widget.extend({
     },
     display_breadcrumbs: function () {
         var self = this;
-        if (!this.action_manager) return;
-        var breadcrumbs = this.action_manager.get_breadcrumbs();
+        if (!this.ActionManager) return;
+        var breadcrumbs = this.ActionManager.get_breadcrumbs();
         if (!breadcrumbs.length) return;
 
         var $breadcrumbs = breadcrumbs.map(function (bc, index) {
@@ -732,7 +732,7 @@ instance.web.ViewManager =  instance.web.Widget.extend({
                     .toggleClass('active', is_last);
             if (!is_last) {
                 $bc.click(function () {
-                    self.action_manager.select_widget(bc.widget, bc.index);
+                    self.ActionManager.select_widget(bc.widget, bc.index);
                 });
             }
             return $bc;
@@ -760,7 +760,7 @@ instance.web.ViewManager =  instance.web.Widget.extend({
         }
         controller.on('switch_mode', this, this.switch_mode.bind(this));
         controller.on('history_back', this, function () {
-            if (self.action_manager) self.action_manager.trigger('history_back');
+            if (self.ActionManager) self.ActionManager.trigger('history_back');
         });
         controller.on("change:title", this, function() {
             self.display_breadcrumbs();
@@ -854,9 +854,9 @@ instance.web.ViewManager =  instance.web.Widget.extend({
         });
     },
     do_push_state: function(state) {
-        if (this.action_manager) {
+        if (this.ActionManager) {
             state.view_type = this.active_view.type;
-            this.action_manager.do_push_state(state);
+            this.ActionManager.do_push_state(state);
         }
     },    
     do_load_state: function(state, warm) {
