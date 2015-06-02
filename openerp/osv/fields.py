@@ -212,7 +212,7 @@ class _column(object):
         base_items = [
             ('copy', self.copy),
         ]
-        truthy_items = filter(itemgetter(1), [
+        items = [
             ('index', self.select),
             ('manual', self.manual),
             ('string', self.string),
@@ -229,8 +229,8 @@ class _column(object):
             ('translate', self.translate),
             ('domain', self._domain),
             ('context', self._context),
-        ])
-        return dict(base_items + truthy_items + self._args.items())
+        ]
+        return dict(base_items + items + self._args.items())
 
     def restart(self):
         pass
