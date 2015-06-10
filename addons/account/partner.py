@@ -241,11 +241,38 @@ class res_partner(osv.osv):
     def _invoice_total(self, cr, uid, ids, field_name, arg, context=None):
         result = {}
         account_invoice_report = self.pool.get('account.invoice.report')
-        for partner in self.browse(cr, uid, ids, context=context):
-            domain = [('partner_id', 'child_of', partner.id), ('state', 'not in', ['draft', 'cancel'])]
+        user = self.pool['res.users'].browse(cr, uid, uid, context=context)
+        for partner_id in ids:
+            # first read invoices in the user's currency
+            all_partner_ids = self.pool['res.partner'].search(
+                cr, uid, [('id', 'child_of', partner_id)], context=context)
+            # searching account.invoice.report via the orm is comparatively
+            # expensive (searching for many2one fields generates in $idlist
+            # queries), so we do the simplest and most common case in sql
+
+            where_query = account_invoice_report._where_calc(cr, uid, [
+                ('partner_id', 'in', all_partner_ids), ('state', 'not in', ['draft', 'cancel']), ('currency_id', '=', user.company_id.currency_id.id)
+            ], context=context)
+            account_invoice_report._apply_ir_rules(cr, uid, where_query, 'read', context=context)
+            from_clause, where_clause, where_clause_params = where_query.get_sql()
+            where_str = where_clause and (" WHERE %s AND " % where_clause) or ' WHERE '
+
+            query = """SELECT SUM(price_total)
+                         FROM account_invoice_report
+                      %s """ % where_str
+            cr.execute(query, where_clause_params)
+
+            result[partner_id] = sum(s or 0.0 for s, in cr.fetchall())
+            # and then add invoices in other currencies
+            domain = [
+                ('partner_id', 'in', all_partner_ids),
+                ('state', 'not in', ['draft', 'cancel']),
+                ('currency_id', '!=', user.company_id.currency_id.id),
+            ]
             invoice_ids = account_invoice_report.search(cr, uid, domain, context=context)
-            invoices = account_invoice_report.browse(cr, uid, invoice_ids, context=context)
-            result[partner.id] = sum(inv.user_currency_price_total for inv in invoices)
+            if invoice_ids:
+                invoices = account_invoice_report.browse(cr, uid, invoice_ids, context=context)
+                result[partner_id] += sum(inv.user_currency_price_total for inv in invoices)
         return result
 
     def _journal_item_count(self, cr, uid, ids, field_name, arg, context=None):
